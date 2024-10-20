@@ -7,10 +7,14 @@ void main() async {
 
   // Initialize FirebaseService
   final firebaseService = FirebaseService();
+
   try {
     await firebaseService.initializeFirebase();
+    print("Firebase initialized successfully");
   } catch (e) {
-    print(e); // You can handle this more gracefully in a production app
+    print("Error initializing Firebase: $e");
+    // You can choose to return or exit the app if Firebase fails to initialize
+    return;
   }
 
   runApp(const MyApp());
@@ -27,8 +31,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(
-          title: 'Firebase Connection Status'), // Update to HomePage
+      home: const HomePage(title: 'Firebase Connection Status'),
     );
   }
 }

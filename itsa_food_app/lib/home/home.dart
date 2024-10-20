@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/sign_up/sign_up.dart';
+import 'package:itsa_food_app/login/login.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
@@ -22,13 +23,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _checkFirebaseConnection() async {
-    if (firebaseService.isInitialized) {
+    try {
+      if (firebaseService.isInitialized) {
+        setState(() {
+          _connectionStatus = "Firebase connected successfully!";
+        });
+      } else {
+        setState(() {
+          _connectionStatus = "Failed to connect to Firebase.";
+        });
+      }
+    } catch (e) {
+      print('Error checking Firebase connection: $e');
       setState(() {
-        _connectionStatus = "Firebase connected successfully!";
-      });
-    } else {
-      setState(() {
-        _connectionStatus = "Failed to connect to Firebase.";
+        _connectionStatus = "Error checking connection.";
       });
     }
   }
@@ -67,6 +75,18 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               child: const Text('Sign Up'),
+            ),
+            const SizedBox(height: 20), // Add some space between buttons
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          const LoginPage()), // Update to your LoginPage
+                );
+              },
+              child: const Text('Login'),
             ),
           ],
         ),
