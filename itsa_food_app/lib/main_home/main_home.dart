@@ -1,43 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/widgets/customer_navbar.dart';
+import 'package:itsa_food_app/widgets/customer_appbar.dart';
+import 'package:itsa_food_app/widgets/customer_sidebar.dart';
 
-class MainHome extends StatelessWidget {
-  const MainHome({super.key});
+class MainHome extends StatefulWidget {
+  final String userName;
+  final String email;
+  final String imageUrl;
+
+  const MainHome({
+    super.key,
+    required this.userName,
+    required this.email,
+    required this.imageUrl,
+  });
+
+  @override
+  State<MainHome> createState() => _MainHomeState();
+}
+
+class _MainHomeState extends State<MainHome> {
+  int _currentIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final List<Widget> _pages = [
+    const Center(child: Text('Home Page')),
+    const Center(child: Text('Menu Page')),
+    const Center(child: Text('Favorites Page')),
+    const Center(child: Text('User Page')),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _openCart() {
+    print("Cart opened");
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Main Home"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Implement logout logic here
-              // For example, you might want to sign out the user and navigate back to login
-              // FirebaseAuth.instance.signOut();
-              Navigator.pop(
-                  context); // Navigate back to the previous screen (login)
-            },
-          ),
-        ],
+      key: _scaffoldKey,
+      appBar: CustomAppBar(
+        scaffoldKey: _scaffoldKey,
+        onCartPressed: _openCart,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to the Main Home!',
-              style: TextStyle(fontSize: 24),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Implement your functionality here
-                // For example, navigate to another screen
-              },
-              child: const Text("Do Something"),
-            ),
-          ],
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onItemTapped,
+      ),
+      drawer: Drawer(
+        child: Sidebar(
+          userName: widget.userName,
+          email: widget.email,
+          imageUrl: widget.imageUrl,
         ),
       ),
     );

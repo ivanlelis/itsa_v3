@@ -16,6 +16,30 @@ class FirebaseService {
     return _instance;
   }
 
+  Future<Map<String, dynamic>?> getCurrentUserInfo() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      // Use the user's email to retrieve their document from Firestore
+      String userEmail = user.email ?? '';
+
+      // Query the Firestore users collection to find the document with the user's email
+      QuerySnapshot snapshot = await _firestore
+          .collection('users')
+          .where('emailAddress', isEqualTo: userEmail)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // If a document is found, return its data
+        return snapshot.docs.first.data() as Map<String, dynamic>?;
+      } else {
+        print("No user document found for email: $userEmail");
+      }
+    } else {
+      print("No user is currently logged in.");
+    }
+    return null;
+  }
+
   Future<void> initializeFirebase() async {
     if (_isInitialized) {
       return; // Prevent multiple initializations
@@ -58,6 +82,7 @@ class FirebaseService {
         'lastName': lastName,
         'emailAddress': email,
         'mobileNumber': mobileNumber,
+        'imageUrl': '', // Initialize imageUrl if needed
       });
 
       await userCredential.user?.sendEmailVerification();

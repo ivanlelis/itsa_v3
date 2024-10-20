@@ -54,12 +54,32 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Navigate to main_home.dart upon successful login
+      // Fetch the current user's info from Firestore
+      Map<String, dynamic>? userInfo =
+          await firebaseService.getCurrentUserInfo();
+
+      // Check if userInfo is null or empty
+      if (userInfo == null || userInfo.isEmpty) {
+        setState(() {
+          _errorMessage = "User information not found.";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Navigate to main_home.dart upon successful login, passing user info
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                const MainHome()), // Adjust the class name as needed
+          builder: (context) => MainHome(
+            userName:
+                userInfo['userName'] ?? "Guest User", // Provide default value
+            email: userInfo['emailAddress'] ??
+                "No Email Provided", // Use correct field
+            imageUrl:
+                userInfo['imageUrl'] ?? "", // Use placeholder later if empty
+          ),
+        ),
       );
     } on FirebaseAuthException catch (e) {
       setState(() {

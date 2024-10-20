@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/home/home.dart';
+import 'package:itsa_food_app/user_provider/user_provider.dart'; // Import your UserProvider
+import 'package:provider/provider.dart'; // Import provider package
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +19,12 @@ void main() async {
     return;
   }
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => UserProvider(), // Create an instance of UserProvider
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
