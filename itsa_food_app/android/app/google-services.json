@@ -1,0 +1,99 @@
+{
+  "project_info": {
+    "project_number": "782392675006",
+    "firebase_url": "https://itsa-9af01-default-rtdb.firebaseio.com",
+    "project_id": "itsa-9af01",
+    "storage_bucket": "itsa-9af01.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782392675006:android:d512f5e3fed2d2cb96acef",
+        "android_client_info": {
+          "package_name": "com.itsa.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "782392675006-8ps3sp95q7amadoeppvkfqm96tknig0s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.itsa.app",
+            "certificate_hash": "e8b081fcba652b64fca5ce06803e4e4312306411"
+          }
+        },
+        {
+          "client_id": "782392675006-2oshm80095ubqmgdkiatmt5v0b6r9pon.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHEAiP1nkFWLpDCWcEe-HUO_xMB2OXVPE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "782392675006-2oshm80095ubqmgdkiatmt5v0b6r9pon.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "782392675006-2vsfaiaoauajor25omb7c3hb17fuuamh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.itsaFoodApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782392675006:android:1993200a1008554e96acef",
+        "android_client_info": {
+          "package_name": "com.itsa.fooddelivery"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "782392675006-ei4jq9v0ilnoploihsmcn64a154hogu0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.itsa.fooddelivery",
+            "certificate_hash": "e8b081fcba652b64fca5ce06803e4e4312306411"
+          }
+        },
+        {
+          "client_id": "782392675006-2oshm80095ubqmgdkiatmt5v0b6r9pon.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHEAiP1nkFWLpDCWcEe-HUO_xMB2OXVPE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "782392675006-2oshm80095ubqmgdkiatmt5v0b6r9pon.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "782392675006-2vsfaiaoauajor25omb7c3hb17fuuamh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.itsaFoodApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

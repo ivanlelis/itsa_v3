@@ -1,0 +1,61 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+    id 'com.google.gms.google-services'  // Ensure this applies after other plugins
+}
+
+dependencies {
+    // Import the Firebase BoM (Bill of Materials) for Firebase dependencies management
+    implementation platform('com.google.firebase:firebase-bom:33.4.0')
+
+    // Add Firebase Analytics dependency (no version needed since it's managed by BoM)
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // Add other Firebase dependencies as needed
+    // For example: 
+    // implementation 'com.google.firebase:firebase-auth'
+    // implementation 'com.google.firebase:firebase-firestore'
+}
+
+android {
+    namespace = "com.itsa.app"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    defaultConfig {
+        applicationId = "com.itsa.app"  // Ensure this matches your package name
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+
+        // Make sure your minSdkVersion is compatible with Firebase libraries
+        minSdkVersion 23
+    }
+
+    buildTypes {
+        release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.debug
+            // Enable shrinking and proguard to reduce APK size
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
