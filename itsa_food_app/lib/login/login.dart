@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/main_home/customer_home.dart'; // Import the Customer Home Page
 import 'package:itsa_food_app/main_home/rider_home.dart'; // Import the Rider Home Page
+import 'package:itsa_food_app/main_home/admin_home.dart'; // Import the Admin Home Page
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -47,56 +48,74 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Check if the user's email is verified
-      if (!userCredential.user!.emailVerified) {
-        setState(() {
-          _errorMessage = "Please verify your email before logging in.";
-          _isLoading = false;
-        });
-        return;
-      }
+      if (userCredential.user!.emailVerified) {
+        // If the email is verified, fetch user info from Firestore
+        Map<String, dynamic>? userInfo =
+            await firebaseService.getCurrentUserInfo();
 
-      // Fetch the current user's info from Firestore
-      Map<String, dynamic>? userInfo =
-          await firebaseService.getCurrentUserInfo();
+        // Check if userInfo is null or empty
+        if (userInfo == null || userInfo.isEmpty) {
+          setState(() {
+            _errorMessage = "User information not found.";
+            _isLoading = false;
+          });
+          return;
+        }
 
-      // Check if userInfo is null or empty
-      if (userInfo == null || userInfo.isEmpty) {
-        setState(() {
-          _errorMessage = "User information not found.";
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Navigate to the appropriate home page based on user type
-      String userType = userInfo['userType']; // Get user type from Firestore
-      if (userType == 'customer') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CustomerMainHome(
-              userName: userInfo['userName'] ?? "Guest User",
-              email: userInfo['emailAddress'] ?? "No Email Provided",
-              imageUrl: userInfo['imageUrl'] ?? "",
+        // Navigate to the appropriate home page based on user type
+        String userType = userInfo['userType']; // Get user type from Firestore
+        if (userType == 'customer') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CustomerMainHome(
+                userName: userInfo['userName'] ?? "Guest User",
+                email: userInfo['emailAddress'] ?? "No Email Provided",
+                imageUrl: userInfo['imageUrl'] ?? "",
+              ),
             ),
-          ),
-        );
-      } else if (userType == 'rider') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RiderMainHome(
-              userName: userInfo['userName'] ?? "Guest User",
-              email: userInfo['emailAddress'] ?? "No Email Provided",
-              imageUrl: userInfo['imageUrl'] ?? "",
+          );
+        } else if (userType == 'rider') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RiderMainHome(
+                userName: userInfo['userName'] ?? "Guest User",
+                email: userInfo['emailAddress'] ?? "No Email Provided",
+                imageUrl: userInfo['imageUrl'] ?? "",
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          setState(() {
+            _errorMessage = "Unknown user type.";
+            _isLoading = false;
+          });
+        }
       } else {
-        setState(() {
-          _errorMessage = "Unknown user type.";
-          _isLoading = false;
-        });
+        // Admin login check
+        Map<String, dynamic>? adminInfo =
+            await firebaseService.getAdminInfo(email);
+
+        if (adminInfo != null) {
+          // Directly navigate to the Admin Home Page if admin credentials are used
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminHome(
+                userName: "Admin", // You can set a default name for admin
+                email: email,
+                imageUrl: "", // Placeholder for admin image
+              ),
+            ),
+          );
+        } else {
+          setState(() {
+            _errorMessage =
+                "Email not verified or admin credentials incorrect.";
+            _isLoading = false;
+          });
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {

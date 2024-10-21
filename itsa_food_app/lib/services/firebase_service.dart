@@ -49,6 +49,21 @@ class FirebaseService {
     return null;
   }
 
+  Future<Map<String, dynamic>?> getAdminInfo(String email) async {
+    try {
+      DocumentSnapshot snapshot =
+          await _firestore.collection('admin').doc('admin_1').get();
+      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+
+      if (data != null && data['email'] == email) {
+        return data; // Return admin data if email matches
+      }
+    } catch (e) {
+      print("Error fetching admin info: $e");
+    }
+    return null; // Return null if no matching admin found
+  }
+
   Future<void> initializeFirebase() async {
     if (_isInitialized) {
       return; // Prevent multiple initializations

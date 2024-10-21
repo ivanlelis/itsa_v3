@@ -73,8 +73,9 @@ class Sidebar extends StatelessWidget {
           title: const Text('Log Out'),
           onTap: () async {
             await FirebaseAuth.instance.signOut();
-            // Navigate back to Login page
-            Navigator.of(context).pushReplacementNamed('/login');
+            // Navigate back to Home page
+            Navigator.of(context).pushReplacementNamed(
+                '/home'); // Adjust the route name if needed
           },
         ),
       ],

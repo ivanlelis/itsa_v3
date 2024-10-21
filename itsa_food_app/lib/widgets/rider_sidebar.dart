@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RiderDrawer extends StatelessWidget {
   final String userName;
@@ -6,11 +7,11 @@ class RiderDrawer extends StatelessWidget {
   final String imageUrl;
 
   const RiderDrawer({
-    Key? key,
+    super.key,
     required this.userName,
     required this.email,
     required this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +58,22 @@ class RiderDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Log Out'),
-            onTap: () {
-              // Log out logic
+            onTap: () async {
+              // Check if the user is logged in
+              User? user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                // User is logged in, proceed to sign out
+                try {
+                  await FirebaseAuth.instance.signOut();
+                  // Navigate back to home.dart
+                  Navigator.of(context).pushReplacementNamed('/home');
+                } catch (e) {
+                  print("Error signing out: $e"); // Log the error for debugging
+                }
+              } else {
+                // User is not logged in
+                print("No user is currently logged in.");
+              }
             },
           ),
         ],
