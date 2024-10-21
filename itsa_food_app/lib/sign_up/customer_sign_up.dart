@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+class CustomerSignUp extends StatefulWidget {
+  const CustomerSignUp({super.key});
 
   @override
-  _SignUpPageState createState() => _SignUpPageState();
+  _CustomerSignUpState createState() => _CustomerSignUpState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
+class _CustomerSignUpState extends State<CustomerSignUp> {
   final FirebaseService _firebaseService = FirebaseService();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
@@ -32,6 +32,7 @@ class _SignUpPageState extends State<SignUpPage> {
         email,
         mobileNumber,
         password,
+        userType: 'customer', // Add userType argument here
       );
       setState(() {
         _message =

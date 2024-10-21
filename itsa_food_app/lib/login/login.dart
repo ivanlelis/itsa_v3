@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
-import 'package:itsa_food_app/main_home/main_home.dart';
+import 'package:itsa_food_app/main_home/customer_home.dart'; // Import the Customer Home Page
+import 'package:itsa_food_app/main_home/rider_home.dart'; // Import the Rider Home Page
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -67,20 +68,36 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Navigate to main_home.dart upon successful login, passing user info
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainHome(
-            userName:
-                userInfo['userName'] ?? "Guest User", // Provide default value
-            email: userInfo['emailAddress'] ??
-                "No Email Provided", // Use correct field
-            imageUrl:
-                userInfo['imageUrl'] ?? "", // Use placeholder later if empty
+      // Navigate to the appropriate home page based on user type
+      String userType = userInfo['userType']; // Get user type from Firestore
+      if (userType == 'customer') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CustomerMainHome(
+              userName: userInfo['userName'] ?? "Guest User",
+              email: userInfo['emailAddress'] ?? "No Email Provided",
+              imageUrl: userInfo['imageUrl'] ?? "",
+            ),
           ),
-        ),
-      );
+        );
+      } else if (userType == 'rider') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RiderMainHome(
+              userName: userInfo['userName'] ?? "Guest User",
+              email: userInfo['emailAddress'] ?? "No Email Provided",
+              imageUrl: userInfo['imageUrl'] ?? "",
+            ),
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = "Unknown user type.";
+          _isLoading = false;
+        });
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = e.message; // Display error message

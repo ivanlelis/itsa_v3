@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/pre_sign_up/segmentation.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
-import 'package:itsa_food_app/sign_up/sign_up.dart';
 import 'package:itsa_food_app/login/login.dart';
 
 class HomePage extends StatefulWidget {
@@ -71,7 +71,8 @@ class _HomePageState extends State<HomePage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SignUpPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const PreSignUpSegmentationPage()),
                 );
               },
               child: const Text('Sign Up'),

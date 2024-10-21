@@ -19,21 +19,30 @@ class FirebaseService {
   Future<Map<String, dynamic>?> getCurrentUserInfo() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      // Use the user's email to retrieve their document from Firestore
       String userEmail = user.email ?? '';
 
-      // Query the Firestore users collection to find the document with the user's email
-      QuerySnapshot snapshot = await _firestore
-          .collection('users')
+      // Check the 'customer' collection for the user's document
+      QuerySnapshot customerSnapshot = await _firestore
+          .collection('customer')
           .where('emailAddress', isEqualTo: userEmail)
           .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        // If a document is found, return its data
-        return snapshot.docs.first.data() as Map<String, dynamic>?;
-      } else {
-        print("No user document found for email: $userEmail");
+      if (customerSnapshot.docs.isNotEmpty) {
+        return customerSnapshot.docs.first.data() as Map<String, dynamic>?;
       }
+
+      // If not found in 'customer', check the 'rider' collection
+      QuerySnapshot riderSnapshot = await _firestore
+          .collection('rider')
+          .where('emailAddress', isEqualTo: userEmail)
+          .get();
+
+      if (riderSnapshot.docs.isNotEmpty) {
+        return riderSnapshot.docs.first.data() as Map<String, dynamic>?;
+      }
+
+      // If the user is not found in either collection
+      print("No user document found for email: $userEmail");
     } else {
       print("No user is currently logged in.");
     }
@@ -61,8 +70,16 @@ class FirebaseService {
 
   bool get isInitialized => _isInitialized;
 
-  Future<void> signUpWithEmail(String firstName, String lastName, String email,
-      String mobileNumber, String password) async {
+  Future<void> signUpWithEmail(
+    String firstName,
+    String lastName,
+    String email,
+    String mobileNumber,
+    String password, {
+    required String userType, // Field to distinguish between customer and rider
+    Map<String, dynamic>?
+        additionalData, // Extra info like vehicle details for riders
+  }) async {
     if (!_isInitialized) {
       throw Exception("Firebase is not initialized.");
     }
@@ -76,15 +93,20 @@ class FirebaseService {
 
       String userName = '${firstName.trim()} ${lastName.trim()}';
 
-      await _firestore.collection('users').doc(userName).set({
+      // Determine the collection (customer or rider) based on userType
+      String collection = userType == 'rider' ? 'rider' : 'customer';
+
+      await _firestore.collection(collection).doc(userName).set({
         'userName': userName,
         'firstName': firstName,
         'lastName': lastName,
         'emailAddress': email,
         'mobileNumber': mobileNumber,
-        'imageUrl': '', // Initialize imageUrl if needed
+        'userType': userType, // Store user type (customer or rider)
+        ...?additionalData, // Additional data for riders (e.g., vehicle details)
       });
 
+      // Send verification email
       await userCredential.user?.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message);

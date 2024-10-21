@@ -3,12 +3,12 @@ import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_sidebar.dart';
 
-class MainHome extends StatefulWidget {
+class CustomerMainHome extends StatefulWidget {
   final String userName;
   final String email;
   final String imageUrl;
 
-  const MainHome({
+  const CustomerMainHome({
     super.key,
     required this.userName,
     required this.email,
@@ -16,10 +16,10 @@ class MainHome extends StatefulWidget {
   });
 
   @override
-  State<MainHome> createState() => _MainHomeState();
+  State<CustomerMainHome> createState() => _CustomerMainHomeState();
 }
 
-class _MainHomeState extends State<MainHome> {
+class _CustomerMainHomeState extends State<CustomerMainHome> {
   int _currentIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
