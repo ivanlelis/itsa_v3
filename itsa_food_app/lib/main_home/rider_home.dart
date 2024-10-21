@@ -7,11 +7,11 @@ class RiderMainHome extends StatelessWidget {
   final String imageUrl;
 
   const RiderMainHome({
-    Key? key,
+    super.key,
     required this.userName,
     required this.email,
     required this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
