@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:itsa_food_app/admin_pages/menu_mgmt.dart'; // Import the MenuManagement page
-import 'package:itsa_food_app/main_home/admin_home.dart'; // Import the AdminHome page
+import 'package:itsa_food_app/admin_pages/menu_mgmt.dart';
+import 'package:itsa_food_app/main_home/admin_home.dart';
+import 'package:itsa_food_app/admin_pages/user_mgmt.dart';
 
 class AdminBottomNavBar extends StatelessWidget {
   final int selectedIndex; // Index of the currently selected icon
@@ -56,6 +57,12 @@ class AdminBottomNavBar extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const MenuManagement()),
+          );
+        } else if (index == 3) {
+          // If the users item is tapped, navigate to UserManagement
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => UserManagement()),
           );
         } else {
           // For other items, call the provided function

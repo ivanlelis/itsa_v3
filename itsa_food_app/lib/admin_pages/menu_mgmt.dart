@@ -221,7 +221,6 @@ class _AddProductModalState extends State<AddProductModal> {
       final downloadUrl = await ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
-      print('Error uploading image: $e');
       return null;
     }
   }
@@ -416,12 +415,12 @@ class ProductCard extends StatelessWidget {
   final String imageUrl;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.productName,
     required this.productType,
     required this.prices,
     required this.imageUrl,
-  }) : super(key: key);
+  });
 
   Future<String> _getImageUrl() async {
     final Reference ref =
@@ -488,9 +487,7 @@ class ProductCard extends StatelessWidget {
           .ref()
           .child('product_image/$productName.jpg');
       await storageRef.delete();
-      print('Image deleted successfully.');
     } catch (e) {
-      print('Error deleting image: $e');
     }
   }
 

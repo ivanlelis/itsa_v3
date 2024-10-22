@@ -11,12 +11,12 @@ class ProductEditModal extends StatefulWidget {
   final String imageUrl; // Add imageUrl to hold the current product image URL
 
   const ProductEditModal({
-    Key? key,
+    super.key,
     required this.productName,
     required this.productType,
     required this.prices,
     required this.imageUrl, // Add imageUrl to constructor
-  }) : super(key: key);
+  });
 
   @override
   _ProductEditModalState createState() => _ProductEditModalState();
@@ -124,8 +124,8 @@ class _ProductEditModalState extends State<ProductEditModal> {
   }
 
   Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
       setState(() {
