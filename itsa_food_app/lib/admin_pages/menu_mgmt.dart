@@ -3,6 +3,10 @@ import 'package:itsa_food_app/widgets/admin_appbar.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_sidebar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:itsa_food_app/edit/editProduct.dart';
 
 class MenuManagement extends StatefulWidget {
   const MenuManagement({super.key});
@@ -35,6 +39,7 @@ class _MenuManagementState extends State<MenuManagement> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
+      // Modify this part of your code
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -124,18 +129,12 @@ class _MenuManagementState extends State<MenuManagement> {
                       return ProductCard(
                         productName: product['productName'],
                         productType: product['productType'],
-                        // Add prices based on product type
                         prices: _getProductPrices(product),
+                        imageUrl: product['imageUrl'], // Pass the imageUrl
                       );
                     },
                   );
                 },
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                // Currently empty; you can add logic to display products later
-                children: const [], // Empty list to avoid displaying hardcoded items
               ),
             ),
           ],
@@ -161,19 +160,19 @@ class _MenuManagementState extends State<MenuManagement> {
     final productType = product['productType'];
     if (productType == 'Takoyaki') {
       return {
-        '4pcs': product['4pc'],
-        '8pcs': product['8pc'],
-        '12pcs': product['12pc'],
+        'Takoyaki 4 pcs': product['4pc'],
+        'Takoyaki 8 pcs': product['8pc'],
+        'Takoyaki 12 pcs': product['12pc'],
       };
     } else if (productType == 'Milk Tea') {
       return {
-        'Small': product['small'],
-        'Medium': product['medium'],
-        'Large': product['large'],
+        'Milk Tea Small': product['small'],
+        'Milk Tea Medium': product['medium'],
+        'Milk Tea Large': product['large'],
       };
     } else if (productType == 'Meals') {
       return {
-        'Price': product['price'],
+        'Meals Price': product['price'],
       };
     }
     return {};
@@ -181,7 +180,7 @@ class _MenuManagementState extends State<MenuManagement> {
 }
 
 class AddProductModal extends StatefulWidget {
-  const AddProductModal({Key? key}) : super(key: key);
+  const AddProductModal({super.key});
 
   @override
   _AddProductModalState createState() => _AddProductModalState();
@@ -196,6 +195,37 @@ class _AddProductModalState extends State<AddProductModal> {
     'Meals': '',
   };
 
+  File? _selectedImage; // Variable to store selected image file
+
+  // Method to pick an image from the device
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      setState(() {
+        _selectedImage = File(pickedImage.path);
+      });
+    }
+  }
+
+  // Method to upload the selected image to Firebase Storage
+  Future<String?> _uploadImageToFirebase() async {
+    if (_selectedImage == null) return null;
+
+    final fileName = _productNameController.text.trim();
+    final destination = 'product_image/$fileName.jpg';
+
+    try {
+      final ref = FirebaseStorage.instance.ref(destination);
+      await ref.putFile(_selectedImage!);
+      final downloadUrl = await ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
+    }
+  }
+
   // Method to save product details to Firestore
   Future<void> _saveProductToFirestore() async {
     final productName = _productNameController.text.trim();
@@ -207,10 +237,20 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
+    // Upload image to Firebase Storage
+    final imageUrl = await _uploadImageToFirebase();
+    if (imageUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select an image')),
+      );
+      return;
+    }
+
     // Create a document with the product name as the ID
     final productData = {
       'productName': productName,
       'productType': _selectedProductType,
+      'imageUrl': imageUrl, // Store the image URL in Firestore
     };
 
     // Add variant-specific prices to the document
@@ -228,7 +268,7 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     } else if (_selectedProductType == 'Meals') {
       productData.addAll({
-        'price': _variantPrices['Meals'] ?? '',
+        'price': _variantPrices['Meals Price'] ?? '',
       });
     }
 
@@ -243,113 +283,127 @@ class _AddProductModalState extends State<AddProductModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Add Product',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Container(
+        // Set a height to cover more of the screen (adjust this percentage as needed)
+        height:
+            MediaQuery.of(context).size.height * 0.85, // 85% of screen height
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Add Product',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _productNameController,
-            decoration: InputDecoration(labelText: 'Product Name'),
-          ),
-          const SizedBox(height: 16),
-          Text('Select Product Type:'),
-          DropdownButton<String>(
-            hint: Text('Select Product Type'),
-            value: _selectedProductType,
-            items: ['Takoyaki', 'Milk Tea', 'Meals'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedProductType = newValue;
-                // Reset prices for the selected product type
-                _variantPrices.clear();
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          // Display price input fields based on selected product type
-          if (_selectedProductType != null) ...[
-            Text('Set Prices for ${_selectedProductType!} Variants:'),
-            if (_selectedProductType == 'Takoyaki') ...[
-              TextField(
-                decoration: InputDecoration(labelText: '4pcs Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Takoyaki 4pcs'] = value;
-                  });
-                },
+            const SizedBox(height: 16),
+            TextField(
+              controller: _productNameController,
+              decoration: InputDecoration(labelText: 'Product Name'),
+            ),
+            const SizedBox(height: 16),
+            Text('Select Product Type:'),
+            DropdownButton<String>(
+              hint: Text('Select Product Type'),
+              value: _selectedProductType,
+              items: ['Takoyaki', 'Milk Tea', 'Meals'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedProductType = newValue;
+                  // Reset prices for the selected product type
+                  _variantPrices.clear();
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            // Display price input fields based on selected product type
+            if (_selectedProductType != null) ...[
+              Text('Set Prices for ${_selectedProductType!} Variants:'),
+              if (_selectedProductType == 'Takoyaki') ...[
+                TextField(
+                  decoration: InputDecoration(labelText: '4pcs Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Takoyaki 4pcs'] = value;
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: '8pcs Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Takoyaki 8pcs'] = value;
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: '12pcs Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Takoyaki 12pcs'] = value;
+                    });
+                  },
+                ),
+              ] else if (_selectedProductType == 'Milk Tea') ...[
+                TextField(
+                  decoration: InputDecoration(labelText: 'Small Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Milk Tea Small'] = value;
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Medium Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Milk Tea Medium'] = value;
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Large Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Milk Tea Large'] = value;
+                    });
+                  },
+                ),
+              ] else if (_selectedProductType == 'Meals') ...[
+                TextField(
+                  decoration: InputDecoration(labelText: 'Meals Price'),
+                  onChanged: (value) {
+                    setState(() {
+                      _variantPrices['Meals'] = value;
+                    });
+                  },
+                ),
+              ],
+              const SizedBox(height: 16),
+              // Image picker and preview
+              if (_selectedImage != null) ...[
+                Image.file(_selectedImage!, height: 200, width: 200), // Preview
+              ],
+              TextButton(
+                onPressed: _pickImage,
+                child: Text('Select Image'),
               ),
-              TextField(
-                decoration: InputDecoration(labelText: '8pcs Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Takoyaki 8pcs'] = value;
-                  });
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: '12pcs Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Takoyaki 12pcs'] = value;
-                  });
-                },
-              ),
-            ] else if (_selectedProductType == 'Milk Tea') ...[
-              TextField(
-                decoration: InputDecoration(labelText: 'Small Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Milk Tea Small'] = value;
-                  });
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Medium Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Milk Tea Medium'] = value;
-                  });
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Large Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Milk Tea Large'] = value;
-                  });
-                },
-              ),
-            ] else if (_selectedProductType == 'Meals') ...[
-              TextField(
-                decoration: InputDecoration(labelText: 'Meals Price'),
-                onChanged: (value) {
-                  setState(() {
-                    _variantPrices['Meals'] = value;
-                  });
-                },
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _saveProductToFirestore,
+                child: const Text('Add Product'),
               ),
             ],
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _saveProductToFirestore,
-              child: const Text('Add Product'),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -359,13 +413,86 @@ class ProductCard extends StatelessWidget {
   final String productName;
   final String productType;
   final Map<String, String> prices;
+  final String imageUrl;
 
   const ProductCard({
     Key? key,
     required this.productName,
     required this.productType,
     required this.prices,
+    required this.imageUrl,
   }) : super(key: key);
+
+  Future<String> _getImageUrl() async {
+    final Reference ref =
+        FirebaseStorage.instance.ref().child('product_image/$productName.jpg');
+    try {
+      final String downloadUrl = await ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      return ''; // Return an empty string if the image doesn't exist
+    }
+  }
+
+  void _showEditProductModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ProductEditModal(
+          productName: productName,
+          productType: productType,
+          prices: prices,
+          imageUrl: imageUrl, // Pass all required parameters
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteProduct(BuildContext context) async {
+    // Show confirmation dialog
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Product'),
+          content: const Text('Are you sure you want to delete this product?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('No'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text('Yes'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      // Delete from Firestore
+      await FirebaseFirestore.instance
+          .collection('products') // Update with your collection name
+          .doc(productName) // Assuming productName is the document ID
+          .delete();
+
+      // Delete image from Firebase Storage
+      await _deleteImageFromFirebaseStorage(productName);
+    }
+  }
+
+  Future<void> _deleteImageFromFirebaseStorage(String productName) async {
+    try {
+      final Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('product_image/$productName.jpg');
+      await storageRef.delete();
+      print('Image deleted successfully.');
+    } catch (e) {
+      print('Error deleting image: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -375,6 +502,24 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            FutureBuilder<String>(
+              future: _getImageUrl(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError || snapshot.data!.isEmpty) {
+                  return Container(); // No image, do not show anything
+                } else {
+                  return Image.network(
+                    snapshot.data!,
+                    height: 100,
+                    width: 100,
+                    fit: BoxFit.cover,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 8),
             Text(
               productName,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -382,8 +527,24 @@ class ProductCard extends StatelessWidget {
             Text('Type: $productType'),
             const SizedBox(height: 8),
             ...prices.entries.map((priceEntry) {
-              return Text('${priceEntry.key}: ₱${priceEntry.value}');
-            }).toList(),
+              String priceValue =
+                  priceEntry.value.isNotEmpty ? priceEntry.value : 'N/A';
+              return Text('${priceEntry.key}: ₱$priceValue');
+            }),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () =>
+                  _showEditProductModal(context), // Open edit modal
+              child: const Text('Edit Product'),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  _deleteProduct(context), // Trigger delete function
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Set color to red
+              ),
+              child: const Text('Delete Product'),
+            ),
           ],
         ),
       ),

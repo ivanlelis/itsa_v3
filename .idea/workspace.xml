@@ -6,8 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="8f538df2-186c-42e7-bbc6-f7710d42fa10" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/rider_home.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/rider_home.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_navbar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_navbar.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/menu_mgmt.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/menu_mgmt.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/admin_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/admin_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_sidebar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_sidebar.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugins.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugins.cmake" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

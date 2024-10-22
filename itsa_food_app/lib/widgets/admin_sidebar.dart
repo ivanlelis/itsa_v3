@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/home/home.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminSidebar extends StatelessWidget {
   final VoidCallback onLogout; // Callback for logout action
@@ -80,10 +82,57 @@ class AdminSidebar extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Log Out'),
-            onTap: onLogout, // Call the logout function
+            onTap: () {
+              _showLogoutConfirmationDialog(
+                  context); // Show confirmation dialog
+            },
           ),
         ],
       ),
     );
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog if No
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                await _logout(context); // Pass context to the logout function
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    // Accept context as a parameter
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      // Navigate to Home page without a back button
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+            builder: (context) =>
+                const HomePage(title: 'Firebase Connection Status')),
+        (route) => false, // This removes all previous routes
+      );
+    } catch (e) {
+      // Handle logout errors if needed
+      print("Error logging out: $e");
+    }
   }
 }
