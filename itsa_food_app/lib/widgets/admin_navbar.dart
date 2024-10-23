@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/admin_pages/menu_mgmt.dart';
+import 'package:itsa_food_app/admin_pages/orders_mgmt.dart';
 import 'package:itsa_food_app/main_home/admin_home.dart';
 import 'package:itsa_food_app/admin_pages/user_mgmt.dart';
 
@@ -51,6 +52,13 @@ class AdminBottomNavBar extends StatelessWidget {
                 builder: (context) => AdminHome(
                     email:
                         "your_email@example.com")), // Replace with actual email
+          );
+        } else if (index == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    OrdersManagement()), // Replace with actual email
           );
         } else if (index == 2) {
           // If the menu item is tapped, navigate to MenuManagement

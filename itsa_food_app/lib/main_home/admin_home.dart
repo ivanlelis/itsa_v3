@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/widgets/admin_appbar.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_sidebar.dart'; // Import the sidebar widget
+import 'package:provider/provider.dart';
+import 'package:itsa_food_app/user_provider/user_provider.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
-  final String email;
+  final String email; // Add email here
   final String imageUrl;
 
   const AdminHome({
     super.key,
     this.userName = "Admin", // Default username for Admin
-    required this.email,
+    required this.email, // Make email a required parameter
     this.imageUrl = '', // Default empty string for imageUrl
   });
 
@@ -41,9 +43,12 @@ class _AdminHomeState extends State<AdminHome> {
 
   @override
   Widget build(BuildContext context) {
+    final adminEmail =
+        Provider.of<UserProvider>(context).adminEmail; // Retrieve admin email
+
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AdminAppBar(scaffoldKey: _scaffoldKey), // Use AdminAppBar
+      appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(
@@ -64,38 +69,15 @@ class _AdminHomeState extends State<AdminHome> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Email: ${widget.email}',
+                'Email: $adminEmail', // Use email from UserProvider
                 style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Action for managing users
-                },
-                icon: const Icon(Icons.person_add),
-                label: const Text('Manage Users'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Action for viewing reports
-                },
-                icon: const Icon(Icons.report),
-                label: const Text('View Reports'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Action for managing orders
-                },
-                icon: const Icon(Icons.shopping_cart),
-                label: const Text('Manage Orders'),
-              ),
+              // Other UI elements...
             ],
           ),
         ),
       ),
-      drawer: AdminSidebar(onLogout: _logout), // Add the AdminSidebar here
+      drawer: AdminSidebar(onLogout: _logout),
       bottomNavigationBar: AdminBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,

@@ -1,9 +1,12 @@
+// Your existing imports
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
-import 'package:itsa_food_app/main_home/customer_home.dart'; // Import the Customer Home Page
-import 'package:itsa_food_app/main_home/rider_home.dart'; // Import the Rider Home Page
-import 'package:itsa_food_app/main_home/admin_home.dart'; // Import the Admin Home Page
+import 'package:itsa_food_app/main_home/customer_home.dart';
+import 'package:itsa_food_app/main_home/rider_home.dart';
+import 'package:itsa_food_app/main_home/admin_home.dart';
+import 'package:provider/provider.dart';
+import 'package:itsa_food_app/user_provider/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,7 +16,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance; // Firebase Auth instance
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseService firebaseService = FirebaseService();
 
   final _emailController = TextEditingController();
@@ -25,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   void _login() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null; // Reset error message
+      _errorMessage = null;
     });
 
     String email = _emailController.text.trim();
@@ -49,46 +52,39 @@ class _LoginPageState extends State<LoginPage> {
 
       // Check if the user's email is verified
       if (userCredential.user!.emailVerified) {
-        // If the email is verified, fetch user info from Firestore
+        // Fetch user info from Firestore (for non-admin users)
         Map<String, dynamic>? userInfo =
             await firebaseService.getCurrentUserInfo();
 
-        // Check if userInfo is null or empty
-        if (userInfo == null || userInfo.isEmpty) {
-          setState(() {
-            _errorMessage = "User information not found.";
-            _isLoading = false;
-          });
-          return;
-        }
-
-        // Navigate to the appropriate home page based on user type
-        String userType = userInfo['userType']; // Get user type from Firestore
-        if (userType == 'customer') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CustomerMainHome(
-                userName: userInfo['userName'] ?? "Guest User",
-                email: userInfo['emailAddress'] ?? "No Email Provided",
-                imageUrl: userInfo['imageUrl'] ?? "",
+        // Check user type and navigate accordingly
+        if (userInfo != null && userInfo.isNotEmpty) {
+          String userType = userInfo['userType'];
+          if (userType == 'customer') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CustomerMainHome(
+                  userName: userInfo['userName'] ?? "Guest User",
+                  email: userInfo['emailAddress'] ?? "No Email Provided",
+                  imageUrl: userInfo['imageUrl'] ?? "",
+                ),
               ),
-            ),
-          );
-        } else if (userType == 'rider') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RiderMainHome(
-                userName: userInfo['userName'] ?? "Guest User",
-                email: userInfo['emailAddress'] ?? "No Email Provided",
-                imageUrl: userInfo['imageUrl'] ?? "",
+            );
+          } else if (userType == 'rider') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RiderMainHome(
+                  userName: userInfo['userName'] ?? "Guest User",
+                  email: userInfo['emailAddress'] ?? "No Email Provided",
+                  imageUrl: userInfo['imageUrl'] ?? "",
+                ),
               ),
-            ),
-          );
+            );
+          }
         } else {
           setState(() {
-            _errorMessage = "Unknown user type.";
+            _errorMessage = "User information not found.";
             _isLoading = false;
           });
         }
@@ -98,21 +94,28 @@ class _LoginPageState extends State<LoginPage> {
             await firebaseService.getAdminInfo(email);
 
         if (adminInfo != null) {
-          // Directly navigate to the Admin Home Page if admin credentials are used
+          // Access the email from the adminInfo map
+          String adminEmail = adminInfo['email']; // Use the correct key here
+
+          // Save the admin email in UserProvider
+          Provider.of<UserProvider>(context, listen: false)
+              .setAdminEmail(adminEmail);
+
+          // Navigate to the Admin Home Page
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => AdminHome(
-                userName: "Admin", // You can set a default name for admin
-                email: email,
+                userName:
+                    "Admin", // Set default name or get from adminInfo if applicable
+                email: adminEmail, // Use the admin email
                 imageUrl: "", // Placeholder for admin image
               ),
             ),
           );
         } else {
           setState(() {
-            _errorMessage =
-                "Email not verified or admin credentials incorrect.";
+            _errorMessage = "Admin credentials incorrect or not found.";
             _isLoading = false;
           });
         }
