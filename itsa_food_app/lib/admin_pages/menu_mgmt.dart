@@ -205,6 +205,11 @@ class _AddProductModalState extends State<AddProductModal> {
       setState(() {
         _selectedImage = File(pickedImage.path);
       });
+    } else {
+      // Notify user that image selection failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No image selected. Please select an image.')),
+      );
     }
   }
 
@@ -221,6 +226,7 @@ class _AddProductModalState extends State<AddProductModal> {
       final downloadUrl = await ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
+      print('Error uploading image: $e');
       return null;
     }
   }
@@ -236,11 +242,19 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
+    // Ensure an image has been selected
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select an image')),
+      );
+      return;
+    }
+
     // Upload image to Firebase Storage
     final imageUrl = await _uploadImageToFirebase();
     if (imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select an image')),
+        SnackBar(content: Text('Failed to upload image. Please try again.')),
       );
       return;
     }
@@ -284,7 +298,6 @@ class _AddProductModalState extends State<AddProductModal> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
-        // Set a height to cover more of the screen (adjust this percentage as needed)
         height:
             MediaQuery.of(context).size.height * 0.85, // 85% of screen height
         padding: const EdgeInsets.all(16.0),
@@ -317,77 +330,61 @@ class _AddProductModalState extends State<AddProductModal> {
               onChanged: (String? newValue) {
                 setState(() {
                   _selectedProductType = newValue;
-                  // Reset prices for the selected product type
-                  _variantPrices.clear();
+                  _variantPrices
+                      .clear(); // Reset prices for the selected product type
                 });
               },
             ),
             const SizedBox(height: 16),
-            // Display price input fields based on selected product type
             if (_selectedProductType != null) ...[
               Text('Set Prices for ${_selectedProductType!} Variants:'),
               if (_selectedProductType == 'Takoyaki') ...[
                 TextField(
                   decoration: InputDecoration(labelText: '4pcs Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Takoyaki 4pcs'] = value;
-                    });
+                    _variantPrices['Takoyaki 4pcs'] = value;
                   },
                 ),
                 TextField(
                   decoration: InputDecoration(labelText: '8pcs Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Takoyaki 8pcs'] = value;
-                    });
+                    _variantPrices['Takoyaki 8pcs'] = value;
                   },
                 ),
                 TextField(
                   decoration: InputDecoration(labelText: '12pcs Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Takoyaki 12pcs'] = value;
-                    });
+                    _variantPrices['Takoyaki 12pcs'] = value;
                   },
                 ),
               ] else if (_selectedProductType == 'Milk Tea') ...[
                 TextField(
                   decoration: InputDecoration(labelText: 'Small Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Milk Tea Small'] = value;
-                    });
+                    _variantPrices['Milk Tea Small'] = value;
                   },
                 ),
                 TextField(
                   decoration: InputDecoration(labelText: 'Medium Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Milk Tea Medium'] = value;
-                    });
+                    _variantPrices['Milk Tea Medium'] = value;
                   },
                 ),
                 TextField(
                   decoration: InputDecoration(labelText: 'Large Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Milk Tea Large'] = value;
-                    });
+                    _variantPrices['Milk Tea Large'] = value;
                   },
                 ),
               ] else if (_selectedProductType == 'Meals') ...[
                 TextField(
                   decoration: InputDecoration(labelText: 'Meals Price'),
                   onChanged: (value) {
-                    setState(() {
-                      _variantPrices['Meals'] = value;
-                    });
+                    _variantPrices['Meals Price'] = value;
                   },
                 ),
               ],
               const SizedBox(height: 16),
-              // Image picker and preview
               if (_selectedImage != null) ...[
                 Image.file(_selectedImage!, height: 200, width: 200), // Preview
               ],
@@ -487,8 +484,7 @@ class ProductCard extends StatelessWidget {
           .ref()
           .child('product_image/$productName.jpg');
       await storageRef.delete();
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   @override

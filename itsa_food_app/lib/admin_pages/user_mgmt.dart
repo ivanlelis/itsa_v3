@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:itsa_food_app/widgets/admin_appbar.dart'; // Import AdminAppBar
 import 'package:itsa_food_app/widgets/admin_navbar.dart'; // Import AdminBottomNavBar
+import 'package:itsa_food_app/widgets/admin_sidebar.dart'; // Import AdminSidebar
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for logout
 
 class UserManagement extends StatefulWidget {
   const UserManagement({super.key});
@@ -16,6 +18,13 @@ class _UserManagementState extends State<UserManagement> {
   int _selectedIndex = 3; // Set the selected index to 3 for 'Users'
 
   Future<List<Map<String, dynamic>>>? _userListFuture; // Define _userListFuture
+
+  @override
+  void initState() {
+    super.initState();
+    // Automatically load customers when the page first displays
+    _userListFuture = _loadUsers('customer');
+  }
 
   // Handle tapping on the bottom nav bar items
   void _onItemTapped(int index) {
@@ -33,11 +42,21 @@ class _UserManagementState extends State<UserManagement> {
         .toList();
   }
 
+  // Function to handle logout
+  void _onLogout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.of(context)
+        .pushReplacementNamed('/home'); // Redirect to home.dart after logout
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: scaffoldKey),
+      drawer: AdminSidebar(
+        onLogout: _onLogout, // Pass the _onLogout function to AdminSidebar
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         child: Column(
@@ -90,8 +109,16 @@ class _UserManagementState extends State<UserManagement> {
                           elevation: 4,
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           child: ListTile(
-                            title: Text(user['userName'] ??
-                                'No Name'), // Ensure this retrieves the userName
+                            title: Text(user['userName'] ?? 'No Name'),
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                // Placeholder for view action
+                                // You can define a function or display a message for now
+                                print(
+                                    "View button clicked for ${user['userName']}");
+                              },
+                              child: const Text("View"),
+                            ),
                           ),
                         );
                       },

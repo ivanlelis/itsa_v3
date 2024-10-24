@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_appbar.dart';
+import 'package:itsa_food_app/widgets/admin_sidebar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OrdersManagement extends StatefulWidget {
   const OrdersManagement({super.key});
@@ -22,11 +24,20 @@ class _OrdersManagementState extends State<OrdersManagement> {
     // Add navigation logic here if needed
   }
 
+  void _onLogout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.of(context)
+        .pushReplacementNamed('/home'); // Redirect to home.dart after logout
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey, // Assign the scaffold key here
-      appBar: AdminAppBar(scaffoldKey: _scaffoldKey), // Pass scaffold key
+      appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
+      drawer: AdminSidebar(
+        onLogout: _onLogout, // Pass the _onLogout function to AdminSidebar
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

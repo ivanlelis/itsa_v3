@@ -7,11 +7,11 @@ class Sidebar extends StatelessWidget {
   final String imageUrl;
 
   const Sidebar({
-    super.key,
+    Key? key,
     required this.userName,
     required this.email,
     required this.imageUrl,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -73,9 +73,9 @@ class Sidebar extends StatelessWidget {
           title: const Text('Log Out'),
           onTap: () async {
             await FirebaseAuth.instance.signOut();
-            // Navigate back to Home page
-            Navigator.of(context).pushReplacementNamed(
-                '/home'); // Adjust the route name if needed
+            // Navigate back to Home page and clear all previous routes
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/home', (route) => false);
           },
         ),
       ],

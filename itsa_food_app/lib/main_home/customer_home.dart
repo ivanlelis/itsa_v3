@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_sidebar.dart';
+import 'package:itsa_food_app/customer_pages/menu.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
@@ -13,7 +14,7 @@ class CustomerMainHome extends StatefulWidget {
     required this.userName,
     required this.email,
     required this.imageUrl,
-  });
+  }); 
 
   @override
   State<CustomerMainHome> createState() => _CustomerMainHomeState();
@@ -34,6 +35,19 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
     setState(() {
       _currentIndex = index;
     });
+
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Menu(
+            userName: widget.userName,
+            email: widget.email,
+            imageUrl: widget.imageUrl,
+          ),
+        ),
+      );
+    }
   }
 
   void _openCart() {
