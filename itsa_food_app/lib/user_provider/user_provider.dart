@@ -15,23 +15,25 @@ class UserProvider with ChangeNotifier {
     if (user != null) {
       // Fetching user document based on the email (or UID)
       final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.email) // Use user.email or user.uid as the document ID
+          .collection(
+              'customer') // Change to 'customer' if that's where the users are stored
+          .where('emailAddress', isEqualTo: user.email) // Fetch based on email
           .get();
 
-      if (userDoc.exists) {
-        final data = userDoc.data();
-        if (data != null) {
-          // Ensure data is not null before accessing fields
-          _currentUser = UserModel(
-            userName: data['userName'] ?? '', // Access fields safely
-            emailAddress: data['emailAddress'] ?? '',
-            email: data['email'] ?? '',
-          );
-          _adminEmail = data['email']; // Set admin email from the fetched data
-          notifyListeners();
-        }
+      if (userDoc.docs.isNotEmpty) {
+        final data = userDoc.docs.first.data(); // Get the first document
+        _currentUser = UserModel(
+          userName: data['userName'] ?? '',
+          emailAddress: data['emailAddress'] ?? '',
+          email: user.email ?? '',
+        );
+        _adminEmail = data['email']; // Set admin email from the fetched data
+        notifyListeners();
+      } else {
+        print("No user document found for email: ${user.email}");
       }
+    } else {
+      print("No user is currently logged in.");
     }
   }
 

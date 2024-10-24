@@ -5,6 +5,9 @@ import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_sidebar.dart';
 import 'package:itsa_food_app/customer_pages/product_view.dart';
+import 'package:itsa_food_app/user_provider/user_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:itsa_food_app/customer_pages/main_cart.dart';
 
 class Menu extends StatefulWidget {
   final String userName;
@@ -17,8 +20,6 @@ class Menu extends StatefulWidget {
     required this.email,
     required this.imageUrl,
   }) : super(key: key);
-
-  @override
   _MenuState createState() => _MenuState();
 }
 
@@ -67,7 +68,23 @@ class _MenuState extends State<Menu> {
       appBar: CustomAppBar(
         scaffoldKey: _scaffoldKey,
         onCartPressed: () {
-          // Implement your cart logic here
+          final user =
+              Provider.of<UserProvider>(context, listen: false).currentUser;
+          if (user != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainCart(
+                  userName: user.userName,
+                  email: user.emailAddress,
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Please log in to access the cart")),
+            );
+          }
         },
       ),
       drawer: Drawer(
@@ -210,6 +227,8 @@ class _MenuState extends State<Menu> {
                         milkTeaMedium: milkTeaMedium,
                         milkTeaLarge: milkTeaLarge,
                         mealsPrice: mealsPrice,
+                        userName: widget.userName,
+                        email: widget.email,
                       );
                     },
                   );
@@ -237,6 +256,8 @@ class ProductCard extends StatelessWidget {
   final String? milkTeaMedium;
   final String? milkTeaLarge;
   final String? mealsPrice;
+  final String userName;
+  final String email;
 
   const ProductCard({
     Key? key,
@@ -249,12 +270,31 @@ class ProductCard extends StatelessWidget {
     this.milkTeaMedium,
     this.milkTeaLarge,
     this.mealsPrice,
+    required this.userName,
+    required this.email,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Determine product type
+    String productType;
+    if (takoyakiPrices != null) {
+      productType = 'takoyaki';
+    } else if (milkTeaSmall != null) {
+      productType = 'milktea';
+    } else if (mealsPrice != null) {
+      productType = 'meal';
+    } else {
+      productType = 'unknown'; // Default value
+    }
+
     return GestureDetector(
       onTap: () {
+        // Debug print to check values before navigation
+        print('Navigating to ProductView...');
+        print('User Name: $userName');
+        print('Email: $email');
+
         // Navigate to the ProductView page and pass product details
         Navigator.push(
           context,
@@ -269,6 +309,9 @@ class ProductCard extends StatelessWidget {
               milkTeaMedium: milkTeaMedium,
               milkTeaLarge: milkTeaLarge,
               mealsPrice: mealsPrice,
+              userName: userName,
+              email: email,
+              productType: productType,
             ),
           ),
         );

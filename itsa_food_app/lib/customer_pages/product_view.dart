@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/customer_pages/cart.dart';
 
 class ProductView extends StatefulWidget {
   final String productName;
@@ -10,9 +11,12 @@ class ProductView extends StatefulWidget {
   final String? milkTeaMedium;
   final String? milkTeaLarge;
   final String? mealsPrice;
+  final String? userName; // Nullable
+  final String? email; // Nullable
+  final String productType; // Non-nullable
 
   const ProductView({
-    super.key,
+    Key? key,
     required this.productName,
     required this.imageUrl,
     this.takoyakiPrices,
@@ -22,7 +26,10 @@ class ProductView extends StatefulWidget {
     this.milkTeaMedium,
     this.milkTeaLarge,
     this.mealsPrice,
-  });
+    this.userName, // Make this nullable
+    this.email, // Make this nullable
+    required this.productType,
+  }) : super(key: key);
 
   @override
   _ProductViewState createState() => _ProductViewState();
@@ -42,9 +49,7 @@ class _ProductViewState extends State<ProductView> {
   @override
   void initState() {
     super.initState();
-    // Initialize quantity options and prices based on the product type
     if (widget.takoyakiPrices != null) {
-      // For Takoyaki
       quantityOptions = ['4 pcs', '8 pcs', '12 pcs'];
       prices = [
         widget.takoyakiPrices ?? '0',
@@ -55,7 +60,6 @@ class _ProductViewState extends State<ProductView> {
       quantityOptions = ['Price'];
       prices = [widget.mealsPrice ?? '0'];
     } else if (widget.milkTeaSmall != null) {
-      // For Milk Tea
       quantityOptions = ['Small', 'Medium', 'Large'];
       prices = [
         widget.milkTeaSmall ?? '0',
@@ -80,13 +84,12 @@ class _ProductViewState extends State<ProductView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // Allows the body to go behind the AppBar
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent, // Transparent AppBar
-        elevation: 0, // No shadow
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back,
-              color: Colors.white), // White back button
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -96,31 +99,30 @@ class _ProductViewState extends State<ProductView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Full image at the top
             Image.network(
               widget.imageUrl,
               height: 250,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
+            // Display the current username and email
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product name and base price
                   Text(
                     widget.productName,
                     style: const TextStyle(
                         fontSize: 24, fontWeight: FontWeight.bold),
                   ),
+                  const SizedBox(height: 8.0),
                   Text(
                     '₱${prices[_selectedQuantityIndex]}',
                     style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   const SizedBox(height: 16.0),
 
-                  // Quantity options (either Takoyaki or Milk Tea sizes)
                   Text('Choose Quantity/Size:',
                       style: const TextStyle(fontSize: 16)),
                   ...List.generate(quantityOptions.length, (index) {
@@ -175,7 +177,6 @@ class _ProductViewState extends State<ProductView> {
                     ),
                   ],
 
-                  // Total price and quantity controls
                   const SizedBox(height: 16.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -216,7 +217,6 @@ class _ProductViewState extends State<ProductView> {
                     ],
                   ),
 
-                  // Add to Cart Button
                   const SizedBox(height: 16.0),
                   SizedBox(
                     width: double.infinity,
@@ -226,7 +226,28 @@ class _ProductViewState extends State<ProductView> {
                         backgroundColor: Colors.brown,
                       ),
                       onPressed: () {
-                        // Add to cart functionality here
+                        final String productType = widget.takoyakiPrices != null
+                            ? 'takoyaki'
+                            : (widget.milkTeaSmall != null
+                                ? 'milktea'
+                                : 'meal');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CartPage(
+                              userName: widget.userName!,
+                              email: widget.email!,
+                              productName: widget.productName,
+                              quantity: _quantity,
+                              size: quantityOptions[_selectedQuantityIndex],
+                              price: _totalPrice,
+                              takoyakiSauce: _takoyakiSauce,
+                              bonitoFlakes: _bonitoFlakes,
+                              mayonnaise: _mayonnaise,
+                              productType: productType,
+                            ),
+                          ),
+                        );
                       },
                       child: const Text(
                         'Add to Cart',
