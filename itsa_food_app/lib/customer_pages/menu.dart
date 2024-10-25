@@ -15,11 +15,12 @@ class Menu extends StatefulWidget {
   final String imageUrl;
 
   const Menu({
-    Key? key,
+    super.key,
     required this.userName,
     required this.email,
     required this.imageUrl,
-  }) : super(key: key);
+  });
+  @override
   _MenuState createState() => _MenuState();
 }
 
@@ -46,7 +47,17 @@ class _MenuState extends State<Menu> {
           ),
         );
         break;
-      case 1: // Menu
+      case 1:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Menu(
+              userName: widget.userName,
+              email: widget.email,
+              imageUrl: widget.imageUrl,
+            ),
+          ),
+        );
         break;
       case 2: // Favorites
         // Navigate to the Favorites screen (replace with your actual screen)
@@ -63,13 +74,13 @@ class _MenuState extends State<Menu> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserProvider>(context, listen: false).currentUser;
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(
         scaffoldKey: _scaffoldKey,
         onCartPressed: () {
-          final user =
-              Provider.of<UserProvider>(context, listen: false).currentUser;
           if (user != null) {
             Navigator.push(
               context,
@@ -86,6 +97,7 @@ class _MenuState extends State<Menu> {
             );
           }
         },
+        userName: user?.userName ?? '', // Pass the userName here
       ),
       drawer: Drawer(
         child: Sidebar(
@@ -260,7 +272,7 @@ class ProductCard extends StatelessWidget {
   final String email;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.productName,
     required this.imageUrl,
     this.takoyakiPrices,
@@ -272,7 +284,7 @@ class ProductCard extends StatelessWidget {
     this.mealsPrice,
     required this.userName,
     required this.email,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

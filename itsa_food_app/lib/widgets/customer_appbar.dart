@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final GlobalKey<ScaffoldState> scaffoldKey; // Key for accessing Scaffold
-  final VoidCallback onCartPressed; // Callback for the cart icon
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final VoidCallback onCartPressed;
+  final String userName;
 
   const CustomAppBar({
     super.key,
     required this.scaffoldKey,
     required this.onCartPressed,
+    required this.userName,
   });
 
   @override
@@ -36,10 +39,53 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.shopping_cart),
-          onPressed: () {
-            onCartPressed();
+        // Add StreamBuilder to monitor cart changes
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('customer')
+              .doc(userName) // Use userName to fetch the correct cart
+              .collection('cart')
+              .snapshots(),
+          builder: (context, snapshot) {
+            int itemCount = 0; // Default item count
+
+            if (snapshot.hasData) {
+              // Update itemCount if data is available
+              itemCount = snapshot.data!.docs.length;
+            }
+
+            return Stack(
+              children: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart),
+                  onPressed: onCartPressed,
+                ),
+                if (itemCount > 0) // Show badge if there are items in the cart
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$itemCount', // Display the number of items
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
           },
         ),
       ],

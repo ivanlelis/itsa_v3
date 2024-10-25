@@ -83,6 +83,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             );
           }
         },
+        userName: user?.userName ?? '',
       ),
       body: Center(
         child: user != null

@@ -5,23 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8f538df2-186c-42e7-bbc6-f7710d42fa10" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/orders_mgmt.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/orders_mgmt.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/login/login.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/login/login.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/admin_home.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/admin_home.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/admin_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/admin_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/user_model/user_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/user_model/user_model.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/user_provider/user_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/user_provider/user_provider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_navbar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_navbar.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugin_registrant.h" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugin_registrant.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/linux/flutter/generated_plugins.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugin_registrant.h" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugin_registrant.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/windows/flutter/generated_plugins.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/cart.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/cart.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/main_cart.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/main_cart.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/menu.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/menu.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/product_view.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/product_view.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/customer_sidebar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/customer_sidebar.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

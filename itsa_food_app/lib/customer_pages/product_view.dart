@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:itsa_food_app/customer_pages/cart.dart';
+import 'package:itsa_food_app/customer_pages/main_cart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductView extends StatefulWidget {
   final String productName;
@@ -11,12 +12,12 @@ class ProductView extends StatefulWidget {
   final String? milkTeaMedium;
   final String? milkTeaLarge;
   final String? mealsPrice;
-  final String? userName; // Nullable
-  final String? email; // Nullable
+  final String userName; // Non-nullable
+  final String email; // Non-nullable
   final String productType; // Non-nullable
 
   const ProductView({
-    Key? key,
+    super.key,
     required this.productName,
     required this.imageUrl,
     this.takoyakiPrices,
@@ -26,10 +27,10 @@ class ProductView extends StatefulWidget {
     this.milkTeaMedium,
     this.milkTeaLarge,
     this.mealsPrice,
-    this.userName, // Make this nullable
-    this.email, // Make this nullable
+    required this.userName,
+    required this.email,
     required this.productType,
-  }) : super(key: key);
+  });
 
   @override
   _ProductViewState createState() => _ProductViewState();
@@ -81,6 +82,45 @@ class _ProductViewState extends State<ProductView> {
     });
   }
 
+  // Add to Cart function
+  Future<void> addToCart({
+    required String userName,
+    required String productName,
+    required String productType,
+    required String sizeQuantity,
+    required int quantity,
+    required double total,
+  }) async {
+    try {
+      CollectionReference cart = FirebaseFirestore.instance
+          .collection('customer')
+          .doc(userName)
+          .collection('cart');
+
+      await cart.doc(productName).set({
+        'productName': productName,
+        'productType': productType,
+        'sizeQuantity': sizeQuantity,
+        'quantity': quantity,
+        'total': total,
+        'takoyakiSauce': _takoyakiSauce,
+        'bonitoFlakes': _bonitoFlakes,
+        'mayonnaise': _mayonnaise,
+      });
+      print('Item added to cart successfully!');
+      // Optional: Show a success message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$productName added to cart!')),
+      );
+    } catch (e) {
+      print('Error adding to cart: $e');
+      // Optional: Show an error message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add to cart. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,6 +134,78 @@ class _ProductViewState extends State<ProductView> {
             Navigator.of(context).pop();
           },
         ),
+        actions: [
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('customer')
+                .doc(widget.userName)
+                .collection('cart')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return IconButton(
+                  icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MainCart(
+                          userName: widget.userName,
+                          email: widget.email,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+
+              int itemCount = snapshot.data!.docs.length;
+
+              return Stack(
+                children: <Widget>[
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MainCart(
+                            userName: widget.userName,
+                            email: widget.email,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (itemCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$itemCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -105,7 +217,6 @@ class _ProductViewState extends State<ProductView> {
               width: double.infinity,
               fit: BoxFit.cover,
             ),
-            // Display the current username and email
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -122,7 +233,6 @@ class _ProductViewState extends State<ProductView> {
                     style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   const SizedBox(height: 16.0),
-
                   Text('Choose Quantity/Size:',
                       style: const TextStyle(fontSize: 16)),
                   ...List.generate(quantityOptions.length, (index) {
@@ -139,8 +249,6 @@ class _ProductViewState extends State<ProductView> {
                       },
                     );
                   }),
-
-                  // Add-ons (only if it's Takoyaki)
                   if (widget.takoyakiPrices != null) ...[
                     const SizedBox(height: 16.0),
                     Text('Add-ons:', style: const TextStyle(fontSize: 16)),
@@ -176,7 +284,6 @@ class _ProductViewState extends State<ProductView> {
                       },
                     ),
                   ],
-
                   const SizedBox(height: 16.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -186,74 +293,13 @@ class _ProductViewState extends State<ProductView> {
                         style: const TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove),
-                            onPressed: _quantity > 1
-                                ? () {
-                                    setState(() {
-                                      _quantity--;
-                                      _updateTotalPrice();
-                                    });
-                                  }
-                                : null,
-                          ),
-                          Text(
-                            '$_quantity',
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: () {
-                              setState(() {
-                                _quantity++;
-                                _updateTotalPrice();
-                              });
-                            },
-                          ),
-                        ],
+                      ElevatedButton(
+                        onPressed: () {
+                          _addToCart(); // Call the function to add to cart
+                        },
+                        child: const Text('Add to Cart'),
                       ),
                     ],
-                  ),
-
-                  const SizedBox(height: 16.0),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.brown,
-                      ),
-                      onPressed: () {
-                        final String productType = widget.takoyakiPrices != null
-                            ? 'takoyaki'
-                            : (widget.milkTeaSmall != null
-                                ? 'milktea'
-                                : 'meal');
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CartPage(
-                              userName: widget.userName!,
-                              email: widget.email!,
-                              productName: widget.productName,
-                              quantity: _quantity,
-                              size: quantityOptions[_selectedQuantityIndex],
-                              price: _totalPrice,
-                              takoyakiSauce: _takoyakiSauce,
-                              bonitoFlakes: _bonitoFlakes,
-                              mayonnaise: _mayonnaise,
-                              productType: productType,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Add to Cart',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -261,6 +307,28 @@ class _ProductViewState extends State<ProductView> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _addToCart() async {
+    String sizeQuantity;
+    if (widget.productType == 'milktea') {
+      sizeQuantity =
+          quantityOptions[_selectedQuantityIndex]; // e.g., small, medium, large
+    } else if (widget.productType == 'takoyaki') {
+      sizeQuantity =
+          quantityOptions[_selectedQuantityIndex]; // e.g., 4pc, 8pc, 12pc
+    } else {
+      sizeQuantity = ''; // Meals don't have size/quantity specified
+    }
+
+    await addToCart(
+      userName: widget.userName, // Pass the user name to the function
+      productName: widget.productName, // Pass the product name to the function
+      productType: widget.productType,
+      sizeQuantity: sizeQuantity,
+      quantity: _quantity,
+      total: _totalPrice,
     );
   }
 }

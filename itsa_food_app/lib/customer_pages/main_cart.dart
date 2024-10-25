@@ -5,8 +5,7 @@ class MainCart extends StatefulWidget {
   final String userName;
   final String email;
 
-  const MainCart({Key? key, required this.userName, required this.email})
-      : super(key: key);
+  const MainCart({super.key, required this.userName, required this.email});
 
   @override
   _MainCartState createState() => _MainCartState();
