@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:itsa_food_app/admin_pages/create_vouchers.dart';
 
 class AdminSidebar extends StatelessWidget {
   final VoidCallback onLogout; // Callback for logout action
@@ -37,10 +38,14 @@ class AdminSidebar extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.discount),
+            title: const Text('Create Vouchers'),
             onTap: () {
-              // Navigate to Dashboard
+              // Navigate to CreateVouchers screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Vouchers()),
+              );
             },
           ),
           ListTile(

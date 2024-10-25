@@ -22,16 +22,16 @@ class _MainCartState extends State<MainCart> {
 
   Future<void> _fetchCartItems() async {
     try {
-      // Fetch the cart items for the current user using the passed userName
       QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('customer') // Ensure this is the correct collection name
-          .doc(widget.userName) // Using the userName from the widget
-          .collection('cart') // Cart subcollection
+          .collection('customer')
+          .doc(widget.userName)
+          .collection('cart')
           .get();
 
       setState(() {
         cartItems = snapshot.docs.map((doc) {
           return {
+            'id': doc.id, // Store document ID for deletion
             'productType': doc['productType'],
             'sizeQuantity': doc['sizeQuantity'],
             'quantity': doc['quantity'],
@@ -44,6 +44,20 @@ class _MainCartState extends State<MainCart> {
     }
   }
 
+  Future<void> _deleteCartItem(String docId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('customer')
+          .doc(widget.userName)
+          .collection('cart')
+          .doc(docId)
+          .delete();
+      print('Item deleted successfully!');
+    } catch (e) {
+      print('Error deleting item: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +67,6 @@ class _MainCartState extends State<MainCart> {
       ),
       body: Column(
         children: [
-          // Display the cart items
           Expanded(
             child: cartItems.isEmpty
                 ? const Center(child: Text('Your cart is empty.'))
@@ -61,58 +74,91 @@ class _MainCartState extends State<MainCart> {
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
-                      return Card(
-                        elevation: 4, // Shadow effect for card
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(12), // Rounded corners
+                      return Dismissible(
+                        key: Key(item['id']), // Use a unique key for each item
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item['productType'],
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                        secondaryBackground: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
+                        ),
+                        direction: DismissDirection.horizontal,
+                        onDismissed: (direction) {
+                          _deleteCartItem(
+                              item['id']); // Delete the item from Firestore
+                          setState(() {
+                            cartItems
+                                .removeAt(index); // Remove the item from the UI
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  '${item['productType']} removed from cart'),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['productType'],
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8.0),
-                                    Text(
-                                      'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
-                                      style:
-                                          const TextStyle(color: Colors.grey),
-                                    ),
-                                    const SizedBox(height: 8.0),
-                                    Text(
-                                      'Total: ₱${item['total'].toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.orangeAccent,
+                                      const SizedBox(height: 8.0),
+                                      Text(
+                                        'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
+                                        style:
+                                            const TextStyle(color: Colors.grey),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 8.0),
+                                      Text(
+                                        'Total: ₱${item['total'].toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orangeAccent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );
                     },
                   ),
           ),
-          const Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.grey), // Divider for total section
+          const Divider(height: 1, thickness: 1, color: Colors.grey),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -123,7 +169,7 @@ class _MainCartState extends State<MainCart> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '₱${cartItems.fold(0.0, (sum, item) => sum + item['total']).toStringAsFixed(2)}', // Total of all items
+                  '₱${cartItems.fold(0.0, (sum, item) => sum + item['total']).toStringAsFixed(2)}',
                   style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -132,7 +178,7 @@ class _MainCartState extends State<MainCart> {
               ],
             ),
           ),
-          const SizedBox(height: 16), // Space below the total
+          const SizedBox(height: 16),
         ],
       ),
     );

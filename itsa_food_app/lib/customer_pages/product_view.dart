@@ -38,7 +38,7 @@ class ProductView extends StatefulWidget {
 
 class _ProductViewState extends State<ProductView> {
   int _selectedQuantityIndex = 0;
-  int _quantity = 1;
+  final int _quantity = 1;
   double _totalPrice = 0.0;
   bool _takoyakiSauce = false;
   bool _bonitoFlakes = false;
