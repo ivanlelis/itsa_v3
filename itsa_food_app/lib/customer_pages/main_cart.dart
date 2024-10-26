@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/customer_pages/checkout.dart';
 
 class MainCart extends StatefulWidget {
   final String userName;
@@ -32,7 +33,7 @@ class _MainCartState extends State<MainCart> {
         cartItems = snapshot.docs.map((doc) {
           return {
             'id': doc.id, // Store document ID for deletion
-            'productType': doc['productType'],
+            'productName': doc['productName'],
             'sizeQuantity': doc['sizeQuantity'],
             'quantity': doc['quantity'],
             'total': doc['total'],
@@ -56,6 +57,22 @@ class _MainCartState extends State<MainCart> {
     } catch (e) {
       print('Error deleting item: $e');
     }
+  }
+
+  void _proceedToCheckout() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => Checkout(
+          userName: widget.userName,
+          email: widget.email,
+          totalAmount: cartItems.fold(0.0, (sum, item) => sum + item['total']),
+        ),
+        transitionDuration: Duration.zero, // Remove transition duration
+        reverseTransitionDuration:
+            Duration.zero, // Remove reverse transition duration
+      ),
+    );
   }
 
   @override
@@ -105,7 +122,7 @@ class _MainCartState extends State<MainCart> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                  '${item['productType']} removed from cart'),
+                                  '${item['productName']} removed from cart'),
                             ),
                           );
                         },
@@ -126,7 +143,7 @@ class _MainCartState extends State<MainCart> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item['productType'],
+                                        item['productName'],
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -161,19 +178,45 @@ class _MainCartState extends State<MainCart> {
           const Divider(height: 1, thickness: 1, color: Colors.grey),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment
+                  .stretch, // Make the button stretch the entire width
               children: [
-                const Text(
-                  'Total Amount',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Amount',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '₱${cartItems.fold(0.0, (sum, item) => sum + item['total']).toStringAsFixed(2)}',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orangeAccent),
+                    ),
+                  ],
                 ),
-                Text(
-                  '₱${cartItems.fold(0.0, (sum, item) => sum + item['total']).toStringAsFixed(2)}',
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orangeAccent),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _proceedToCheckout,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orangeAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Proceed to Checkout',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ),
               ],
             ),

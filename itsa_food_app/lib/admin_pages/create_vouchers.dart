@@ -156,7 +156,7 @@ class _VouchersState extends State<Vouchers> {
                         style: TextStyle(fontSize: 12, color: Colors.grey)),
                     SizedBox(height: 20),
                     // Start Date Button
-                    Container(
+                    SizedBox(
                       width: double
                           .infinity, // Set to match the width of text fields
                       child: ElevatedButton(
@@ -176,7 +176,7 @@ class _VouchersState extends State<Vouchers> {
                         null, false), // Uneditable text field
                     SizedBox(height: 20),
                     // Expiration Date Button
-                    Container(
+                    SizedBox(
                       width: double
                           .infinity, // Set to match the width of text fields
                       child: ElevatedButton(
