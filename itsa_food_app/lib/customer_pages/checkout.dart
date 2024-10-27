@@ -605,12 +605,12 @@ class _CheckoutState extends State<Checkout>
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
+                      children: const [
+                        Text(
                           'Ready to pick up in 15-25 mins',
                           style: TextStyle(fontSize: 16),
                         ),
-                        const Icon(Icons.store),
+                        Icon(Icons.store),
                       ],
                     ),
                   ),

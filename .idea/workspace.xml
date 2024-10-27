@@ -6,8 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="8f538df2-186c-42e7-bbc6-f7710d42fa10" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/create_vouchers.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/create_vouchers.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/main_cart.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/main_cart.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/checkout.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/checkout.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/confirm_payment.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/confirm_payment.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/menu.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/menu.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/customer_home.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/customer_home.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

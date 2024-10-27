@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ConfirmPayment extends StatefulWidget {
+  const ConfirmPayment({super.key});
+
   @override
   _ConfirmPaymentState createState() => _ConfirmPaymentState();
 }

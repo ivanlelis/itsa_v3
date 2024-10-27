@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart'; // Ensure you import the provider package
+import 'package:itsa_food_app/user_provider/user_provider.dart'; // Import your UserProvider
 
-class Sidebar extends StatelessWidget {
+class Sidebar extends StatefulWidget {
   final String userName;
   final String email;
   final String imageUrl;
@@ -12,17 +14,46 @@ class Sidebar extends StatelessWidget {
     required this.email,
     required this.imageUrl,
   });
+  @override
+  _SidebarState createState() => _SidebarState();
+}
+
+class _SidebarState extends State<Sidebar> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user data when the Sidebar is initialized
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider
+        .fetchCurrentUser(); // Call your method to fetch user data
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Access the UserProvider to get the current user
+    final userProvider = Provider.of<UserProvider>(context);
+    final currentUser = userProvider.currentUser;
+
+    // Check if the current user is available
+    if (currentUser == null) {
+      return const Center(
+          child:
+              CircularProgressIndicator()); // Show a loading indicator or handle the case when the user is not available
+    }
+
     return Column(
       children: [
         UserAccountsDrawerHeader(
-          accountName: Text(userName),
-          accountEmail: Text(email),
+          accountName: Text(currentUser.userName),
+          accountEmail: Text(currentUser.emailAddress),
           currentAccountPicture: CircleAvatar(
-            backgroundImage: imageUrl.isNotEmpty
-                ? NetworkImage(imageUrl)
+            backgroundImage: currentUser.imageUrl.isNotEmpty
+                ? NetworkImage(currentUser
+                    .imageUrl) // Use the imageUrl from the current user
                 : const NetworkImage(
                     'https://example.com/placeholder.png'), // Use your placeholder image URL
           ),

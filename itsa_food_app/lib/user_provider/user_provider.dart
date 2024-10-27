@@ -26,6 +26,7 @@ class UserProvider with ChangeNotifier {
           userName: data['userName'] ?? '',
           emailAddress: data['emailAddress'] ?? '',
           email: user.email ?? '',
+          imageUrl: data['imageUrl'] ?? '',
         );
         _adminEmail = data['email']; // Set admin email from the fetched data
         notifyListeners();

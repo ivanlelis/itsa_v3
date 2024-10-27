@@ -8,6 +8,7 @@ import 'package:itsa_food_app/customer_pages/product_view.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
+import 'package:itsa_food_app/customer_pages/profile.dart';
 
 class Menu extends StatefulWidget {
   final String userName;
@@ -38,32 +39,49 @@ class _MenuState extends State<Menu> {
       case 0: // Home
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => CustomerMainHome(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                CustomerMainHome(
               userName: widget.userName,
               email: widget.email,
               imageUrl: widget.imageUrl,
             ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
         );
         break;
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => Menu(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => Menu(
               userName: widget.userName,
               email: widget.email,
               imageUrl: widget.imageUrl,
             ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
         );
         break;
       case 2: // Favorites
         // Navigate to the Favorites screen (replace with your actual screen)
         break;
-      case 3: // User
-        // Navigate to the User screen (replace with your actual screen)
+      case 3:
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                ProfileView(
+              userName: widget.userName,
+              email: widget.email,
+              imageUrl: widget.imageUrl,
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
         break;
     }
   }

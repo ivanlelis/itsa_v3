@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_sidebar.dart';
@@ -24,7 +25,7 @@ class CustomerMainHome extends StatefulWidget {
 }
 
 class _CustomerMainHomeState extends State<CustomerMainHome> {
-  int _currentIndex = 0;
+  int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -38,19 +39,36 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
 
   void _onItemTapped(int index) {
     setState(() {
-      _currentIndex = index;
+      _selectedIndex = index;
     });
 
     // Navigate based on the selected index
     if (index == 1) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => Menu(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => Menu(
             userName: widget.userName,
             email: widget.email,
             imageUrl: widget.imageUrl,
           ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
+
+    if (index == 3) {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => ProfileView(
+            userName: widget.userName,
+            email: widget.email,
+            imageUrl: widget.imageUrl,
+          ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         ),
       );
     }
@@ -107,7 +125,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
               ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
+        currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
       drawer: Drawer(
