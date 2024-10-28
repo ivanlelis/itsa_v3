@@ -5,13 +5,13 @@ import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
 
 class Checkout extends StatefulWidget {
   final String userName;
-  final String email;
+  final String emailAddress;
   final double totalAmount;
 
   const Checkout({
     super.key,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
     required this.totalAmount,
   });
 

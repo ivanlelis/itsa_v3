@@ -13,7 +13,7 @@ class ProductView extends StatefulWidget {
   final String? milkTeaLarge;
   final String? mealsPrice;
   final String userName; // Non-nullable
-  final String email; // Non-nullable
+  final String emailAddress; // Non-nullable
   final String productType; // Non-nullable
 
   const ProductView({
@@ -28,7 +28,7 @@ class ProductView extends StatefulWidget {
     this.milkTeaLarge,
     this.mealsPrice,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
     required this.productType,
   });
 
@@ -151,7 +151,7 @@ class _ProductViewState extends State<ProductView> {
                       MaterialPageRoute(
                         builder: (context) => MainCart(
                           userName: widget.userName,
-                          email: widget.email,
+                          emailAddress: widget.emailAddress,
                         ),
                       ),
                     );
@@ -171,7 +171,7 @@ class _ProductViewState extends State<ProductView> {
                         MaterialPageRoute(
                           builder: (context) => MainCart(
                             userName: widget.userName,
-                            email: widget.email,
+                            emailAddress: widget.emailAddress,
                           ),
                         ),
                       );

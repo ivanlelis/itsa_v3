@@ -8,16 +8,17 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:itsa_food_app/customer_pages/edit_name.dart';
 
 class ProfileView extends StatefulWidget {
   final String userName;
-  final String email;
+  final String emailAddress;
   final String imageUrl;
 
   const ProfileView({
     super.key,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
     required this.imageUrl,
   });
 
@@ -26,6 +27,9 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _userNameController = TextEditingController();
   int _selectedIndex = 3; // Set the default to Profile (index 3)
   File? _pickedImage;
 
@@ -49,7 +53,7 @@ class _ProfileViewState extends State<ProfileView> {
             pageBuilder: (context, animation, secondaryAnimation) =>
                 CustomerMainHome(
               userName: widget.userName,
-              email: widget.email,
+              emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
             ),
             transitionDuration: Duration.zero,
@@ -63,7 +67,7 @@ class _ProfileViewState extends State<ProfileView> {
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => Menu(
               userName: widget.userName,
-              email: widget.email,
+              emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
             ),
             transitionDuration: Duration.zero,
@@ -101,27 +105,40 @@ class _ProfileViewState extends State<ProfileView> {
 
       // Upload image to Firebase Storage directly under 'user_image'
       final storageRef = FirebaseStorage.instance.ref(
-          'user_image/${currentUser.userName}.jpg'); // Directly reference the file path
+          'user_image/${currentUser.emailAddress}.jpg'); // Directly reference the file path
 
       await storageRef.putFile(_pickedImage!);
 
       // Get the download URL
       final imageUrl = await storageRef.getDownloadURL();
 
-      // Update the Firestore document with the image URL
-      await FirebaseFirestore.instance
+      // Query Firestore for the document with the matching emailAddress
+      final customerSnapshot = await FirebaseFirestore.instance
           .collection('customer')
-          .doc(currentUser.userName) // Use userName as the document ID
-          .update({'imageUrl': imageUrl}).then((_) {
+          .where('emailAddress', isEqualTo: currentUser.emailAddress)
+          .get();
+
+      // Check if the document exists
+      if (customerSnapshot.docs.isNotEmpty) {
+        // Update the Firestore document with the image URL
+        await customerSnapshot.docs.first.reference
+            .update({'imageUrl': imageUrl}).then((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Profile image updated successfully!')),
+          );
+        }).catchError((error) {
+          print('Failed to update document: $error');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update profile image.')),
+          );
+        });
+      } else {
+        print(
+            'No document found with emailAddress: ${currentUser.emailAddress}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile image updated successfully!')),
+          SnackBar(content: Text('No user found with this email address.')),
         );
-      }).catchError((error) {
-        print('Failed to update document: $error');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile image.')),
-        );
-      });
+      }
     } catch (e) {
       print('Failed to upload image and save URL: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,15 +149,25 @@ class _ProfileViewState extends State<ProfileView> {
 
   Future<void> _fetchUserData(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    await userProvider.fetchCurrentUser(); // Fetch the current user data
+    await userProvider.fetchCurrentUser();
 
-    setState(() {});
+    // Update controllers with the fetched user data
+    _firstNameController.text = userProvider.currentUser?.firstName ?? '';
+    _lastNameController.text = userProvider.currentUser?.lastName ?? '';
+    _userNameController.text = userProvider.currentUser?.userName ?? '';
+
+    setState(() {}); // Trigger a rebuild
   }
 
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final currentUser = userProvider.currentUser;
+
+    // Fetch user data when building the widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUserData(context);
+    });
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -152,6 +179,7 @@ class _ProfileViewState extends State<ProfileView> {
         ),
         centerTitle: true,
         elevation: 0,
+        automaticallyImplyLeading: false, // Removes the back button
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -190,16 +218,18 @@ class _ProfileViewState extends State<ProfileView> {
 
               SizedBox(height: 8),
               Text(
-                widget.userName,
+                currentUser?.userName ?? widget.userName,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text(
-                widget.email,
+                currentUser?.emailAddress ?? widget.emailAddress,
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
               SizedBox(height: 24),
-              _buildEditableField('Name', widget.userName, context),
-              _buildEditableField('Email', widget.email, context),
+              _buildEditableField(
+                  'Name', currentUser?.userName ?? widget.userName, context),
+              _buildEditableField('Email',
+                  currentUser?.emailAddress ?? widget.emailAddress, context),
               _buildEditableField('Mobile Number', '0912345678',
                   context), // Replace with actual mobile number if available
               SizedBox(height: 24),
@@ -273,8 +303,21 @@ class _ProfileViewState extends State<ProfileView> {
               ),
               IconButton(
                 icon: Icon(Icons.edit, color: Colors.black),
-                onPressed: () {
-                  // Handle edit action
+                onPressed: () async {
+                  // Wait for the result from EditName
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => EditName(
+                              userName: widget.userName,
+                              emailAddress: widget.emailAddress,
+                              imageUrl: widget.imageUrl,
+                            )),
+                  );
+
+                  // Refetch user data when returning
+                  Provider.of<UserProvider>(context, listen: false)
+                      .fetchCurrentUser();
                 },
               ),
             ],

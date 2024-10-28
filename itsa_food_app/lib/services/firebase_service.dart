@@ -106,12 +106,14 @@ class FirebaseService {
         password: password,
       );
 
+      // Compute the user's name
       String userName = '${firstName.trim()} ${lastName.trim()}';
 
       // Determine the collection (customer or rider) based on userType
       String collection = userType == 'rider' ? 'rider' : 'customer';
 
-      await _firestore.collection(collection).doc(userName).set({
+      // Create a new document with a unique ID
+      await _firestore.collection(collection).add({
         'userName': userName,
         'firstName': firstName,
         'lastName': lastName,

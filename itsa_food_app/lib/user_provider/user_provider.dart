@@ -23,9 +23,10 @@ class UserProvider with ChangeNotifier {
       if (userDoc.docs.isNotEmpty) {
         final data = userDoc.docs.first.data(); // Get the first document
         _currentUser = UserModel(
+          firstName: data['firstName'] ?? '',
+          lastName: data['lastName'] ?? '',
           userName: data['userName'] ?? '',
           emailAddress: data['emailAddress'] ?? '',
-          email: user.email ?? '',
           imageUrl: data['imageUrl'] ?? '',
         );
         _adminEmail = data['email']; // Set admin email from the fetched data
@@ -40,6 +41,11 @@ class UserProvider with ChangeNotifier {
 
   void setAdminEmail(String email) {
     _adminEmail = email; // Set the admin email
+    notifyListeners();
+  }
+
+  void updateCurrentUser(UserModel updatedUser) {
+    _currentUser = updatedUser; // Update the current user
     notifyListeners();
   }
 }

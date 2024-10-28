@@ -12,13 +12,13 @@ import 'package:itsa_food_app/customer_pages/profile.dart';
 
 class Menu extends StatefulWidget {
   final String userName;
-  final String email;
+  final String emailAddress;
   final String imageUrl;
 
   const Menu({
     super.key,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
     required this.imageUrl,
   });
   @override
@@ -43,7 +43,7 @@ class _MenuState extends State<Menu> {
             pageBuilder: (context, animation, secondaryAnimation) =>
                 CustomerMainHome(
               userName: widget.userName,
-              email: widget.email,
+              emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
             ),
             transitionDuration: Duration.zero,
@@ -57,7 +57,7 @@ class _MenuState extends State<Menu> {
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => Menu(
               userName: widget.userName,
-              email: widget.email,
+              emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
             ),
             transitionDuration: Duration.zero,
@@ -75,7 +75,7 @@ class _MenuState extends State<Menu> {
             pageBuilder: (context, animation, secondaryAnimation) =>
                 ProfileView(
               userName: widget.userName,
-              email: widget.email,
+              emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
             ),
             transitionDuration: Duration.zero,
@@ -105,7 +105,7 @@ class _MenuState extends State<Menu> {
               MaterialPageRoute(
                 builder: (context) => MainCart(
                   userName: user.userName,
-                  email: user.emailAddress,
+                  emailAddress: user.emailAddress,
                 ),
               ),
             );
@@ -120,7 +120,7 @@ class _MenuState extends State<Menu> {
       drawer: Drawer(
         child: Sidebar(
           userName: widget.userName,
-          email: widget.email,
+          emailAddress: widget.emailAddress,
           imageUrl: widget.imageUrl,
         ),
       ),
@@ -258,7 +258,7 @@ class _MenuState extends State<Menu> {
                         milkTeaLarge: milkTeaLarge,
                         mealsPrice: mealsPrice,
                         userName: widget.userName,
-                        email: widget.email,
+                        emailAddress: widget.emailAddress,
                       );
                     },
                   );
@@ -287,7 +287,7 @@ class ProductCard extends StatelessWidget {
   final String? milkTeaLarge;
   final String? mealsPrice;
   final String userName;
-  final String email;
+  final String emailAddress;
 
   const ProductCard({
     super.key,
@@ -301,7 +301,7 @@ class ProductCard extends StatelessWidget {
     this.milkTeaLarge,
     this.mealsPrice,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
   });
 
   @override
@@ -323,7 +323,7 @@ class ProductCard extends StatelessWidget {
         // Debug print to check values before navigation
         print('Navigating to ProductView...');
         print('User Name: $userName');
-        print('Email: $email');
+        print('Email: $emailAddress');
 
         // Navigate to the ProductView page and pass product details
         Navigator.push(
@@ -340,7 +340,7 @@ class ProductCard extends StatelessWidget {
               milkTeaLarge: milkTeaLarge,
               mealsPrice: mealsPrice,
               userName: userName,
-              email: email,
+              emailAddress: emailAddress,
               productType: productType,
             ),
           ),

@@ -10,13 +10,13 @@ import 'package:provider/provider.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
-  final String email;
+  final String emailAddress;
   final String imageUrl;
 
   const CustomerMainHome({
     super.key,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
     required this.imageUrl,
   });
 
@@ -49,7 +49,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => Menu(
             userName: widget.userName,
-            email: widget.email,
+            emailAddress: widget.emailAddress,
             imageUrl: widget.imageUrl,
           ),
           transitionDuration: Duration.zero,
@@ -64,7 +64,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => ProfileView(
             userName: widget.userName,
-            email: widget.email,
+            emailAddress: widget.emailAddress,
             imageUrl: widget.imageUrl,
           ),
           transitionDuration: Duration.zero,
@@ -91,7 +91,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
               MaterialPageRoute(
                 builder: (context) => MainCart(
                   userName: user.userName,
-                  email: user.emailAddress,
+                  emailAddress: user.emailAddress,
                 ),
               ),
             );
@@ -114,7 +114,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'Email: ${widget.email}',
+                    'Email: ${widget.emailAddress}',
                     style: TextStyle(fontSize: 16),
                   ),
                 ],
@@ -131,7 +131,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
       drawer: Drawer(
         child: Sidebar(
           userName: widget.userName,
-          email: widget.email,
+          emailAddress: widget.emailAddress,
           imageUrl: widget.imageUrl,
         ),
       ),

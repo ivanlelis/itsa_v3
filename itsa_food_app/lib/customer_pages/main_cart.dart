@@ -4,9 +4,9 @@ import 'package:itsa_food_app/customer_pages/checkout.dart';
 
 class MainCart extends StatefulWidget {
   final String userName;
-  final String email;
+  final String emailAddress;
 
-  const MainCart({super.key, required this.userName, required this.email});
+  const MainCart({super.key, required this.userName, required this.emailAddress});
 
   @override
   _MainCartState createState() => _MainCartState();
@@ -65,7 +65,7 @@ class _MainCartState extends State<MainCart> {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => Checkout(
           userName: widget.userName,
-          email: widget.email,
+          emailAddress: widget.emailAddress,
           totalAmount: cartItems.fold(0.0, (sum, item) => sum + item['total']),
         ),
         transitionDuration: Duration.zero, // Remove transition duration

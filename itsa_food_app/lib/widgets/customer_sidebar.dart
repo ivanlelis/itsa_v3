@@ -5,13 +5,13 @@ import 'package:itsa_food_app/user_provider/user_provider.dart'; // Import your 
 
 class Sidebar extends StatefulWidget {
   final String userName;
-  final String email;
+  final String emailAddress;
   final String imageUrl;
 
   const Sidebar({
     super.key,
     required this.userName,
-    required this.email,
+    required this.emailAddress,
     required this.imageUrl,
   });
   @override

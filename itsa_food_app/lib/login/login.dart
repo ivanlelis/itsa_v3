@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
               MaterialPageRoute(
                 builder: (context) => CustomerMainHome(
                   userName: userInfo['userName'] ?? "Guest User",
-                  email: userInfo['emailAddress'] ?? "No Email Provided",
+                  emailAddress: userInfo['emailAddress'] ?? "No Email Provided",
                   imageUrl: userInfo['imageUrl'] ?? "",
                 ),
               ),
