@@ -9,17 +9,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/customer_pages/edit_name.dart';
+import 'package:itsa_food_app/customer_pages/edit_email.dart';
 
 class ProfileView extends StatefulWidget {
   final String userName;
   final String emailAddress;
+  final String email;
   final String imageUrl;
+  final String uid;
 
   const ProfileView({
     super.key,
     required this.userName,
     required this.emailAddress,
+    required this.email,
     required this.imageUrl,
+    required this.uid,
   });
 
   @override
@@ -30,6 +35,7 @@ class _ProfileViewState extends State<ProfileView> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _userNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   int _selectedIndex = 3; // Set the default to Profile (index 3)
   File? _pickedImage;
 
@@ -55,6 +61,8 @@ class _ProfileViewState extends State<ProfileView> {
               userName: widget.userName,
               emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -69,6 +77,8 @@ class _ProfileViewState extends State<ProfileView> {
               userName: widget.userName,
               emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -155,6 +165,7 @@ class _ProfileViewState extends State<ProfileView> {
     _firstNameController.text = userProvider.currentUser?.firstName ?? '';
     _lastNameController.text = userProvider.currentUser?.lastName ?? '';
     _userNameController.text = userProvider.currentUser?.userName ?? '';
+    _emailController.text = userProvider.currentUser?.emailAddress ?? '';
 
     setState(() {}); // Trigger a rebuild
   }
@@ -304,22 +315,39 @@ class _ProfileViewState extends State<ProfileView> {
               IconButton(
                 icon: Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
-                  // Wait for the result from EditName
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
+                  if (label == 'Name') {
+                    // Navigate to EditName
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
                         builder: (context) => EditName(
-                              userName: widget.userName,
-                              emailAddress: widget.emailAddress,
-                              imageUrl: widget.imageUrl,
-                            )),
-                  );
-
+                          userName: widget.userName,
+                          emailAddress: widget.emailAddress,
+                          imageUrl: widget.imageUrl,
+                          uid: widget.uid,
+                          email: widget.email,
+                        ),
+                      ),
+                    );
+                  } else if (label == 'Email') {
+                    // Navigate to EditEmail
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditEmail(
+                          userName: widget.userName,
+                          emailAddress: widget.emailAddress,
+                          imageUrl: widget.imageUrl,
+                          uid: widget.uid,
+                        ),
+                      ),
+                    );
+                  }
                   // Refetch user data when returning
                   Provider.of<UserProvider>(context, listen: false)
                       .fetchCurrentUser();
                 },
-              ),
+              )
             ],
           ),
         ),

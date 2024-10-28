@@ -67,6 +67,8 @@ class _LoginPageState extends State<LoginPage> {
                   userName: userInfo['userName'] ?? "Guest User",
                   emailAddress: userInfo['emailAddress'] ?? "No Email Provided",
                   imageUrl: userInfo['imageUrl'] ?? "",
+                  uid: userInfo['uid'] ?? "",
+                  email: userInfo['email'] ?? "",
                 ),
               ),
             );

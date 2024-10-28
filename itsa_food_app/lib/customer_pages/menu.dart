@@ -13,13 +13,17 @@ import 'package:itsa_food_app/customer_pages/profile.dart';
 class Menu extends StatefulWidget {
   final String userName;
   final String emailAddress;
+  final String email;
   final String imageUrl;
+  final String uid;
 
   const Menu({
     super.key,
     required this.userName,
     required this.emailAddress,
+    required this.email,
     required this.imageUrl,
+    required this.uid,
   });
   @override
   _MenuState createState() => _MenuState();
@@ -45,6 +49,8 @@ class _MenuState extends State<Menu> {
               userName: widget.userName,
               emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -59,6 +65,8 @@ class _MenuState extends State<Menu> {
               userName: widget.userName,
               emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -77,6 +85,8 @@ class _MenuState extends State<Menu> {
               userName: widget.userName,
               emailAddress: widget.emailAddress,
               imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,

@@ -7,13 +7,17 @@ import 'package:itsa_food_app/user_model/user_model.dart';
 class EditName extends StatefulWidget {
   final String userName;
   final String emailAddress;
+  final String email;
   final String imageUrl;
+  final String uid;
 
   const EditName({
     super.key,
     required this.userName,
     required this.emailAddress,
+    required this.email,
     required this.imageUrl,
+    required this.uid,
   });
 
   @override
@@ -59,11 +63,13 @@ class _EditNameState extends State<EditName> {
       // Update the user in your UserProvider using a new method
       userProvider.updateCurrentUser(
         UserModel(
+          uid: widget.uid,
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           userName: '${_firstNameController.text} ${_lastNameController.text}',
           emailAddress: widget.emailAddress,
           imageUrl: widget.imageUrl,
+          email: widget.email,
         ),
       );
 

@@ -11,13 +11,17 @@ import 'package:provider/provider.dart';
 class CustomerMainHome extends StatefulWidget {
   final String userName;
   final String emailAddress;
+  final String email;
   final String imageUrl;
+  final String uid;
 
   const CustomerMainHome({
     super.key,
     required this.userName,
     required this.emailAddress,
+    required this.email,
     required this.imageUrl,
+    required this.uid,
   });
 
   @override
@@ -51,6 +55,8 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             userName: widget.userName,
             emailAddress: widget.emailAddress,
             imageUrl: widget.imageUrl,
+            uid: widget.uid,
+            email: widget.email,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -66,6 +72,8 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             userName: widget.userName,
             emailAddress: widget.emailAddress,
             imageUrl: widget.imageUrl,
+            uid: widget.uid,
+            email: widget.email,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,

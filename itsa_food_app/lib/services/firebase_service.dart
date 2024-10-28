@@ -106,14 +106,21 @@ class FirebaseService {
         password: password,
       );
 
-      // Compute the user's name
+      // Ensure userCredential and user are non-null
+      User? user = userCredential.user;
+      if (user == null) {
+        throw Exception("User credential is null; UID could not be obtained.");
+      }
+
       String userName = '${firstName.trim()} ${lastName.trim()}';
+      String uid = user.uid; // Get the user's UID
 
       // Determine the collection (customer or rider) based on userType
       String collection = userType == 'rider' ? 'rider' : 'customer';
 
-      // Create a new document with a unique ID
-      await _firestore.collection(collection).add({
+      // Use the UID as the document ID and add a 'uid' field in the document data
+      await _firestore.collection(collection).doc(uid).set({
+        'uid': uid, // Add UID field to the document
         'userName': userName,
         'firstName': firstName,
         'lastName': lastName,
@@ -124,7 +131,7 @@ class FirebaseService {
       });
 
       // Send verification email
-      await userCredential.user?.sendEmailVerification();
+      await user.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
