@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/admin_pages/create_vouchers.dart';
+import 'package:itsa_food_app/admin_pages/memorygame.dart';
 
 class AdminSidebar extends StatelessWidget {
   final VoidCallback onLogout; // Callback for logout action
@@ -50,9 +51,13 @@ class AdminSidebar extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.note),
-            title: const Text('Order Management'),
+            title: const Text('Mini Games'),
             onTap: () {
-              // Navigate to Order Management
+              // Navigate to CreateVouchers screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MemoryGameWithChests()),
+              );
             },
           ),
           ListTile(

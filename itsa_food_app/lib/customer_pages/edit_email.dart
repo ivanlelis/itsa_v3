@@ -10,7 +10,7 @@ class EditEmail extends StatefulWidget {
   final String imageUrl;
   final String uid;
 
-  EditEmail({
+  const EditEmail({super.key, 
     required this.userName,
     required this.emailAddress,
     required this.imageUrl,
