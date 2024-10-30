@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => RiderMainHome(
+                builder: (context) => RiderDashboard(
                   userName: userInfo['userName'] ?? "Guest User",
                   email: userInfo['emailAddress'] ?? "No Email Provided",
                   imageUrl: userInfo['imageUrl'] ?? "",

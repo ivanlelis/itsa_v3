@@ -5,6 +5,8 @@ import 'package:confetti/confetti.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ScratchCardGrid extends StatefulWidget {
+  const ScratchCardGrid({super.key});
+
   @override
   _ScratchCardGridState createState() => _ScratchCardGridState();
 }
@@ -222,7 +224,7 @@ class _ScratchCardGridState extends State<ScratchCardGrid>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
+                            boxShadow: const [
                               BoxShadow(
                                 color: Colors.black26,
                                 blurRadius: 8,
@@ -275,7 +277,7 @@ class _ScratchCardGridState extends State<ScratchCardGrid>
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
                         color: Colors.black26,
                         blurRadius: 12,
@@ -316,7 +318,7 @@ class _ScratchCardGridState extends State<ScratchCardGrid>
                     confettiController: _confettiController,
                     blastDirectionality: BlastDirectionality.explosive,
                     shouldLoop: false,
-                    colors: [
+                    colors: const [
                       Colors.blue,
                       Colors.green,
                       Colors.pink,
@@ -340,7 +342,7 @@ class ScratchCard extends StatelessWidget {
   final bool isWinningCard;
   final bool revealed; // New parameter to indicate if revealed
 
-  ScratchCard({
+  const ScratchCard({super.key, 
     required this.rewardText,
     required this.onReveal,
     required this.isWinningCard,
