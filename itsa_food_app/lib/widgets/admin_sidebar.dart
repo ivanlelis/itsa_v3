@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/admin_pages/create_vouchers.dart';
-import 'package:itsa_food_app/admin_pages/memorygame.dart';
+import 'package:itsa_food_app/admin_pages/scratch&win.dart';
 
 class AdminSidebar extends StatelessWidget {
   final VoidCallback onLogout; // Callback for logout action
@@ -56,7 +56,7 @@ class AdminSidebar extends StatelessWidget {
               // Navigate to CreateVouchers screen
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MemoryGameWithChests()),
+                MaterialPageRoute(builder: (context) => ScratchCardGrid()),
               );
             },
           ),
