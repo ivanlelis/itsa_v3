@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/firebase_options.dart';
+import 'dart:math';
 
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
@@ -85,6 +86,24 @@ class FirebaseService {
 
   bool get isInitialized => _isInitialized;
 
+  String generateCustomerID() {
+    const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    Random random = Random();
+    String randomString = List.generate(
+        5, (index) => characters[random.nextInt(characters.length)]).join();
+    return 'ITSA$randomString'; // Prefix with 'ITSA'
+  }
+
+  String generateRiderID() {
+    const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    Random random = Random();
+    String randomString = List.generate(
+        5, (index) => characters[random.nextInt(characters.length)]).join();
+    return 'ITSA$randomString'; // Prefix with 'ITSA' for riderID too
+  }
+
   Future<void> signUpWithEmail(
     String firstName,
     String lastName,
@@ -115,10 +134,18 @@ class FirebaseService {
       String userName = '${firstName.trim()} ${lastName.trim()}';
       String uid = user.uid; // Get the user's UID
 
+      // Generate ID based on user type
+      String id;
+      if (userType == 'rider') {
+        id = generateRiderID(); // Generate riderID
+      } else {
+        id = generateCustomerID(); // Generate customerID
+      }
+
       // Determine the collection (customer or rider) based on userType
       String collection = userType == 'rider' ? 'rider' : 'customer';
 
-      // Use the UID as the document ID and add a 'uid' field in the document data
+      // Use the UID as the document ID and add fields in the document data
       await _firestore.collection(collection).doc(uid).set({
         'uid': uid, // Add UID field to the document
         'userName': userName,
@@ -127,6 +154,11 @@ class FirebaseService {
         'emailAddress': email,
         'mobileNumber': mobileNumber,
         'userType': userType, // Store user type (customer or rider)
+        'customerID': userType == 'customer'
+            ? id
+            : null, // Set customerID if userType is customer
+        'riderID':
+            userType == 'rider' ? id : null, // Set riderID if userType is rider
         ...?additionalData, // Additional data for riders (e.g., vehicle details)
       });
 

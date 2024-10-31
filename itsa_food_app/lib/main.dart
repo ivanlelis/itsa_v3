@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/customer_pages/edit_address.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:itsa_food_app/login/login.dart'; // Import your LoginPage
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(
             title: 'Firebase Connection Status'), // Define the home route
         '/login': (context) => const LoginPage(), // Define the login route
+        '/address': (context) => EditAddress()
         // Add other routes as needed, e.g., for RiderHome, CustomerHome, etc.
       },
       // Optional: Define the onUnknownRoute to handle undefined routes

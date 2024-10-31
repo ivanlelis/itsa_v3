@@ -5,12 +5,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final VoidCallback onCartPressed;
   final String userName;
+  final String uid;
 
   const CustomAppBar({
     super.key,
     required this.scaffoldKey,
     required this.onCartPressed,
     required this.userName,
+    required this.uid,
   });
 
   @override
@@ -43,7 +45,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('customer')
-              .doc(userName) // Use userName to fetch the correct cart
+              .doc(uid)
               .collection('cart')
               .snapshots(),
           builder: (context, snapshot) {

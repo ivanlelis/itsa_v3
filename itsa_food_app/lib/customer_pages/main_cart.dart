@@ -5,8 +5,14 @@ import 'package:itsa_food_app/customer_pages/checkout.dart';
 class MainCart extends StatefulWidget {
   final String userName;
   final String emailAddress;
+  final String uid;
 
-  const MainCart({super.key, required this.userName, required this.emailAddress});
+  const MainCart({
+    super.key,
+    required this.userName,
+    required this.emailAddress,
+    required this.uid,
+  });
 
   @override
   _MainCartState createState() => _MainCartState();
@@ -25,7 +31,7 @@ class _MainCartState extends State<MainCart> {
     try {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('customer')
-          .doc(widget.userName)
+          .doc(widget.uid)
           .collection('cart')
           .get();
 
@@ -49,7 +55,7 @@ class _MainCartState extends State<MainCart> {
     try {
       await FirebaseFirestore.instance
           .collection('customer')
-          .doc(widget.userName)
+          .doc(widget.uid)
           .collection('cart')
           .doc(docId)
           .delete();

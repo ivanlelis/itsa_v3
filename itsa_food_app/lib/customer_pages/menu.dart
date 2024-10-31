@@ -116,6 +116,7 @@ class _MenuState extends State<Menu> {
                 builder: (context) => MainCart(
                   userName: user.userName,
                   emailAddress: user.emailAddress,
+                  uid: widget.uid,
                 ),
               ),
             );
@@ -125,7 +126,8 @@ class _MenuState extends State<Menu> {
             );
           }
         },
-        userName: user?.userName ?? '', // Pass the userName here
+        userName: user?.userName ?? '',
+        uid: user?.uid ?? '',
       ),
       drawer: Drawer(
         child: Sidebar(
@@ -269,6 +271,7 @@ class _MenuState extends State<Menu> {
                         mealsPrice: mealsPrice,
                         userName: widget.userName,
                         emailAddress: widget.emailAddress,
+                        uid: widget.uid,
                       );
                     },
                   );
@@ -298,6 +301,7 @@ class ProductCard extends StatelessWidget {
   final String? mealsPrice;
   final String userName;
   final String emailAddress;
+  final String uid;
 
   const ProductCard({
     super.key,
@@ -312,6 +316,7 @@ class ProductCard extends StatelessWidget {
     this.mealsPrice,
     required this.userName,
     required this.emailAddress,
+    required this.uid,
   });
 
   @override
@@ -352,6 +357,7 @@ class ProductCard extends StatelessWidget {
               userName: userName,
               emailAddress: emailAddress,
               productType: productType,
+              uid: uid,
             ),
           ),
         );

@@ -6,9 +6,17 @@
   <component name="ChangeListManager">
     <list default="true" id="8f538df2-186c-42e7-bbc6-f7710d42fa10" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/memorygame.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/admin_pages/memorygame.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_sidebar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/admin_sidebar.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/flip_card.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/flip_card.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/main_cart.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/main_cart.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/menu.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/menu.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/product_view.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/customer_pages/product_view.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/customer_home.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/customer_home.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/main_home/rider_home.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/main_home/rider_home.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/services/firebase_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/services/firebase_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/user_model/user_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/user_model/user_model.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/lib/widgets/customer_appbar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/lib/widgets/customer_appbar.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/itsa_food_app/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/itsa_food_app/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -4,7 +4,7 @@ class UserModel {
   String lastName;
   String userName;
   String imageUrl;
-  String email; // Assuming this is the user's email.
+  String email;
 
   // Change emailAddress from final to a regular field
   String emailAddress;

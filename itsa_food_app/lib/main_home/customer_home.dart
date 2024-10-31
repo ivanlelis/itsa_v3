@@ -100,6 +100,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                 builder: (context) => MainCart(
                   userName: user.userName,
                   emailAddress: user.emailAddress,
+                  uid: user.uid,
                 ),
               ),
             );
@@ -110,6 +111,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
           }
         },
         userName: user?.userName ?? '',
+        uid: user?.uid ?? '',
       ),
       body: Center(
         child: user != null

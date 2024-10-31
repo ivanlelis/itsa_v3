@@ -15,6 +15,7 @@ class ProductView extends StatefulWidget {
   final String userName; // Non-nullable
   final String emailAddress; // Non-nullable
   final String productType; // Non-nullable
+  final String uid;
 
   const ProductView({
     super.key,
@@ -30,6 +31,7 @@ class ProductView extends StatefulWidget {
     required this.userName,
     required this.emailAddress,
     required this.productType,
+    required this.uid,
   });
 
   @override
@@ -94,7 +96,7 @@ class _ProductViewState extends State<ProductView> {
     try {
       CollectionReference cart = FirebaseFirestore.instance
           .collection('customer')
-          .doc(userName)
+          .doc(widget.uid)
           .collection('cart');
 
       await cart.doc(productName).set({
@@ -138,7 +140,7 @@ class _ProductViewState extends State<ProductView> {
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('customer')
-                .doc(widget.userName)
+                .doc(widget.uid)
                 .collection('cart')
                 .snapshots(),
             builder: (context, snapshot) {
@@ -152,6 +154,7 @@ class _ProductViewState extends State<ProductView> {
                         builder: (context) => MainCart(
                           userName: widget.userName,
                           emailAddress: widget.emailAddress,
+                          uid: widget.uid,
                         ),
                       ),
                     );
@@ -172,6 +175,7 @@ class _ProductViewState extends State<ProductView> {
                           builder: (context) => MainCart(
                             userName: widget.userName,
                             emailAddress: widget.emailAddress,
+                            uid: widget.uid,
                           ),
                         ),
                       );
