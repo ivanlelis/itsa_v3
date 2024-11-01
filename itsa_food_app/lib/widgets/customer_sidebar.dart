@@ -7,12 +7,18 @@ class Sidebar extends StatefulWidget {
   final String userName;
   final String emailAddress;
   final String imageUrl;
+  final String uid;
+  final double latitude;
+  final double longitude;
 
   const Sidebar({
     super.key,
     required this.userName,
     required this.emailAddress,
     required this.imageUrl,
+    required this.uid,
+    required this.latitude,
+    required this.longitude,
   });
   @override
   _SidebarState createState() => _SidebarState();
@@ -78,10 +84,20 @@ class _SidebarState extends State<Sidebar> {
           leading: const Icon(Icons.location_on),
           title: const Text('Address'),
           onTap: () {
-            // Navigate to Address page
-            Navigator.pushNamed(context, '/address');
+            // Create a map to hold the arguments
+            final Map<String, dynamic> args = {
+              'emailAddress': widget.emailAddress,
+              'userName': widget.userName,
+              'uid': widget.uid,
+              'latitude': widget.latitude,
+              'longitude': widget.longitude,
+            };
+
+            // Navigate to Address page with arguments
+            Navigator.pushNamed(context, '/address', arguments: args);
           },
         ),
+
         ListTile(
           leading: const Icon(Icons.card_giftcard),
           title: const Text('Vouchers'),

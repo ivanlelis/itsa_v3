@@ -10,6 +10,9 @@ class EditName extends StatefulWidget {
   final String email;
   final String imageUrl;
   final String uid;
+  final String userAddress;
+  final double latitude;
+  final double longitude;
 
   const EditName({
     super.key,
@@ -18,6 +21,9 @@ class EditName extends StatefulWidget {
     required this.email,
     required this.imageUrl,
     required this.uid,
+    required this.userAddress,
+    required this.latitude,
+    required this.longitude,
   });
 
   @override
@@ -70,6 +76,9 @@ class _EditNameState extends State<EditName> {
           emailAddress: widget.emailAddress,
           imageUrl: widget.imageUrl,
           email: widget.email,
+          userAddress: widget.userAddress,
+          latitude: widget.latitude,
+          longitude: widget.longitude,
         ),
       );
 

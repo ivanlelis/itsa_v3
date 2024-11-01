@@ -14,6 +14,9 @@ class CustomerMainHome extends StatefulWidget {
   final String email;
   final String imageUrl;
   final String uid;
+  final String userAddress;
+  final double latitude;
+  final double longitude;
 
   const CustomerMainHome({
     super.key,
@@ -22,6 +25,9 @@ class CustomerMainHome extends StatefulWidget {
     required this.email,
     required this.imageUrl,
     required this.uid,
+    required this.userAddress,
+    required this.latitude,
+    required this.longitude,
   });
 
   @override
@@ -57,6 +63,9 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             imageUrl: widget.imageUrl,
             uid: widget.uid,
             email: widget.email,
+            userAddress: widget.userAddress,
+            latitude: widget.latitude,
+            longitude: widget.longitude,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -74,6 +83,9 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             imageUrl: widget.imageUrl,
             uid: widget.uid,
             email: widget.email,
+            userAddress: widget.userAddress,
+            latitude: widget.latitude,
+            longitude: widget.longitude,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -127,6 +139,16 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                     'Email: ${widget.emailAddress}',
                     style: TextStyle(fontSize: 16),
                   ),
+                  SizedBox(height: 10),
+                  // Display the latitude and longitude
+                  Text(
+                    'Latitude: ${widget.latitude.toStringAsFixed(6)}',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                  ),
+                  Text(
+                    'Longitude: ${widget.longitude.toStringAsFixed(6)}',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                  ),
                 ],
               )
             : Text(
@@ -143,6 +165,9 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
           userName: widget.userName,
           emailAddress: widget.emailAddress,
           imageUrl: widget.imageUrl,
+          uid: widget.uid,
+          latitude: widget.latitude,
+          longitude: widget.longitude,
         ),
       ),
     );

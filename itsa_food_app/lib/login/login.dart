@@ -69,6 +69,11 @@ class _LoginPageState extends State<LoginPage> {
                   imageUrl: userInfo['imageUrl'] ?? "",
                   uid: userInfo['uid'] ?? "",
                   email: userInfo['email'] ?? "",
+                  userAddress: userInfo['userAddress'] ?? "",
+                  latitude: userInfo['userCoordinates']?['latitude'] ??
+                      0.0, // Access nested latitude
+                  longitude: userInfo['userCoordinates']?['longitude'] ??
+                      0.0, // Access nested longitude
                 ),
               ),
             );

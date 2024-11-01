@@ -16,6 +16,9 @@ class Menu extends StatefulWidget {
   final String email;
   final String imageUrl;
   final String uid;
+  final String userAddress;
+  final double latitude;
+  final double longitude;
 
   const Menu({
     super.key,
@@ -24,6 +27,9 @@ class Menu extends StatefulWidget {
     required this.email,
     required this.imageUrl,
     required this.uid,
+    required this.userAddress,
+    required this.latitude,
+    required this.longitude,
   });
   @override
   _MenuState createState() => _MenuState();
@@ -51,6 +57,9 @@ class _MenuState extends State<Menu> {
               imageUrl: widget.imageUrl,
               uid: widget.uid,
               email: widget.email,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -67,6 +76,9 @@ class _MenuState extends State<Menu> {
               imageUrl: widget.imageUrl,
               uid: widget.uid,
               email: widget.email,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -87,6 +99,9 @@ class _MenuState extends State<Menu> {
               imageUrl: widget.imageUrl,
               uid: widget.uid,
               email: widget.email,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -134,6 +149,9 @@ class _MenuState extends State<Menu> {
           userName: widget.userName,
           emailAddress: widget.emailAddress,
           imageUrl: widget.imageUrl,
+          uid: widget.uid,
+          latitude: widget.latitude,
+          longitude: widget.longitude,
         ),
       ),
       body: Padding(

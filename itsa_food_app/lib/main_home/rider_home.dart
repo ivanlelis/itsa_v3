@@ -8,11 +8,11 @@ class RiderDashboard extends StatefulWidget {
   final String imageUrl;
 
   const RiderDashboard({
-    Key? key,
+    super.key,
     required this.userName,
     required this.email,
     required this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   _RiderDashboardState createState() => _RiderDashboardState();

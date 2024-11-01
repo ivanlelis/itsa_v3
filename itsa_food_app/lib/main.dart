@@ -45,8 +45,23 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(
             title: 'Firebase Connection Status'), // Define the home route
         '/login': (context) => const LoginPage(), // Define the login route
-        '/address': (context) => EditAddress()
-        // Add other routes as needed, e.g., for RiderHome, CustomerHome, etc.
+        '/address': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+
+          return EditAddress(
+            userName:
+                args?['userName'] ?? '', // Default to an empty string if null
+            emailAddress: args?['emailAddress'] ??
+                '', // Default to an empty string if null
+            email: args?['email'] ?? '', // Default to an empty string if null
+            uid: args?['uid'] ?? '', // Default to an empty string if null
+            userAddress: args?['userAddress'] ??
+                '', // Default to an empty string if null
+            latitude: args?['latitude'] ?? 0.0, // Default to 0.0 if null
+            longitude: args?['longitude'] ?? 0.0, // Default to 0.0 if null
+          );
+        },
       },
       // Optional: Define the onUnknownRoute to handle undefined routes
       onUnknownRoute: (settings) {

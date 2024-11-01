@@ -38,6 +38,11 @@ class UserProvider with ChangeNotifier {
           emailAddress: data['emailAddress'] ?? '',
           imageUrl: data['imageUrl'] ?? '',
           email: data['email'] ?? '',
+          userAddress: data['userAddress'] ?? '',
+          latitude:
+              data['userCoordinates']['latitude'] ?? 0.0, // Extract latitude
+          longitude:
+              data['userCoordinates']['longitude'] ?? 0.0, // Extract longitude
         );
         _adminEmail = data['email']; // Set admin email from the fetched data
         notifyListeners();
@@ -72,6 +77,11 @@ class UserProvider with ChangeNotifier {
         'lastName': _currentUser!.lastName,
         'userName': _currentUser!.userName,
         'imageUrl': _currentUser!.imageUrl,
+        'userCoordinates': {
+          // Add userCoordinates to the update
+          'latitude': _currentUser!.latitude,
+          'longitude': _currentUser!.longitude,
+        },
       });
     }
   }
