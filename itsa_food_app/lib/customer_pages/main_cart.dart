@@ -75,6 +75,7 @@ class _MainCartState extends State<MainCart> {
           userName: widget.userName,
           emailAddress: widget.emailAddress,
           totalAmount: cartItems.fold(0.0, (sum, item) => sum + item['total']),
+          uid: widget.uid,
         ),
         transitionDuration: Duration.zero, // Remove transition duration
         reverseTransitionDuration:

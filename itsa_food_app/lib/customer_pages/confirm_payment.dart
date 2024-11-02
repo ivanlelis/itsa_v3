@@ -1,33 +1,78 @@
 // ignore_for_file: library_private_types_in_public_api
 
-import 'dart:io'; // Import this to use the File class
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:itsa_food_app/user_provider/user_provider.dart';
 
 class ConfirmPayment extends StatefulWidget {
-  const ConfirmPayment({super.key});
+  final double totalAmountWithDelivery;
+  final String productName;
+  final String sizeQuantity;
+  final String paymentMethod;
+  final String deliveryType;
+  final String voucherCode;
+
+  const ConfirmPayment({
+    super.key,
+    required this.totalAmountWithDelivery,
+    required this.productName,
+    required this.sizeQuantity,
+    required this.paymentMethod,
+    required this.deliveryType,
+    required this.voucherCode,
+  });
 
   @override
   _ConfirmPaymentState createState() => _ConfirmPaymentState();
 }
 
 class _ConfirmPaymentState extends State<ConfirmPayment> {
-  XFile? _image; // Store the selected image
-  final ImagePicker _picker = ImagePicker(); // Image picker instance
+  XFile? _image;
+  final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     setState(() {
-      _image = image; // Update the image state
+      _image = image;
     });
   }
 
-  void _submitPayment() {
-    // Handle payment submission logic here
-    if (_image != null) {
-      // Implement your submission logic
+  void _submitPayment() async {
+    final currentUser =
+        Provider.of<UserProvider>(context, listen: false).currentUser;
+
+    if (currentUser != null && _image != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('customer')
+            .doc(currentUser.uid)
+            .collection('orders')
+            .add({
+          'timestamp': FieldValue.serverTimestamp(),
+          'status': 'pending',
+          'imagePath': _image!.path,
+          'totalAmountWithDelivery': widget.totalAmountWithDelivery,
+          'productName': widget.productName,
+          'sizeQuantity': widget.sizeQuantity,
+          'paymentMethod': widget.paymentMethod,
+          'deliveryType': widget.deliveryType,
+          'voucherCode': widget.voucherCode,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payment submitted successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error submitting payment: $e')),
+        );
+      }
+    } else if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment submitted successfully!')),
+        SnackBar(content: Text('No user is currently logged in.')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,7 +86,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Confirm Payment'),
-        backgroundColor: Color(0xFF2E0B0D), // Main color
+        backgroundColor: Color(0xFF2E0B0D),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -83,23 +128,55 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                       ),
               ),
             ),
-            Spacer(), // This will push the button to the bottom
+            SizedBox(height: 20),
+            Text(
+              'Total Amount: ₱${widget.totalAmountWithDelivery.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E0B0D),
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Product Name: ${widget.productName}',
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Size/Quantity: ${widget.sizeQuantity}',
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Payment Method: ${widget.paymentMethod}',
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Delivery Type: ${widget.deliveryType}',
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Voucher Code: ${widget.voucherCode}',
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            Spacer(),
             ElevatedButton(
               onPressed: _submitPayment,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2E0B0D), // Main color for button
-                padding: EdgeInsets.symmetric(
-                    vertical: 20), // Increase vertical padding
+                backgroundColor: Color(0xFF2E0B0D),
+                padding: EdgeInsets.symmetric(vertical: 20),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                minimumSize:
-                    Size(double.infinity, 56), // Make the button bigger
+                minimumSize: Size(double.infinity, 56),
               ),
               child: Text(
                 'Confirm Payment',
                 style: TextStyle(
-                  fontSize: 18, // Increase font size
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
