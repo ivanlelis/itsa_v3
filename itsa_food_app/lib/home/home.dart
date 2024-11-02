@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/pre_sign_up/segmentation.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/edit_address.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';

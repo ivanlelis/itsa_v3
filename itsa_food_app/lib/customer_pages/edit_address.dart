@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api, avoid_print, unused_element, use_build_context_synchronously, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -128,6 +130,29 @@ class _EditAddressState extends State<EditAddress> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-fetch the address when dependencies change (i.e., when the screen is re-displayed)
+    _fetchAddress(_selectedLocation);
+  }
+
+  void _initializeLocation() {
+    if (widget.latitude != null && widget.longitude != null) {
+      _selectedLocation = LatLng(widget.latitude!, widget.longitude!);
+      _currentAddress = widget.userAddress; // Update current address
+    } else if (widget.userAddress.isNotEmpty) {
+      _fetchCoordinatesFromAddress(widget.userAddress);
+    } else {
+      // Fallback default location (San Francisco)
+      _selectedLocation = LatLng(37.7749, -122.4194);
+      _currentAddress = "Fetching address...";
+    }
+
+    // Move the camera to the user's location if the map controller is available
+    _updateMapToUserLocation();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -163,7 +188,6 @@ class _EditAddressState extends State<EditAddress> {
             onMapCreated: (GoogleMapController controller) {
               _controller = controller;
               _setMapStyle();
-              // Only update the camera position after the map is created
               _updateMapToUserLocation();
             },
             onCameraMove: (CameraPosition position) {
@@ -212,11 +236,11 @@ class _EditAddressState extends State<EditAddress> {
               ),
             ),
           Positioned(
-            top: 610,
+            top: 590,
             left: 16,
             right: 16,
             child: Container(
-              height: 120,
+              height: 130,
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -232,7 +256,6 @@ class _EditAddressState extends State<EditAddress> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Displaying the latitude and longitude above the address
                   Text(
                     "Latitude: ${widget.latitude?.toStringAsFixed(6) ?? 'N/A'}, Longitude: ${widget.longitude?.toStringAsFixed(6) ?? 'N/A'}",
                     style: TextStyle(color: Colors.black54),
@@ -248,7 +271,7 @@ class _EditAddressState extends State<EditAddress> {
                       _currentAddress,
                       style: TextStyle(color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
+                      maxLines: 3,
                     ),
                   ),
                 ],

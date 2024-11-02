@@ -39,12 +39,18 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
-  void initState() {
-    super.initState();
-    // Fetch the current user when the widget initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchDataAndUpdateUI();
+  }
+
+  Future<void> _fetchDataAndUpdateUI() async {
+    await Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
+    setState(() {}); // Update the UI after fetching data
+  }
+
+  Future<void> _refreshData() async {
+    await _fetchDataAndUpdateUI();
   }
 
   void _onItemTapped(int index) {
@@ -52,20 +58,22 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
       _selectedIndex = index;
     });
 
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
     // Navigate based on the selected index
     if (index == 1) {
       Navigator.push(
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => Menu(
-            userName: widget.userName,
-            emailAddress: widget.emailAddress,
-            imageUrl: widget.imageUrl,
-            uid: widget.uid,
-            email: widget.email,
-            userAddress: widget.userAddress,
-            latitude: widget.latitude,
-            longitude: widget.longitude,
+            userName: userProvider.currentUser?.userName ?? '',
+            emailAddress: userProvider.currentUser?.emailAddress ?? '',
+            imageUrl: userProvider.currentUser?.imageUrl ?? '',
+            uid: userProvider.currentUser?.uid ?? '',
+            email: userProvider.currentUser?.email ?? '',
+            userAddress: userProvider.currentUser?.userAddress ?? '',
+            latitude: userProvider.currentUser?.latitude ?? 0.0,
+            longitude: userProvider.currentUser?.longitude ?? 0.0,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -78,14 +86,14 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => ProfileView(
-            userName: widget.userName,
-            emailAddress: widget.emailAddress,
-            imageUrl: widget.imageUrl,
-            uid: widget.uid,
-            email: widget.email,
-            userAddress: widget.userAddress,
-            latitude: widget.latitude,
-            longitude: widget.longitude,
+            userName: userProvider.currentUser?.userName ?? '',
+            emailAddress: userProvider.currentUser?.emailAddress ?? '',
+            imageUrl: userProvider.currentUser?.imageUrl ?? '',
+            uid: userProvider.currentUser?.uid ?? '',
+            email: userProvider.currentUser?.email ?? '',
+            userAddress: userProvider.currentUser?.userAddress ?? '',
+            latitude: userProvider.currentUser?.latitude ?? 0.0,
+            longitude: userProvider.currentUser?.longitude ?? 0.0,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -96,15 +104,14 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserProvider>(context).currentUser;
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.currentUser;
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(
         scaffoldKey: _scaffoldKey,
         onCartPressed: () {
-          final user =
-              Provider.of<UserProvider>(context, listen: false).currentUser;
           if (user != null) {
             Navigator.push(
               context,
@@ -125,36 +132,50 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         userName: user?.userName ?? '',
         uid: user?.uid ?? '',
       ),
-      body: Center(
-        child: user != null
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Logged in as: ${widget.userName}',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Email: ${widget.emailAddress}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 10),
-                  // Display the latitude and longitude
-                  Text(
-                    'Latitude: ${widget.latitude.toStringAsFixed(6)}',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                  Text(
-                    'Longitude: ${widget.longitude.toStringAsFixed(6)}',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                ],
-              )
-            : Text(
-                'No user is logged in',
-                style: TextStyle(fontSize: 16),
-              ),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: user != null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Logged in as: ${user.userName}',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Email: ${user.emailAddress}',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Address: ${user.userAddress}',
+                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                        ),
+                        Text(
+                          'Latitude: ${user.latitude.toStringAsFixed(6)}',
+                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                        ),
+                        Text(
+                          'Longitude: ${user.longitude.toStringAsFixed(6)}',
+                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      'No user is logged in',
+                      style: TextStyle(fontSize: 16),
+                    ),
+            ),
+          ),
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
@@ -162,12 +183,12 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
       ),
       drawer: Drawer(
         child: Sidebar(
-          userName: widget.userName,
-          emailAddress: widget.emailAddress,
-          imageUrl: widget.imageUrl,
-          uid: widget.uid,
-          latitude: widget.latitude,
-          longitude: widget.longitude,
+          userName: user?.userName ?? '',
+          emailAddress: user?.emailAddress ?? '',
+          imageUrl: user?.imageUrl ?? '',
+          uid: user?.uid ?? '',
+          latitude: user?.latitude ?? 0.0,
+          longitude: user?.longitude ?? 0.0,
         ),
       ),
     );
