@@ -14,8 +14,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.deepPurple, // Change as needed
       toolbarHeight: 80, // Adjust height if needed
       leading: IconButton(
-        icon: const Icon(Icons.menu,
-            color: Colors.white), // Set burger icon color to white
+        icon: const Icon(Icons.menu),
         onPressed: () {
           scaffoldKey.currentState?.openDrawer(); // Open the drawer (sidebar)
         },
@@ -34,20 +33,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications,
-              color: Colors.white), // Set notification icon color to white
-          onPressed: () {
-            // Handle notification button press
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No new notifications')),
-            );
-          },
-        ),
-        const SizedBox(
-            width: 16), // Add some space between the button and the edge
-      ],
+      actions: const [], // No additional actions for admin app bar
     );
   }
 

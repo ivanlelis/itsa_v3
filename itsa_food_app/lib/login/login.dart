@@ -51,14 +51,14 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Check if the user's email is verified
-      if (userCredential.user!.emailVerified) {
+      if (userCredential.user != null && userCredential.user!.emailVerified) {
         // Fetch user info from Firestore (for non-admin users)
         Map<String, dynamic>? userInfo =
             await firebaseService.getCurrentUserInfo();
 
         // Check user type and navigate accordingly
         if (userInfo != null && userInfo.isNotEmpty) {
-          String userType = userInfo['userType'];
+          String userType = userInfo['userType'] ?? "unknown";
           if (userType == 'customer') {
             Navigator.pushReplacement(
               context,
@@ -70,10 +70,8 @@ class _LoginPageState extends State<LoginPage> {
                   uid: userInfo['uid'] ?? "",
                   email: userInfo['email'] ?? "",
                   userAddress: userInfo['userAddress'] ?? "",
-                  latitude: userInfo['userCoordinates']?['latitude'] ??
-                      0.0, // Access nested latitude
-                  longitude: userInfo['userCoordinates']?['longitude'] ??
-                      0.0, // Access nested longitude
+                  latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
+                  longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
                 ),
               ),
             );
@@ -100,32 +98,26 @@ class _LoginPageState extends State<LoginPage> {
         Map<String, dynamic>? adminInfo =
             await firebaseService.getAdminInfo(email);
 
-        if (adminInfo != null) {
-          // Access the email from the adminInfo map
-          String adminEmail = adminInfo['email']; // Use the correct key here
+        // Access the email from the adminInfo map
+        String adminEmail =
+            adminInfo?['email'] ?? "No Email Provided"; // Add null check
 
-          // Save the admin email in UserProvider
-          Provider.of<UserProvider>(context, listen: false)
-              .setAdminEmail(adminEmail);
+        // Save the admin email in UserProvider
+        Provider.of<UserProvider>(context, listen: false)
+            .setAdminEmail(adminEmail);
 
-          // Navigate to the Admin Home Page
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminHome(
-                userName:
-                    "Admin", // Set default name or get from adminInfo if applicable
-                email: adminEmail, // Use the admin email
-                imageUrl: "", // Placeholder for admin image
-              ),
+        // Navigate to the Admin Home Page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminHome(
+              userName:
+                  "Admin", // Set default name or get from adminInfo if applicable
+              email: adminEmail, // Use the admin email
+              imageUrl: "", // Placeholder for admin image
             ),
-          );
-        } else {
-          setState(() {
-            _errorMessage = "Admin credentials incorrect or not found.";
-            _isLoading = false;
-          });
-        }
+          ),
+        );
       }
     } on FirebaseAuthException catch (e) {
       setState(() {

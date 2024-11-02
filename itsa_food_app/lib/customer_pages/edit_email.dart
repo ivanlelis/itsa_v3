@@ -140,11 +140,10 @@ class _EditEmailState extends State<EditEmail> {
               ),
             SizedBox(height: 20),
             // Display the UID of the current logged-in user
-            if (currentUserUid != null)
-              Text(
-                "Your UID: $currentUserUid",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
+            Text(
+              "Your UID: $currentUserUid",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),

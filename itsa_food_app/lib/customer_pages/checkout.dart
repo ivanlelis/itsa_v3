@@ -226,7 +226,9 @@ class _CheckoutState extends State<Checkout>
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            // Handle address editing
+                          },
                           child: const Text(
                             'Edit',
                             style: TextStyle(color: Colors.green),
@@ -467,22 +469,23 @@ class _CheckoutState extends State<Checkout>
                                                           totalDiscount =
                                                               totalAmountWithDelivery *
                                                                   (discountAmt /
-                                                                      100);
+                                                                      100); // Apply percentage discount
                                                         } else if (discountType ==
                                                             'Fixed') {
                                                           totalDiscount =
-                                                              discountAmt;
+                                                              discountAmt; // Use fixed discount directly
                                                         }
 
                                                         // Update total amount with the discount
                                                         totalAmountWithDelivery -=
-                                                            totalDiscount;
+                                                            totalDiscount; // Subtract the discount from the total amount
 
                                                         // Call the function to handle voucher updates
-                                                        _updateVoucher(data);
+                                                        _updateVoucher(
+                                                            data); // This will manage the total amount with the discount
                                                       });
                                                       Navigator.of(context)
-                                                          .pop();
+                                                          .pop(); // Close the dialog
                                                     },
                                                   ),
                                                 );
@@ -519,6 +522,7 @@ class _CheckoutState extends State<Checkout>
                   height: 16,
                 ),
 
+                // Cart Items section
                 Card(
                   elevation: 4,
                   margin:
@@ -529,72 +533,46 @@ class _CheckoutState extends State<Checkout>
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap:
+                          true, // Allow ListView to take the height of its children
+                      physics:
+                          const NeverScrollableScrollPhysics(), // Disable scrolling
                       itemCount: cartItems.length,
                       itemBuilder: (context, index) {
-                        final item = cartItems[index]; // Get the current item
-
-                        return GestureDetector(
-                          onTap: () {
-                            _buildTotalAndOrderButton(item); // Pass item here
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) =>
-                                        ConfirmPayment(
-                                  totalAmountWithDelivery:
-                                      totalAmountWithDelivery,
-                                  productName: item['productName'],
-                                  sizeQuantity: item['sizeQuantity'],
-                                  paymentMethod: selectedPaymentMethod == 0
-                                      ? 'Cash'
-                                      : 'GCash',
-                                  deliveryType: selectedDeliveryType == 0
-                                      ? 'Fast'
-                                      : 'Standard',
-                                  voucherCode: selectedVoucherCode ?? '',
+                        final item = cartItems[index];
+                        return Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['productName'], // Update this line
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
-                            );
-                          },
-                          child: Card(
-                            elevation: 4,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['productName'], // Product name
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  '₱${item['total'].toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orangeAccent,
                                   ),
-                                  const SizedBox(height: 8.0),
-                                  Text(
-                                    'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                  const SizedBox(height: 8.0),
-                                  Text(
-                                    '₱${item['total'].toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orangeAccent,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         );
@@ -875,6 +853,7 @@ class _CheckoutState extends State<Checkout>
                 ),
                 const SizedBox(height: 16),
 
+                // Cart Items section
                 Card(
                   elevation: 4,
                   margin:
@@ -885,72 +864,46 @@ class _CheckoutState extends State<Checkout>
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap:
+                          true, // Allow ListView to take the height of its children
+                      physics:
+                          const NeverScrollableScrollPhysics(), // Disable scrolling
                       itemCount: cartItems.length,
                       itemBuilder: (context, index) {
-                        final item = cartItems[index]; // Get the current item
-
-                        return GestureDetector(
-                          onTap: () {
-                            _buildTotalAndOrderButton(item); // Pass item here
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) =>
-                                        ConfirmPayment(
-                                  totalAmountWithDelivery:
-                                      totalAmountWithDelivery,
-                                  productName: item['productName'],
-                                  sizeQuantity: item['sizeQuantity'],
-                                  paymentMethod: selectedPaymentMethod == 0
-                                      ? 'Cash'
-                                      : 'GCash',
-                                  deliveryType: selectedDeliveryType == 0
-                                      ? 'Fast'
-                                      : 'Standard',
-                                  voucherCode: selectedVoucherCode ?? '',
+                        final item = cartItems[index];
+                        return Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['productName'], // Update this line
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
-                            );
-                          },
-                          child: Card(
-                            elevation: 4,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['productName'], // Product name
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  '₱${item['total'].toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orangeAccent,
                                   ),
-                                  const SizedBox(height: 8.0),
-                                  Text(
-                                    'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                  const SizedBox(height: 8.0),
-                                  Text(
-                                    '₱${item['total'].toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orangeAccent,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         );
@@ -969,13 +922,7 @@ class _CheckoutState extends State<Checkout>
     );
   }
 
-  // Update _buildTotalAndOrderButton to accept an optional parameter
-  Widget _buildTotalAndOrderButton([Map<String, dynamic>? selectedCartItem]) {
-    // You can check if selectedCartItem is null and handle it accordingly.
-    if (selectedCartItem != null) {
-      // Do something with selectedCartItem if it's provided
-    }
-
+  Widget _buildTotalAndOrderButton() {
     return Column(
       children: [
         Container(
@@ -1005,20 +952,42 @@ class _CheckoutState extends State<Checkout>
         ),
         GestureDetector(
           onTap: () {
-            // Navigate directly to ConfirmPayment without any transition
+            // Collect all product names from the cart
+            List<String> productNames =
+                cartItems.map((item) => item['productName'] as String).toList();
+
+            // Define delivery type based on selectedDeliveryType (int)
+            String deliveryType;
+            switch (selectedDeliveryType) {
+              case 0:
+                deliveryType = 'Fast';
+                break;
+              case 1:
+                deliveryType = 'Standard';
+                break;
+              default:
+                deliveryType = 'Unknown Delivery';
+            }
+
+            // Define payment method based on selectedPaymentMethod (int)
+            String paymentMethod;
+            if (selectedPaymentMethod == 0) {
+              paymentMethod = 'Cash'; // Assuming 0 for Cash
+            } else if (selectedPaymentMethod == 1) {
+              paymentMethod = 'GCash'; // Assuming 1 for GCash
+            } else {
+              paymentMethod = 'Unknown'; // Fallback if neither is selected
+            }
+
+            // Navigate to ConfirmPayment with all product names, delivery type, and payment method
             Navigator.push(
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
                     ConfirmPayment(
-                  totalAmountWithDelivery: totalAmountWithDelivery,
-                  productName: selectedCartItem?['productName'] ??
-                      '', // Safe access in case selectedCartItem is null
-                  sizeQuantity:
-                      selectedCartItem?['sizeQuantity'] ?? '', // Safe access
-                  paymentMethod: selectedPaymentMethod == 0 ? 'Cash' : 'GCash',
-                  deliveryType: selectedDeliveryType == 0 ? 'Fast' : 'Standard',
-                  voucherCode: selectedVoucherCode ?? '',
+                  productNames: productNames,
+                  deliveryType: deliveryType,
+                  paymentMethod: paymentMethod,
                 ),
                 transitionDuration: Duration.zero,
                 reverseTransitionDuration: Duration.zero,

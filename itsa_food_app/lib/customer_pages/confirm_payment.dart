@@ -1,78 +1,45 @@
 // ignore_for_file: library_private_types_in_public_api
 
-import 'dart:io';
+import 'dart:io'; // Import this to use the File class
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
-import 'package:itsa_food_app/user_provider/user_provider.dart';
 
 class ConfirmPayment extends StatefulWidget {
-  final double totalAmountWithDelivery;
-  final String productName;
-  final String sizeQuantity;
-  final String paymentMethod;
-  final String deliveryType;
-  final String voucherCode;
+  final List<String> productNames;
+  final String deliveryType; // New parameter for delivery type
+  final String paymentMethod; // New parameter for payment method
+  final String?
+      selectedVoucherCode; // Optional parameter for selected voucher code
 
   const ConfirmPayment({
-    super.key,
-    required this.totalAmountWithDelivery,
-    required this.productName,
-    required this.sizeQuantity,
-    required this.paymentMethod,
+    Key? key,
+    required this.productNames,
     required this.deliveryType,
-    required this.voucherCode,
-  });
+    required this.paymentMethod,
+    this.selectedVoucherCode,
+  }) : super(key: key);
 
   @override
   _ConfirmPaymentState createState() => _ConfirmPaymentState();
 }
 
 class _ConfirmPaymentState extends State<ConfirmPayment> {
-  XFile? _image;
-  final ImagePicker _picker = ImagePicker();
+  XFile? _image; // Store the selected image
+  final ImagePicker _picker = ImagePicker(); // Image picker instance
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     setState(() {
-      _image = image;
+      _image = image; // Update the image state
     });
   }
 
-  void _submitPayment() async {
-    final currentUser =
-        Provider.of<UserProvider>(context, listen: false).currentUser;
-
-    if (currentUser != null && _image != null) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('customer')
-            .doc(currentUser.uid)
-            .collection('orders')
-            .add({
-          'timestamp': FieldValue.serverTimestamp(),
-          'status': 'pending',
-          'imagePath': _image!.path,
-          'totalAmountWithDelivery': widget.totalAmountWithDelivery,
-          'productName': widget.productName,
-          'sizeQuantity': widget.sizeQuantity,
-          'paymentMethod': widget.paymentMethod,
-          'deliveryType': widget.deliveryType,
-          'voucherCode': widget.voucherCode,
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Payment submitted successfully!')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error submitting payment: $e')),
-        );
-      }
-    } else if (currentUser == null) {
+  void _submitPayment() {
+    // Handle payment submission logic here
+    if (_image != null) {
+      // Implement your submission logic
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No user is currently logged in.')),
+        SnackBar(content: Text('Payment submitted successfully!')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +53,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Confirm Payment'),
-        backgroundColor: Color(0xFF2E0B0D),
+        backgroundColor: Color(0xFF2E0B0D), // Main color
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -102,6 +69,45 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               ),
             ),
             SizedBox(height: 20),
+            // Display all product names
+            for (String productName in widget.productNames)
+              Text(
+                'Product: $productName',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.black,
+                ),
+              ),
+            SizedBox(
+                height: 20), // Space before delivery type and payment method
+            Text(
+              'Delivery Type: ${widget.deliveryType}', // Display delivery type
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              'Payment Method: ${widget.paymentMethod}', // Display payment method
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
+                color: Colors.black,
+              ),
+            ),
+            if (widget.selectedVoucherCode != null) ...[
+              Text(
+                'Selected Voucher: ${widget.selectedVoucherCode}', // Display selected voucher code
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+            SizedBox(height: 20), // Space before the image container
             GestureDetector(
               onTap: _pickImage,
               child: Container(
@@ -128,55 +134,23 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                       ),
               ),
             ),
-            SizedBox(height: 20),
-            Text(
-              'Total Amount: ₱${widget.totalAmountWithDelivery.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E0B0D),
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Product Name: ${widget.productName}',
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Size/Quantity: ${widget.sizeQuantity}',
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Payment Method: ${widget.paymentMethod}',
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Delivery Type: ${widget.deliveryType}',
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Voucher Code: ${widget.voucherCode}',
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-            Spacer(),
+            Spacer(), // Push the button to the bottom
             ElevatedButton(
               onPressed: _submitPayment,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2E0B0D),
-                padding: EdgeInsets.symmetric(vertical: 20),
+                backgroundColor: Color(0xFF2E0B0D), // Main color for button
+                padding: EdgeInsets.symmetric(
+                    vertical: 20), // Increase vertical padding
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                minimumSize: Size(double.infinity, 56),
+                minimumSize:
+                    Size(double.infinity, 56), // Make the button bigger
               ),
               child: Text(
                 'Confirm Payment',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 18, // Increase font size
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
