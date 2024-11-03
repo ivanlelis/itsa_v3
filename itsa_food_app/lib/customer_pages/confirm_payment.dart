@@ -1,49 +1,85 @@
-// ignore_for_file: library_private_types_in_public_api
-
-import 'dart:io'; // Import this to use the File class
+import 'dart:io';
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<String> productNames;
-  final String deliveryType; // New parameter for delivery type
-  final String paymentMethod; // New parameter for payment method
-  final String?
-      selectedVoucherCode; // Optional parameter for selected voucher code
+  final String deliveryType;
+  final String paymentMethod;
+  final String voucherCode;
+  final double totalAmountWithDelivery;
+  final String uid;
 
   const ConfirmPayment({
-    Key? key,
+    super.key,
     required this.productNames,
     required this.deliveryType,
     required this.paymentMethod,
-    this.selectedVoucherCode,
-  }) : super(key: key);
+    required this.voucherCode,
+    required this.totalAmountWithDelivery,
+    required this.uid,
+  });
 
   @override
   _ConfirmPaymentState createState() => _ConfirmPaymentState();
 }
 
 class _ConfirmPaymentState extends State<ConfirmPayment> {
-  XFile? _image; // Store the selected image
-  final ImagePicker _picker = ImagePicker(); // Image picker instance
+  XFile? _image;
+  final ImagePicker _picker = ImagePicker();
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     setState(() {
-      _image = image; // Update the image state
+      _image = image;
     });
   }
 
-  void _submitPayment() {
-    // Handle payment submission logic here
-    if (_image != null) {
-      // Implement your submission logic
+  String _generateOrderID() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return List.generate(8, (index) => chars[Random().nextInt(chars.length)])
+        .join();
+  }
+
+  Future<void> _submitPayment() async {
+    // Get the current logged-in user's document ID
+    final user = _auth.currentUser;
+    if (user == null) return; // Exit if no user is logged in
+
+    // Generate a unique order ID
+    final orderID = _generateOrderID();
+
+    // Create order details
+    final orderData = {
+      'productNames': widget.productNames,
+      'deliveryType': widget.deliveryType,
+      'paymentMethod': widget.paymentMethod,
+      'voucherCode': widget.voucherCode,
+      'totalAmountWithDelivery': widget.totalAmountWithDelivery,
+      'orderID': orderID,
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+
+    try {
+      // Create "orders" subcollection and add the order document
+      await _firestore
+          .collection('customer')
+          .doc(widget.uid) // Assuming the document ID is the user's email
+          .collection('orders')
+          .doc(orderID) // Name the document with the order ID
+          .set(orderData);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Payment submitted successfully!')),
       );
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please attach proof of payment!')),
+        SnackBar(content: Text('Failed to submit payment. Try again!')),
       );
     }
   }
@@ -53,7 +89,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Confirm Payment'),
-        backgroundColor: Color(0xFF2E0B0D), // Main color
+        backgroundColor: Color(0xFF2E0B0D),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -69,45 +105,35 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               ),
             ),
             SizedBox(height: 20),
-            // Display all product names
             for (String productName in widget.productNames)
               Text(
                 'Product: $productName',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.black,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.black),
               ),
-            SizedBox(
-                height: 20), // Space before delivery type and payment method
+            SizedBox(height: 20),
             Text(
-              'Delivery Type: ${widget.deliveryType}', // Display delivery type
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.normal,
-                color: Colors.black,
-              ),
+              'Delivery Type: ${widget.deliveryType}',
+              style: TextStyle(fontSize: 16, color: Colors.black),
             ),
             Text(
-              'Payment Method: ${widget.paymentMethod}', // Display payment method
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.normal,
-                color: Colors.black,
-              ),
+              'Payment Method: ${widget.paymentMethod}',
+              style: TextStyle(fontSize: 16, color: Colors.black),
             ),
-            if (widget.selectedVoucherCode != null) ...[
+            if (widget.voucherCode.isNotEmpty)
               Text(
-                'Selected Voucher: ${widget.selectedVoucherCode}', // Display selected voucher code
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.black,
-                ),
+                'Selected Voucher: ${widget.voucherCode}',
+                style: TextStyle(fontSize: 16, color: Colors.black),
               ),
-            ],
-            SizedBox(height: 20), // Space before the image container
+            SizedBox(height: 20),
+            Text(
+              'Total Amount with Delivery: ₱${widget.totalAmountWithDelivery.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            SizedBox(height: 20),
             GestureDetector(
               onTap: _pickImage,
               child: Container(
@@ -120,40 +146,31 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 ),
                 child: _image == null
                     ? Center(
-                        child: Text(
-                          'Tap to attach image',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      )
+                        child: Text('Tap to attach image',
+                            style: TextStyle(color: Colors.grey[600])))
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          File(_image!.path),
-                          fit: BoxFit.cover,
-                        ),
+                        child:
+                            Image.file(File(_image!.path), fit: BoxFit.cover),
                       ),
               ),
             ),
-            Spacer(), // Push the button to the bottom
+            Spacer(),
             ElevatedButton(
               onPressed: _submitPayment,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2E0B0D), // Main color for button
-                padding: EdgeInsets.symmetric(
-                    vertical: 20), // Increase vertical padding
+                backgroundColor: Color(0xFF2E0B0D),
+                padding: EdgeInsets.symmetric(vertical: 20),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                minimumSize:
-                    Size(double.infinity, 56), // Make the button bigger
+                    borderRadius: BorderRadius.circular(12)),
+                minimumSize: Size(double.infinity, 56),
               ),
               child: Text(
                 'Confirm Payment',
                 style: TextStyle(
-                  fontSize: 18, // Increase font size
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
             ),
           ],

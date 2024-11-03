@@ -972,14 +972,17 @@ class _CheckoutState extends State<Checkout>
             // Define payment method based on selectedPaymentMethod (int)
             String paymentMethod;
             if (selectedPaymentMethod == 0) {
-              paymentMethod = 'Cash'; // Assuming 0 for Cash
+              paymentMethod = 'Cash';
             } else if (selectedPaymentMethod == 1) {
-              paymentMethod = 'GCash'; // Assuming 1 for GCash
+              paymentMethod = 'GCash';
             } else {
-              paymentMethod = 'Unknown'; // Fallback if neither is selected
+              paymentMethod = 'Unknown';
             }
 
-            // Navigate to ConfirmPayment with all product names, delivery type, and payment method
+            // Get the selected voucher code, or use a default if none is selected
+            String voucherCode = selectedVoucherCode ?? 'No Voucher';
+
+            // Navigate to ConfirmPayment with all required information
             Navigator.push(
               context,
               PageRouteBuilder(
@@ -988,6 +991,9 @@ class _CheckoutState extends State<Checkout>
                   productNames: productNames,
                   deliveryType: deliveryType,
                   paymentMethod: paymentMethod,
+                  voucherCode: voucherCode,
+                  totalAmountWithDelivery: totalAmountWithDelivery,
+                  uid: widget.uid,
                 ),
                 transitionDuration: Duration.zero,
                 reverseTransitionDuration: Duration.zero,
