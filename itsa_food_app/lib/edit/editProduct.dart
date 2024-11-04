@@ -11,6 +11,7 @@ class ProductEditModal extends StatefulWidget {
   final String productType;
   final Map<String, String> prices;
   final String imageUrl; // Add imageUrl to hold the current product image URL
+  final String productID;
 
   const ProductEditModal({
     super.key,
@@ -18,6 +19,7 @@ class ProductEditModal extends StatefulWidget {
     required this.productType,
     required this.prices,
     required this.imageUrl, // Add imageUrl to constructor
+    required this.productID,
   });
 
   @override
@@ -48,20 +50,20 @@ class _ProductEditModalState extends State<ProductEditModal> {
     CollectionReference productsCollection =
         FirebaseFirestore.instance.collection('products');
     DocumentReference productDoc = productsCollection
-        .doc(widget.productName); // Use old product name for deletion
+        .doc(widget.productID); // Use productID for the document reference
 
     String? imageUrl;
 
     // Upload new image if selected
     if (_selectedImage != null) {
       imageUrl = await _uploadImageToFirebase(
-          _selectedImage!, newProductName); // Pass both arguments
+          _selectedImage!, widget.productID); // Use productID as the filename
     } else {
       imageUrl = widget
           .imageUrl; // Keep the existing image URL if no new image is selected
     }
 
-    // Create new product data based on the product type
+    // Create updated product data
     Map<String, dynamic> newProductData = {
       'productName': newProductName,
       'productType': newProductType,
@@ -88,11 +90,8 @@ class _ProductEditModalState extends State<ProductEditModal> {
     }
 
     try {
-      // Delete the old document first
-      await productDoc.delete();
-
-      // Create a new document with the updated data
-      await productsCollection.doc(newProductName).set(newProductData);
+      // Update the existing document with the new data
+      await productDoc.set(newProductData, SetOptions(merge: true));
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Product updated successfully!')),
@@ -106,10 +105,9 @@ class _ProductEditModalState extends State<ProductEditModal> {
     }
   }
 
-  Future<String?> _uploadImageToFirebase(File image, String productName) async {
+  Future<String?> _uploadImageToFirebase(File image, String productID) async {
     try {
-      String fileName =
-          '$productName.jpg'; // Use productName as the filename with an appropriate extension
+      String fileName = '$productID.jpg'; // Use productID as the filename
 
       // Set the correct path to the existing folder
       Reference storageRef = FirebaseStorage.instance.ref().child(

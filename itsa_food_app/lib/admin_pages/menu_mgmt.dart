@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:itsa_food_app/edit/editProduct.dart';
+import 'dart:math'; // Import for random number generation
 
 class MenuManagement extends StatefulWidget {
   const MenuManagement({super.key});
@@ -133,6 +134,8 @@ class _MenuManagementState extends State<MenuManagement> {
                         productType: product['productType'],
                         prices: _getProductPrices(product),
                         imageUrl: product['imageUrl'], // Pass the imageUrl
+                        productID: product[
+                            'productID'], // Add this line to pass the productID
                       );
                     },
                   );
@@ -216,11 +219,10 @@ class _AddProductModalState extends State<AddProductModal> {
   }
 
   // Method to upload the selected image to Firebase Storage
-  Future<String?> _uploadImageToFirebase() async {
+  Future<String?> _uploadImageToFirebase(String productID) async {
     if (_selectedImage == null) return null;
 
-    final fileName = _productNameController.text.trim();
-    final destination = 'product_image/$fileName.jpg';
+    final destination = 'product_image/$productID.jpg';
 
     try {
       final ref = FirebaseStorage.instance.ref(destination);
@@ -231,6 +233,16 @@ class _AddProductModalState extends State<AddProductModal> {
       print('Error uploading image: $e');
       return null;
     }
+  }
+
+  // Method to generate a random productID
+  String _generateProductID() {
+    const characters =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random();
+    final randomString = List.generate(
+        6, (index) => characters[random.nextInt(characters.length)]).join();
+    return 'itsa-$randomString';
   }
 
   // Method to save product details to Firestore
@@ -252,8 +264,11 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
-    // Upload image to Firebase Storage
-    final imageUrl = await _uploadImageToFirebase();
+    // Generate productID
+    final productID = _generateProductID();
+
+    // Upload image to Firebase Storage with productID as the filename
+    final imageUrl = await _uploadImageToFirebase(productID);
     if (imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to upload image. Please try again.')),
@@ -261,8 +276,9 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
-    // Create a document with the product name as the ID
+    // Create a document with the productID as the ID
     final productData = {
+      'productID': productID,
       'productName': productName,
       'productType': _selectedProductType,
       'imageUrl': imageUrl, // Store the image URL in Firestore
@@ -287,10 +303,10 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     }
 
-    // Save to Firestore
+    // Save to Firestore using the productID as the document ID
     await FirebaseFirestore.instance
         .collection('products')
-        .doc(productName) // Document ID is the product name
+        .doc(productID) // Document ID is the generated productID
         .set(productData);
 
     Navigator.pop(context); // Close the modal after saving
@@ -411,7 +427,8 @@ class ProductCard extends StatelessWidget {
   final String productName;
   final String productType;
   final Map<String, String> prices;
-  final String imageUrl;
+  final String imageUrl; // Directly using the provided imageUrl
+  final String productID;
 
   const ProductCard({
     super.key,
@@ -419,20 +436,10 @@ class ProductCard extends StatelessWidget {
     required this.productType,
     required this.prices,
     required this.imageUrl,
+    required this.productID,
   });
 
-  Future<String> _getImageUrl() async {
-    final Reference ref =
-        FirebaseStorage.instance.ref().child('product_image/$productName.jpg');
-    try {
-      final String downloadUrl = await ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      return ''; // Return an empty string if the image doesn't exist
-    }
-  }
-
-  void _showEditProductModal(BuildContext context) {
+  void _showEditProductModal(BuildContext context, String productID) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -440,13 +447,14 @@ class ProductCard extends StatelessWidget {
           productName: productName,
           productType: productType,
           prices: prices,
-          imageUrl: imageUrl, // Pass all required parameters
+          imageUrl: imageUrl,
+          productID: productID, // Pass the productID
         );
       },
     );
   }
 
-  Future<void> _deleteProduct(BuildContext context) async {
+  Future<void> _deleteProduct(BuildContext context, String productID) async {
     // Show confirmation dialog
     bool? confirmed = await showDialog<bool>(
       context: context,
@@ -469,24 +477,36 @@ class ProductCard extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      // Delete from Firestore
+      // Delete from Firestore using the productID
       await FirebaseFirestore.instance
           .collection('products') // Update with your collection name
-          .doc(productName) // Assuming productName is the document ID
+          .doc(productID) // Use productID as the document ID
           .delete();
 
-      // Delete image from Firebase Storage
-      await _deleteImageFromFirebaseStorage(productName);
+      // Delete image from Firebase Storage using the productID
+      await _deleteImageFromFirebaseStorage(productID);
     }
   }
 
-  Future<void> _deleteImageFromFirebaseStorage(String productName) async {
+  Future<void> _deleteImageFromFirebaseStorage(String productID) async {
     try {
-      final Reference storageRef = FirebaseStorage.instance
-          .ref()
-          .child('product_image/$productName.jpg');
+      final Reference storageRef = FirebaseStorage.instance.ref().child(
+          'product_image/$productID.jpg'); // Use productID to locate the image
       await storageRef.delete();
-    } catch (e) {}
+    } catch (e) {
+      print('Error deleting image from Firebase Storage: $e');
+    }
+  }
+
+  Future<String> _getImageUrl() async {
+    final Reference ref =
+        FirebaseStorage.instance.ref().child('product_image/$productID.jpg');
+    try {
+      final String downloadUrl = await ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      return ''; // Return an empty string if the image doesn't exist
+    }
   }
 
   @override
@@ -529,12 +549,12 @@ class ProductCard extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () =>
-                  _showEditProductModal(context), // Open edit modal
+                  _showEditProductModal(context, productID), // Pass productID
               child: const Text('Edit Product'),
             ),
             ElevatedButton(
               onPressed: () =>
-                  _deleteProduct(context), // Trigger delete function
+                  _deleteProduct(context, productID), // Pass productID
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red, // Set color to red
               ),

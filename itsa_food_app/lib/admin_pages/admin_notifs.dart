@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminNotifs extends StatefulWidget {
+  const AdminNotifs({super.key});
+
   @override
   _AdminNotifsState createState() => _AdminNotifsState();
 }
@@ -105,7 +107,7 @@ class OrderCard extends StatelessWidget {
   final DateTime timestamp;
 
   const OrderCard({
-    Key? key,
+    super.key,
     required this.orderId,
     required this.userName,
     required this.deliveryType,
@@ -114,7 +116,7 @@ class OrderCard extends StatelessWidget {
     required this.totalAmount,
     required this.productNames,
     required this.timestamp,
-  }) : super(key: key);
+  });
 
   void _showOrderDetails(BuildContext context) {
     showDialog(
@@ -139,7 +141,7 @@ class OrderCard extends StatelessWidget {
               Text('Timestamp: ${timestamp.toLocal()}'),
               SizedBox(height: 8),
               Text('Products:'),
-              ...productNames.map((product) => Text('- $product')).toList(),
+              ...productNames.map((product) => Text('- $product')),
             ],
           ),
           actions: [
@@ -175,11 +177,11 @@ class OrderCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: ElevatedButton(
                 onPressed: () => _showOrderDetails(context),
-                child: Text('View'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(
                       0xFF2E0B0D), // Updated from `primary` to `backgroundColor`
                 ),
+                child: Text('View'),
               ),
             )
           ],

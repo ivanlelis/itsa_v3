@@ -1,22 +1,21 @@
-// ignore_for_file: library_private_types_in_public_api
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/widgets/admin_appbar.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
-import 'package:itsa_food_app/widgets/admin_sidebar.dart'; // Import the sidebar widget
+import 'package:itsa_food_app/widgets/admin_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
-  final String email; // Add email here
+  final String email;
   final String imageUrl;
 
   const AdminHome({
     super.key,
-    this.userName = "Admin", // Default username for Admin
-    required this.email, // Make email a required parameter
-    this.imageUrl = '', // Default empty string for imageUrl
+    this.userName = "Admin",
+    required this.email,
+    this.imageUrl = '',
   });
 
   @override
@@ -24,29 +23,64 @@ class AdminHome extends StatefulWidget {
 }
 
 class _AdminHomeState extends State<AdminHome> {
-  int _selectedIndex = 0; // Keep track of the selected index
+  int _selectedIndex = 0;
+  String? mostOrderedProduct;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMostOrderedProduct();
+  }
+
+  Future<void> fetchMostOrderedProduct() async {
+    Map<String, int> productCount = {};
+
+    // Fetch all customers
+    QuerySnapshot customerSnapshot =
+        await FirebaseFirestore.instance.collection('customer').get();
+
+    for (var customerDoc in customerSnapshot.docs) {
+      // Fetch each customer's orders
+      QuerySnapshot orderSnapshot =
+          await customerDoc.reference.collection('orders').get();
+
+      for (var orderDoc in orderSnapshot.docs) {
+        List<dynamic> products = orderDoc['productNames'] ?? [];
+        for (var product in products) {
+          productCount[product] = (productCount[product] ?? 0) + 1;
+        }
+      }
+    }
+
+    // Find the product with the highest count
+    String? mostOrdered;
+    int maxCount = 0;
+    productCount.forEach((product, count) {
+      if (count > maxCount) {
+        mostOrdered = product;
+        maxCount = count;
+      }
+    });
+
+    setState(() {
+      mostOrderedProduct = mostOrdered;
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-
-    // Navigation logic based on index
   }
 
   void _logout() {
-    // Implement your logout logic here
-    // For example, FirebaseAuth.instance.signOut();
-    Navigator.pushReplacementNamed(context, '/home'); // Navigate to home.dart
+    Navigator.pushReplacementNamed(context, '/home');
   }
-
-  final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>(); // Non-const key
 
   @override
   Widget build(BuildContext context) {
-    final adminEmail =
-        Provider.of<UserProvider>(context).adminEmail; // Retrieve admin email
+    final adminEmail = Provider.of<UserProvider>(context).adminEmail;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -71,10 +105,17 @@ class _AdminHomeState extends State<AdminHome> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Email: $adminEmail', // Use email from UserProvider
+                'Email: $adminEmail',
                 style: const TextStyle(fontSize: 16),
               ),
-              // Other UI elements...
+              const SizedBox(height: 20),
+              if (mostOrderedProduct != null)
+                Text(
+                  "What's the most ordered product: $mostOrderedProduct",
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              const SizedBox(height: 10),
             ],
           ),
         ),
