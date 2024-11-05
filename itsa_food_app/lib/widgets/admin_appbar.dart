@@ -6,9 +6,9 @@ class AdminAppBar extends StatefulWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
 
   const AdminAppBar({
-    Key? key,
+    super.key,
     required this.scaffoldKey,
-  }) : super(key: key);
+  });
 
   @override
   _AdminAppBarState createState() => _AdminAppBarState();

@@ -50,6 +50,7 @@ class _AdminNotifsState extends State<AdminNotifs> {
             productNames: List<String>.from(orderData['productNames'] ?? []),
             timestamp: (orderData['timestamp'] as Timestamp?)?.toDate() ??
                 DateTime.now(),
+            orderType: orderData['orderType'] ?? 'N/A', // Fetch orderType
           ),
         );
       }
@@ -105,6 +106,7 @@ class OrderCard extends StatelessWidget {
   final double totalAmount;
   final List<String> productNames;
   final DateTime timestamp;
+  final String orderType; // Added orderType property
 
   const OrderCard({
     super.key,
@@ -116,6 +118,7 @@ class OrderCard extends StatelessWidget {
     required this.totalAmount,
     required this.productNames,
     required this.timestamp,
+    required this.orderType, // Initialize orderType
   });
 
   void _showOrderDetails(BuildContext context) {
@@ -134,9 +137,11 @@ class OrderCard extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text('Order ID: $orderId'),
+              Text('User: $userName'),
               Text('Delivery Type: $deliveryType'),
               Text('Payment Method: $paymentMethod'),
               Text('Voucher Code: $voucherCode'),
+              Text('Order Type: $orderType'), // Displaying orderType
               Text('Total Amount: ₱${totalAmount.toStringAsFixed(2)}'),
               Text('Timestamp: ${timestamp.toLocal()}'),
               SizedBox(height: 8),
@@ -178,8 +183,7 @@ class OrderCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => _showOrderDetails(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(
-                      0xFF2E0B0D), // Updated from `primary` to `backgroundColor`
+                  backgroundColor: Color(0xFF2E0B0D),
                 ),
                 child: Text('View'),
               ),

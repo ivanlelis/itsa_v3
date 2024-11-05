@@ -12,6 +12,7 @@ class ConfirmPayment extends StatefulWidget {
   final String voucherCode;
   final double totalAmountWithDelivery;
   final String uid;
+  final String orderType;
 
   const ConfirmPayment({
     super.key,
@@ -21,6 +22,7 @@ class ConfirmPayment extends StatefulWidget {
     required this.voucherCode,
     required this.totalAmountWithDelivery,
     required this.uid,
+    required this.orderType,
   });
 
   @override
@@ -54,7 +56,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     // Generate a unique order ID
     final orderID = _generateOrderID();
 
-    // Create order details
+    // Create order details with orderType included
     final orderData = {
       'productNames': widget.productNames,
       'deliveryType': widget.deliveryType,
@@ -62,6 +64,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       'voucherCode': widget.voucherCode,
       'totalAmountWithDelivery': widget.totalAmountWithDelivery,
       'orderID': orderID,
+      'orderType': widget.orderType, // Added orderType field
       'timestamp': FieldValue.serverTimestamp(),
     };
 
@@ -74,14 +77,52 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .doc(orderID) // Name the document with the order ID
           .set(orderData);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment submitted successfully!')),
-      );
+      // Delete the entire "cart" subcollection after order submission
+      await _deleteCartSubcollection();
+
+      // Show the success modal
+      _showSuccessModal();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to submit payment. Try again!')),
       );
     }
+  }
+
+  Future<void> _deleteCartSubcollection() async {
+    // Get the cart subcollection reference
+    final cartRef =
+        _firestore.collection('customer').doc(widget.uid).collection('cart');
+
+    // Get all documents in the cart subcollection
+    final cartDocs = await cartRef.get();
+
+    // Delete each document in the cart subcollection
+    for (var doc in cartDocs.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  void _showSuccessModal() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Payment Successful'),
+          content: Text('Payment successful. Order is now processing.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the modal
+                Navigator.of(context)
+                    .pushReplacementNamed('/menu'); // Navigate to Menu
+              },
+              child: Text('Go Back to Menu'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -124,6 +165,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 'Selected Voucher: ${widget.voucherCode}',
                 style: TextStyle(fontSize: 16, color: Colors.black),
               ),
+            SizedBox(height: 20),
+            Text(
+              'Order Type: ${widget.orderType}', // Displaying orderType
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
             SizedBox(height: 20),
             Text(
               'Total Amount with Delivery: ₱${widget.totalAmountWithDelivery.toStringAsFixed(2)}',

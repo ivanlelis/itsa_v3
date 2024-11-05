@@ -5,6 +5,8 @@ import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
+import 'package:itsa_food_app/services/productAnalytics.dart';
+import 'package:itsa_food_app/services/order_chart.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
@@ -26,10 +28,13 @@ class _AdminHomeState extends State<AdminHome> {
   int _selectedIndex = 0;
   String? mostOrderedProduct;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late ProductAnalyticsService
+      _analyticsService; // Declare the analytics service
 
   @override
   void initState() {
     super.initState();
+    _analyticsService = ProductAnalyticsService(); // Initialize it
     fetchMostOrderedProduct();
   }
 
@@ -66,16 +71,6 @@ class _AdminHomeState extends State<AdminHome> {
     setState(() {
       mostOrderedProduct = mostOrdered;
     });
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _logout() {
-    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
@@ -116,6 +111,42 @@ class _AdminHomeState extends State<AdminHome> {
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               const SizedBox(height: 10),
+              // Display product order counts
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Product Order Counts',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      StreamBuilder<Map<String, List<Map<String, dynamic>>>>(
+                        stream: _analyticsService.productOrderCountsStream,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return const Text("Error loading product counts");
+                          } else if (!snapshot.hasData ||
+                              snapshot.data!.isEmpty) {
+                            return const Text("No product data available");
+                          } else {
+                            return ProductOrderLineChart(
+                                productOrderHistory: snapshot.data!);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -126,5 +157,21 @@ class _AdminHomeState extends State<AdminHome> {
         onItemTapped: _onItemTapped,
       ),
     );
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void _logout() {
+    Navigator.pushReplacementNamed(context, '/home');
+  }
+
+  @override
+  void dispose() {
+    _analyticsService.dispose(); // Dispose of the analytics service
+    super.dispose();
   }
 }

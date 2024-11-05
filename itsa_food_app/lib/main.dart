@@ -7,6 +7,7 @@ import 'package:itsa_food_app/home/home.dart';
 import 'package:itsa_food_app/login/login.dart'; // Import your LoginPage
 import 'package:itsa_food_app/user_provider/user_provider.dart'; // Import your UserProvider
 import 'package:provider/provider.dart'; // Import provider package
+import 'package:itsa_food_app/customer_pages/menu.dart'; // Import Menu page
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,22 @@ class MyApp extends StatelessWidget {
             longitude: args?['longitude'] ?? 0.0, // Default to 0.0 if null
           );
         },
+        '/menu': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+
+          return Menu(
+            userName: args?['userName'] ?? '',
+            emailAddress: args?['emailAddress'] ?? '',
+            email: args?['email'] ?? '',
+            uid: args?['uid'] ?? '',
+            userAddress: args?['userAddress'] ?? '',
+            latitude: args?['latitude'] ?? 0.0,
+            longitude: args?['longitude'] ?? 0.0,
+            imageUrl:
+                args?['imageUrl'] ?? '', // Provide a default value if necessary
+          );
+        }, // Define the menu route
       },
       // Optional: Define the onUnknownRoute to handle undefined routes
       onUnknownRoute: (settings) {

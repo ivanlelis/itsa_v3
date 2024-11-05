@@ -35,33 +35,43 @@ class _CheckoutState extends State<Checkout>
   int selectedPaymentMethod = -1; // -1 means no selection
   String? selectedVoucherCode;
   double totalDiscount = 0; // Variable to store total discount
+  String orderType = 'Delivery';
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize the TabController and set up a listener for tab changes
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+
+    // Fetch cart items initially
     _fetchCartItems();
 
-    // Calculate the initial total amount with the default delivery fee
+    // Calculate the initial total amount with the default delivery fee for Delivery tab
     totalAmountWithDelivery = widget.totalAmount + deliveryFee;
     originalTotalAmountWithDelivery = totalAmountWithDelivery;
 
-    // Listen for tab changes to reset the total if Pickup is selected
-    _tabController.addListener(() {
+    // Fetch available vouchers and apply any initial discounts
+    fetchVouchers();
+  }
+
+// Method to handle tab selection and update orderType and totalAmountWithDelivery
+  void _handleTabSelection() {
+    setState(() {
       if (_tabController.index == 1) {
-        // If the Pickup tab is selected, reset the total to the original amount
-        setState(() {
-          totalAmountWithDelivery = widget.totalAmount;
-        });
+        // Pickup tab selected: set orderType to 'Pickup' and reset total amount
+        orderType = 'Pickup';
+        totalAmountWithDelivery = widget.totalAmount;
       } else if (_tabController.index == 0) {
-        // If Delivery tab is selected, include the selected delivery fee
-        setState(() {
-          totalAmountWithDelivery = widget.totalAmount + deliveryFee;
-        });
+        // Delivery tab selected: set orderType to 'Delivery' and include delivery fee
+        orderType = 'Delivery';
+        totalAmountWithDelivery = widget.totalAmount + deliveryFee;
       }
     });
   }
 
+// Method to update the total amount when a voucher is selected
   void _updateVoucher(Map<String, dynamic> data) {
     // Reset total amount before recalculating
     totalAmountWithDelivery = originalTotalAmountWithDelivery;
@@ -82,15 +92,15 @@ class _CheckoutState extends State<Checkout>
     });
   }
 
+// Fetch vouchers and apply any initial discount calculations
   Future<void> fetchVouchers() async {
     QuerySnapshot voucherSnapshot =
         await FirebaseFirestore.instance.collection('voucher').get();
 
-    // Loop through the vouchers and calculate totalDiscount
     for (var doc in voucherSnapshot.docs) {
       var data = doc.data() as Map<String, dynamic>;
-      double discountAmt = data['discountAmt'] ?? 0; // Fetch discount amount
-      String discountType = data['discountType'] ?? ''; // Fetch discount type
+      double discountAmt = data['discountAmt'] ?? 0;
+      String discountType = data['discountType'] ?? '';
 
       // Calculate totalDiscount based on discountType
       if (discountType == 'Percentage') {
@@ -101,10 +111,12 @@ class _CheckoutState extends State<Checkout>
     }
 
     // After fetching and calculating, update the totalAmountWithDelivery accordingly
-    totalAmountWithDelivery +=
-        totalDiscount; // Update total amount with discount
+    setState(() {
+      totalAmountWithDelivery += totalDiscount;
+    });
   }
 
+// Fetch cart items and update the cart items list
   Future<void> _fetchCartItems() async {
     try {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -129,20 +141,27 @@ class _CheckoutState extends State<Checkout>
     }
   }
 
+// Method to update delivery fee based on delivery type
   void _updateDeliveryFee(int deliveryType) {
     setState(() {
       selectedDeliveryType = deliveryType;
-      if (selectedDeliveryType == 0) {
-        deliveryFee = 50.00; // Fast delivery fee
-      } else {
-        deliveryFee = 20.00; // Standard delivery fee
-      }
+      deliveryFee = selectedDeliveryType == 0
+          ? 50.00
+          : 20.00; // Fast vs. Standard delivery fee
 
-      // Update the total amount with the selected delivery fee only if Delivery tab is selected
+      // Update total amount if Delivery tab is selected
       if (_tabController.index == 0) {
         totalAmountWithDelivery = widget.totalAmount + deliveryFee;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    // Remove the tab listener to avoid memory leaks
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -994,6 +1013,7 @@ class _CheckoutState extends State<Checkout>
                   voucherCode: voucherCode,
                   totalAmountWithDelivery: totalAmountWithDelivery,
                   uid: widget.uid,
+                  orderType: orderType, // Pass orderType here
                 ),
                 transitionDuration: Duration.zero,
                 reverseTransitionDuration: Duration.zero,
