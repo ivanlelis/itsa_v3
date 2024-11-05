@@ -583,16 +583,21 @@ class CategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            selectedIndex == index ? Colors.deepPurple : Colors.grey[300],
-      ),
-      onPressed: onPressed,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: selectedIndex == index ? Colors.white : Colors.black,
+    return Flexible(
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              selectedIndex == index ? Colors.deepPurple : Colors.grey[300],
+          padding:
+              EdgeInsets.symmetric(vertical: 12), // Adjust vertical padding
+        ),
+        onPressed: onPressed,
+        child: Text(
+          title,
+          textAlign: TextAlign.center, // Center the text
+          style: TextStyle(
+            color: selectedIndex == index ? Colors.white : Colors.black,
+          ),
         ),
       ),
     );

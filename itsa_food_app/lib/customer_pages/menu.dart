@@ -165,7 +165,7 @@ class _MenuState extends State<Menu> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 CategoryButton(
-                  title: 'All',
+                  icon: Icons.view_list, // Example icon for 'All'
                   index: 0,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -175,7 +175,8 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  title: 'Takoyaki',
+                  icon: Icons
+                      .fastfood, // Replace with appropriate icon for 'Takoyaki'
                   index: 1,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -185,7 +186,8 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  title: 'Milk Tea',
+                  icon: Icons
+                      .local_drink, // Replace with appropriate icon for 'Milk Tea'
                   index: 2,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -195,7 +197,8 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  title: 'Meals',
+                  icon: Icons
+                      .restaurant, // Replace with appropriate icon for 'Meals'
                   index: 3,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -457,14 +460,14 @@ class ProductCard extends StatelessWidget {
 }
 
 class CategoryButton extends StatelessWidget {
-  final String title;
+  final IconData icon; // Add icon property
   final int index;
   final int selectedIndex;
   final VoidCallback onPressed;
 
   const CategoryButton({
     super.key,
-    required this.title,
+    required this.icon, // Require the icon parameter
     required this.index,
     required this.selectedIndex,
     required this.onPressed,
@@ -472,16 +475,29 @@ class CategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            selectedIndex == index ? Colors.deepPurple : Colors.grey[300],
-      ),
-      onPressed: onPressed,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: selectedIndex == index ? Colors.white : Colors.black,
+    return Flexible(
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              selectedIndex == index ? Colors.deepPurple : Colors.grey[300],
+          padding: EdgeInsets.symmetric(vertical: 12),
+        ),
+        onPressed: onPressed,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: selectedIndex == index ? Colors.white : Colors.black,
+            ),
+            SizedBox(height: 4),
+            Text(
+              '', // Optionally keep the text empty or add a small label if needed
+              style: TextStyle(
+                color: selectedIndex == index ? Colors.white : Colors.black,
+              ),
+            ),
+          ],
         ),
       ),
     );

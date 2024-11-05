@@ -69,13 +69,27 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     };
 
     try {
-      // Create "orders" subcollection and add the order document
+      // Create the "orders" subcollection and add the order document
       await _firestore
           .collection('customer')
-          .doc(widget.uid) // Assuming the document ID is the user's email
+          .doc(widget.uid) // Using the user's UID
           .collection('orders')
           .doc(orderID) // Name the document with the order ID
           .set(orderData);
+
+      // Create a notification document in the "notifications" collection
+      final notificationData = {
+        'orderID': orderID,
+        'uid': widget.uid,
+        'timestamp': FieldValue.serverTimestamp(),
+        'message': 'New order placed: $orderID', // Example notification message
+      };
+
+      await _firestore
+          .collection('notifications')
+          .doc('ordersNotif') // Name the document "ordersNotif"
+          .set(notificationData,
+              SetOptions(merge: true)); // Merge if it already exists
 
       // Delete the entire "cart" subcollection after order submission
       await _deleteCartSubcollection();
