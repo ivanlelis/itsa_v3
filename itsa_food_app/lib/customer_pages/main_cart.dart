@@ -8,12 +8,22 @@ class MainCart extends StatefulWidget {
   final String userName;
   final String emailAddress;
   final String uid;
+  final String email;
+  final String imageUrl;
+  final String userAddress;
+  final double latitude;
+  final double longitude;
 
   const MainCart({
     super.key,
     required this.userName,
     required this.emailAddress,
     required this.uid,
+    required this.email,
+    required this.imageUrl,
+    required this.userAddress,
+    required this.latitude,
+    required this.longitude,
   });
 
   @override
@@ -76,6 +86,11 @@ class _MainCartState extends State<MainCart> {
           emailAddress: widget.emailAddress,
           totalAmount: cartItems.fold(0.0, (sum, item) => sum + item['total']),
           uid: widget.uid,
+          email: widget.email,
+          imageUrl: widget.imageUrl,
+          latitude: widget.latitude,
+          longitude: widget.longitude,
+          userAddress: widget.userAddress,
         ),
         transitionDuration: Duration.zero, // Remove transition duration
         reverseTransitionDuration:

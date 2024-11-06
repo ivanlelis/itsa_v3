@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/admin_pages/order_details.dart';
 
 class AdminNotifs extends StatefulWidget {
   const AdminNotifs({super.key});
@@ -20,39 +21,78 @@ class _AdminNotifsState extends State<AdminNotifs> {
   Future<List<OrderCard>> fetchOrders() async {
     List<OrderCard> orderCards = [];
 
-    // Fetch all customer documents
+    // Fetch all notifications from the root-level "notifications" collection
+    QuerySnapshot notificationsSnapshot =
+        await FirebaseFirestore.instance.collection('notifications').get();
+
+    // Fetch all customers at once for more efficiency
     QuerySnapshot customerSnapshot =
         await FirebaseFirestore.instance.collection('customer').get();
 
+    // Create a map of customer documents to quickly access user data by uid
+    Map<String, Map<String, dynamic>> customersMap = {};
     for (var customerDoc in customerSnapshot.docs) {
-      String userName = customerDoc['userName'] ?? 'Unknown User';
+      customersMap[customerDoc.id] = customerDoc.data() as Map<String, dynamic>;
+    }
 
-      // Fetch orders for each customer
-      QuerySnapshot ordersSnapshot = await FirebaseFirestore.instance
+    // Batch fetch all orders for all customers in parallel
+    List<Future<QuerySnapshot>> orderFutures = [];
+    for (var customerDoc in customerSnapshot.docs) {
+      orderFutures.add(FirebaseFirestore.instance
           .collection('customer')
           .doc(customerDoc.id)
           .collection('orders')
-          .get();
+          .get());
+    }
 
-      for (var orderDoc in ordersSnapshot.docs) {
-        var orderData = orderDoc.data() as Map<String, dynamic>;
-        String orderId = orderDoc.id;
+    // Wait for all orders to be fetched in parallel
+    List<QuerySnapshot> ordersSnapshots = await Future.wait(orderFutures);
 
-        orderCards.add(
-          OrderCard(
-            orderId: orderId,
-            userName: userName,
-            deliveryType: orderData['deliveryType'] ?? 'N/A',
-            paymentMethod: orderData['paymentMethod'] ?? 'N/A',
-            voucherCode: orderData['voucherCode'] ?? 'No Voucher',
-            totalAmount:
-                (orderData['totalAmountWithDelivery']?.toDouble() ?? 0.0),
-            productNames: List<String>.from(orderData['productNames'] ?? []),
-            timestamp: (orderData['timestamp'] as Timestamp?)?.toDate() ??
-                DateTime.now(),
-            orderType: orderData['orderType'] ?? 'N/A', // Fetch orderType
-          ),
-        );
+    // Iterate over notifications and corresponding orders
+    for (var notificationDoc in notificationsSnapshot.docs) {
+      var notificationData = notificationDoc.data() as Map<String, dynamic>;
+      String orderID = notificationDoc.id;
+
+      String userName = 'Unknown User';
+      String emailAddress = 'Unknown Email';
+
+      // Iterate over the orders snapshots for each customer
+      for (int i = 0; i < ordersSnapshots.length; i++) {
+        var ordersSnapshot = ordersSnapshots[i];
+
+        // Search for the order matching orderID
+        for (var orderDoc in ordersSnapshot.docs) {
+          if (orderDoc.id == orderID) {
+            // Match found, get the userName and emailAddress from the customer document
+            var customerData = customersMap[customerSnapshot.docs[i].id]!;
+            userName = customerData['userName'] ?? 'Unknown User';
+            emailAddress = customerData['emailAddress'] ?? 'Unknown Email';
+
+            // Add OrderCard with userName and emailAddress
+            orderCards.add(
+              OrderCard(
+                orderID: orderID,
+                userName: userName,
+                emailAddress: emailAddress,
+                deliveryType: notificationData['deliveryType'] ?? 'N/A',
+                paymentMethod: notificationData['paymentMethod'] ?? 'N/A',
+                voucherCode: notificationData['voucherCode'] ?? 'No Voucher',
+                totalAmount:
+                    (notificationData['totalAmountWithDelivery']?.toDouble() ??
+                        0.0),
+                productNames:
+                    List<String>.from(notificationData['productNames'] ?? []),
+                timestamp:
+                    (notificationData['timestamp'] as Timestamp?)?.toDate() ??
+                        DateTime.now(),
+                orderType: notificationData['orderType'] ?? 'N/A',
+                uid: customerSnapshot
+                    .docs[i].id, // Using customerDoc.id as the uid
+              ),
+            );
+            break;
+          }
+        }
       }
     }
 
@@ -98,67 +138,43 @@ class _AdminNotifsState extends State<AdminNotifs> {
 }
 
 class OrderCard extends StatelessWidget {
-  final String orderId;
+  final String orderID;
   final String userName;
+  final String emailAddress;
   final String deliveryType;
   final String paymentMethod;
   final String voucherCode;
   final double totalAmount;
   final List<String> productNames;
   final DateTime timestamp;
-  final String orderType; // Added orderType property
+  final String orderType;
+  final String uid;
 
   const OrderCard({
     super.key,
-    required this.orderId,
+    required this.orderID,
     required this.userName,
+    required this.emailAddress,
     required this.deliveryType,
     required this.paymentMethod,
     required this.voucherCode,
     required this.totalAmount,
     required this.productNames,
     required this.timestamp,
-    required this.orderType, // Initialize orderType
+    required this.orderType,
+    required this.uid,
   });
 
-  void _showOrderDetails(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          contentPadding: EdgeInsets.all(16.0),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Order Details',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('Order ID: $orderId'),
-              Text('User: $userName'),
-              Text('Delivery Type: $deliveryType'),
-              Text('Payment Method: $paymentMethod'),
-              Text('Voucher Code: $voucherCode'),
-              Text('Order Type: $orderType'), // Displaying orderType
-              Text('Total Amount: ₱${totalAmount.toStringAsFixed(2)}'),
-              Text('Timestamp: ${timestamp.toLocal()}'),
-              SizedBox(height: 8),
-              Text('Products:'),
-              ...productNames.map((product) => Text('- $product')),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Close'),
-            ),
-          ],
-        );
-      },
+  void _navigateToOrderDetails(BuildContext context) {
+    // Navigate to the OrderDetailsScreen, passing orderID
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderDetailsScreen(
+          uid: uid,
+          orderID: orderID,
+        ),
+      ),
     );
   }
 
@@ -173,7 +189,7 @@ class OrderCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Order ID: $orderId',
+              'Order ID: $orderID',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text('User: $userName'),
@@ -181,13 +197,13 @@ class OrderCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
-                onPressed: () => _showOrderDetails(context),
+                onPressed: () => _navigateToOrderDetails(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF2E0B0D),
                 ),
                 child: Text('View'),
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:itsa_food_app/customer_pages/main_cart.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
@@ -37,6 +38,20 @@ class CustomerMainHome extends StatefulWidget {
 class _CustomerMainHomeState extends State<CustomerMainHome> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _updateLastActiveTime();
+  }
+
+  Future<void> _updateLastActiveTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    prefs.setInt('lastLoginTime',
+        currentTime); // Store current time in SharedPreferences
+    print("Last active time updated: $currentTime");
+  }
 
   @override
   void didChangeDependencies() {
@@ -120,6 +135,11 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                   userName: user.userName,
                   emailAddress: user.emailAddress,
                   uid: user.uid,
+                  email: user.email,
+                  imageUrl: user.imageUrl,
+                  userAddress: user.userAddress,
+                  latitude: user.latitude,
+                  longitude: user.longitude,
                 ),
               ),
             );

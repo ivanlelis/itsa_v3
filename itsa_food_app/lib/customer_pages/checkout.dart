@@ -10,6 +10,11 @@ class Checkout extends StatefulWidget {
   final String emailAddress;
   final double totalAmount;
   final String uid;
+  final String email;
+  final String imageUrl;
+  final double latitude;
+  final double longitude;
+  final String userAddress;
 
   const Checkout({
     super.key,
@@ -17,6 +22,11 @@ class Checkout extends StatefulWidget {
     required this.emailAddress,
     required this.totalAmount,
     required this.uid,
+    required this.email,
+    required this.imageUrl,
+    required this.latitude,
+    required this.longitude,
+    required this.userAddress,
   });
 
   @override
@@ -1014,6 +1024,13 @@ class _CheckoutState extends State<Checkout>
                   totalAmountWithDelivery: totalAmountWithDelivery,
                   uid: widget.uid,
                   orderType: orderType, // Pass orderType here
+                  userName: widget.userName,
+                  email: widget.email,
+                  emailAddress: widget.emailAddress,
+                  imageUrl: widget.imageUrl,
+                  latitude: widget.latitude,
+                  longitude: widget.longitude,
+                  userAddress: widget.userAddress,
                 ),
                 transitionDuration: Duration.zero,
                 reverseTransitionDuration: Duration.zero,

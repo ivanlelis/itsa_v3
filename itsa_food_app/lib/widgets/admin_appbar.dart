@@ -28,39 +28,62 @@ class _AdminAppBarState extends State<AdminAppBar> {
     _fetchUnreadNotifications();
   }
 
-  // Fetch unread notifications count
+  // Fetch unread notifications count from Firestore
   Future<void> _fetchUnreadNotifications() async {
-    FirebaseFirestore.instance
-        .collectionGroup('orders')
-        .snapshots()
-        .listen((snapshot) {
-      int newNotifications = 0; // Count of new notifications since last checked
+    final userDoc =
+        FirebaseFirestore.instance.collection('admin').doc('admin_1');
+    final docSnapshot = await userDoc.get();
 
-      for (var doc in snapshot.docs) {
-        String orderId = doc.id; // Use document ID as unique identifier
-        Timestamp timestamp = doc['timestamp'];
+    if (docSnapshot.exists) {
+      // Get lastCheckedTime and unreadNotificationCount from Firestore
+      lastCheckedTime = (docSnapshot['lastCheckedTime'] as Timestamp).toDate();
+      unreadNotificationCount = docSnapshot['unreadNotificationCount'];
 
-        // Check if the notification is new and hasn't been counted yet
-        if (timestamp.toDate().isAfter(lastCheckedTime) &&
-            !notifiedOrderIds.contains(orderId)) {
-          newNotifications++;
-          notifiedOrderIds.add(orderId); // Add to the set of notified orders
+      // Fetch notifications based on lastCheckedTime
+      FirebaseFirestore.instance
+          .collectionGroup('orders')
+          .snapshots()
+          .listen((snapshot) {
+        int newNotifications = 0;
+
+        for (var doc in snapshot.docs) {
+          String orderId = doc.id; // Use document ID as unique identifier
+          Timestamp timestamp = doc['timestamp'];
+
+          // Check if the notification is new and hasn't been counted yet
+          if (timestamp.toDate().isAfter(lastCheckedTime) &&
+              !notifiedOrderIds.contains(orderId)) {
+            newNotifications++;
+            notifiedOrderIds.add(orderId); // Add to the set of notified orders
+          }
         }
-      }
 
-      setState(() {
-        unreadNotificationCount +=
-            newNotifications; // Increment the total count without limit
+        setState(() {
+          unreadNotificationCount += newNotifications; // Update unread count
+        });
       });
-    });
+    }
   }
 
-  // Reset unread notifications count when admin views them
+  // Update lastCheckedTime only when admin clicks on the notification
   void _markNotificationsAsRead() {
     setState(() {
-      unreadNotificationCount = 0; // Reset the count
-      lastCheckedTime = DateTime.now(); // Update last checked time to now
-      notifiedOrderIds.clear(); // Clear the set of notified orders
+      unreadNotificationCount = 0;
+      lastCheckedTime = DateTime.now(); // Update only when admin clicks
+      notifiedOrderIds.clear();
+    });
+
+    // Save data to Firestore
+    _saveNotificationData();
+  }
+
+  // Save unread notification count and last checked time to Firestore
+  Future<void> _saveNotificationData() async {
+    final userDoc =
+        FirebaseFirestore.instance.collection('admin').doc('admin_1');
+    await userDoc.update({
+      'unreadNotificationCount': unreadNotificationCount,
+      'lastCheckedTime': Timestamp.fromDate(lastCheckedTime),
     });
   }
 
@@ -95,12 +118,11 @@ class _AdminAppBarState extends State<AdminAppBar> {
             IconButton(
               icon: const Icon(Icons.notifications, color: Colors.white),
               onPressed: () {
-                // Navigate to AdminNotifs page
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => AdminNotifs()),
                 ).then((_) {
-                  _markNotificationsAsRead(); // Reset notification count here
+                  _markNotificationsAsRead(); // Update lastCheckedTime when clicked
                 });
               },
             ),

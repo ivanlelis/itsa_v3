@@ -134,6 +134,11 @@ class _MenuState extends State<Menu> {
                   userName: user.userName,
                   emailAddress: user.emailAddress,
                   uid: widget.uid,
+                  email: widget.email,
+                  imageUrl: widget.imageUrl,
+                  latitude: widget.latitude,
+                  longitude: widget.longitude,
+                  userAddress: widget.userAddress,
                 ),
               ),
             );
@@ -295,6 +300,10 @@ class _MenuState extends State<Menu> {
                         userName: widget.userName,
                         emailAddress: widget.emailAddress,
                         uid: widget.uid,
+                        userAddress: widget.userAddress,
+                        latitude: widget.latitude,
+                        longitude: widget.longitude,
+                        email: widget.email,
                       );
                     },
                   );
@@ -325,6 +334,10 @@ class ProductCard extends StatelessWidget {
   final String userName;
   final String emailAddress;
   final String uid;
+  final String userAddress;
+  final double latitude;
+  final double longitude;
+  final String email;
 
   const ProductCard({
     super.key,
@@ -340,6 +353,10 @@ class ProductCard extends StatelessWidget {
     required this.userName,
     required this.emailAddress,
     required this.uid,
+    required this.userAddress,
+    required this.latitude,
+    required this.longitude,
+    required this.email,
   });
 
   @override
@@ -381,6 +398,10 @@ class ProductCard extends StatelessWidget {
               emailAddress: emailAddress,
               productType: productType,
               uid: uid,
+              userAddress: userAddress,
+              email: email,
+              latitude: latitude,
+              longitude: longitude,
             ),
           ),
         );

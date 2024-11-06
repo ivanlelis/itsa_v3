@@ -1,13 +1,13 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/edit_address.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/home/home.dart';
-import 'package:itsa_food_app/login/login.dart'; // Import your LoginPage
-import 'package:itsa_food_app/user_provider/user_provider.dart'; // Import your UserProvider
-import 'package:provider/provider.dart'; // Import provider package
-import 'package:itsa_food_app/customer_pages/menu.dart'; // Import Menu page
+import 'package:itsa_food_app/login/login.dart';
+import 'package:itsa_food_app/user_provider/user_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:itsa_food_app/customer_pages/menu.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,30 +45,25 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/home', // Set the initial route
       routes: {
-        '/home': (context) => const HomePage(
-            title: 'Firebase Connection Status'), // Define the home route
-        '/login': (context) => const LoginPage(), // Define the login route
+        '/home': (context) =>
+            const HomePage(title: 'Firebase Connection Status'),
+        '/login': (context) => const LoginPage(),
         '/address': (context) {
           final args = ModalRoute.of(context)?.settings.arguments
               as Map<String, dynamic>?;
-
           return EditAddress(
-            userName:
-                args?['userName'] ?? '', // Default to an empty string if null
-            emailAddress: args?['emailAddress'] ??
-                '', // Default to an empty string if null
-            email: args?['email'] ?? '', // Default to an empty string if null
-            uid: args?['uid'] ?? '', // Default to an empty string if null
-            userAddress: args?['userAddress'] ??
-                '', // Default to an empty string if null
-            latitude: args?['latitude'] ?? 0.0, // Default to 0.0 if null
-            longitude: args?['longitude'] ?? 0.0, // Default to 0.0 if null
+            userName: args?['userName'] ?? '',
+            emailAddress: args?['emailAddress'] ?? '',
+            email: args?['email'] ?? '',
+            uid: args?['uid'] ?? '',
+            userAddress: args?['userAddress'] ?? '',
+            latitude: args?['latitude'] ?? 0.0,
+            longitude: args?['longitude'] ?? 0.0,
           );
         },
         '/menu': (context) {
           final args = ModalRoute.of(context)?.settings.arguments
               as Map<String, dynamic>?;
-
           return Menu(
             userName: args?['userName'] ?? '',
             emailAddress: args?['emailAddress'] ?? '',
@@ -77,19 +72,75 @@ class MyApp extends StatelessWidget {
             userAddress: args?['userAddress'] ?? '',
             latitude: args?['latitude'] ?? 0.0,
             longitude: args?['longitude'] ?? 0.0,
-            imageUrl:
-                args?['imageUrl'] ?? '', // Provide a default value if necessary
+            imageUrl: args?['imageUrl'] ?? '',
           );
-        }, // Define the menu route
+        },
       },
-      // Optional: Define the onUnknownRoute to handle undefined routes
       onUnknownRoute: (settings) {
         return MaterialPageRoute(
-          builder: (context) => const HomePage(
-              title:
-                  'Firebase Connection Status'), // Redirect to Home or another page
+          builder: (context) =>
+              const HomePage(title: 'Firebase Connection Status'),
         );
       },
+    );
+  }
+}
+
+class LoginChecker extends StatefulWidget {
+  const LoginChecker({super.key});
+
+  @override
+  _LoginCheckerState createState() => _LoginCheckerState();
+}
+
+class _LoginCheckerState extends State<LoginChecker> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  // Check login status and last login time
+  void _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastLoginTime = prefs.getInt('lastLoginTime');
+
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+
+    // If the user is logged in
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // If more than 30 minutes have passed since the last login, log the user out
+      if (lastLoginTime == null ||
+          currentTime - lastLoginTime > 30 * 60 * 1000) {
+        FirebaseAuth.instance.signOut(); // Log the user out
+        prefs.remove('lastLoginTime'); // Remove the saved login time
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      } else {
+        // User is logged in and within 30 minutes, navigate to home screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const HomePage(title: 'Home')),
+        );
+      }
+    } else {
+      // If no user is logged in, navigate to login screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:itsa_food_app/widgets/admin_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
@@ -28,11 +29,20 @@ class _AdminHomeState extends State<AdminHome> {
   String? mostOrderedProduct;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Map<String, int> productCount = {}; // Store product order counts
+  String? lastActiveTime;
 
   @override
   void initState() {
     super.initState();
     fetchMostOrderedProduct();
+    _getLastActiveTime();
+  }
+
+  Future<void> _getLastActiveTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      lastActiveTime = prefs.getString('last_active_time');
+    });
   }
 
   Future<void> fetchMostOrderedProduct() async {
@@ -123,6 +133,13 @@ class _AdminHomeState extends State<AdminHome> {
                   'Email: $adminEmail',
                   style: const TextStyle(fontSize: 16),
                 ),
+                const SizedBox(height: 20),
+                // Add the 'Last Active' text here
+                if (lastActiveTime != null)
+                  Text(
+                    'Last Active: $lastActiveTime',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
                 const SizedBox(height: 20),
                 if (mostOrderedProduct != null)
                   Text(
@@ -293,6 +310,13 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   void dispose() {
     super.dispose();
+    _updateLastActiveTime();
+  }
+
+  Future<void> _updateLastActiveTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentTime = DateTime.now().toString();
+    await prefs.setString('last_active_time', currentTime);
   }
 }
 

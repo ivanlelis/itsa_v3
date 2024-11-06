@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:itsa_food_app/customer_pages/menu.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<String> productNames;
@@ -13,6 +14,13 @@ class ConfirmPayment extends StatefulWidget {
   final double totalAmountWithDelivery;
   final String uid;
   final String orderType;
+  final String userName;
+  final String email;
+  final String emailAddress;
+  final String imageUrl;
+  final double latitude;
+  final double longitude;
+  final String userAddress;
 
   const ConfirmPayment({
     super.key,
@@ -23,6 +31,13 @@ class ConfirmPayment extends StatefulWidget {
     required this.totalAmountWithDelivery,
     required this.uid,
     required this.orderType,
+    required this.userName,
+    required this.imageUrl,
+    required this.email,
+    required this.emailAddress,
+    required this.latitude,
+    required this.longitude,
+    required this.userAddress,
   });
 
   @override
@@ -69,27 +84,19 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     };
 
     try {
-      // Create the "orders" subcollection and add the order document
+      // Create "orders" subcollection in the "customer" collection
       await _firestore
           .collection('customer')
-          .doc(widget.uid) // Using the user's UID
+          .doc(widget.uid)
           .collection('orders')
-          .doc(orderID) // Name the document with the order ID
+          .doc(orderID) // Document name as orderID
           .set(orderData);
 
-      // Create a notification document in the "notifications" collection
-      final notificationData = {
-        'orderID': orderID,
-        'uid': widget.uid,
-        'timestamp': FieldValue.serverTimestamp(),
-        'message': 'New order placed: $orderID', // Example notification message
-      };
-
+      // Create document in the "notifications" collection at the root level
       await _firestore
           .collection('notifications')
-          .doc('ordersNotif') // Name the document "ordersNotif"
-          .set(notificationData,
-              SetOptions(merge: true)); // Merge if it already exists
+          .doc(orderID) // Document name as orderID
+          .set(orderData);
 
       // Delete the entire "cart" subcollection after order submission
       await _deleteCartSubcollection();
@@ -128,8 +135,19 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the modal
-                Navigator.of(context)
-                    .pushReplacementNamed('/menu'); // Navigate to Menu
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                      builder: (context) => Menu(
+                        userName: widget.userName,
+                            emailAddress: widget.emailAddress,
+                            imageUrl: widget.imageUrl,
+                            uid: widget.uid,
+                            email: widget.email,
+                            userAddress: widget.userAddress,
+                            latitude: widget.latitude,
+                            longitude: widget.longitude,
+                      )), // Direct route to Menu
+                );
               },
               child: Text('Go Back to Menu'),
             ),

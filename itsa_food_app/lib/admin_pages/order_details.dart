@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
-  final String uid;
   final String orderID;
+  final String uid;
 
   OrderDetailsScreen({
     super.key,
-    required this.uid,
     required this.orderID,
+    required this.uid,
   });
 
   // Mapping of Firestore field names to display labels
@@ -22,8 +22,6 @@ class OrderDetailsScreen extends StatelessWidget {
     'voucherCode': 'Voucher Code',
     'totalAmountWithDelivery': 'Order Total',
     'timestamp': 'Time Ordered',
-    'userName': 'User Name',
-    'emailAddress': 'Email',
   };
 
   // Function to format timestamp
@@ -41,7 +39,7 @@ class OrderDetailsScreen extends StatelessWidget {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('customer')
-            .doc(uid)
+            .doc(uid) // Use the uid of the current user
             .snapshots(),
         builder: (context, customerSnapshot) {
           if (customerSnapshot.connectionState == ConnectionState.waiting) {
@@ -58,9 +56,9 @@ class OrderDetailsScreen extends StatelessWidget {
           return StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('customer')
-                .doc(uid)
-                .collection('orders')
-                .doc(orderID)
+                .doc(uid) // Use the uid to get the orders
+                .collection('orders') // Access the 'orders' subcollection
+                .doc(orderID) // Get the specific order document using orderID
                 .snapshots(),
             builder: (context, orderSnapshot) {
               if (orderSnapshot.connectionState == ConnectionState.waiting) {
@@ -74,6 +72,11 @@ class OrderDetailsScreen extends StatelessWidget {
               var orderData =
                   orderSnapshot.data!.data() as Map<String, dynamic>;
 
+              // Retrieve order details
+              String userName = customerData['userName'] ?? 'N/A';
+              String emailAddress = customerData['emailAddress'] ?? 'N/A';
+              String imageUrl = customerData['imageUrl'] ?? '';
+
               return Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -84,20 +87,17 @@ class OrderDetailsScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.grey[300], // Placeholder color
-                      backgroundImage: customerData['imageUrl'] != null &&
-                              customerData['imageUrl'].isNotEmpty
-                          ? NetworkImage(customerData['imageUrl'])
+                      backgroundImage: imageUrl.isNotEmpty
+                          ? NetworkImage(imageUrl)
                           : null, // Use the image URL if available
-                      child: customerData['imageUrl'] == null ||
-                              customerData['imageUrl'].isEmpty
-                          ? const Icon(Icons.person,
-                              size: 50) // Default icon if no image
+                      child: imageUrl.isEmpty
+                          ? const Icon(Icons.person, size: 50) // Default icon
                           : null,
                     ),
                     const SizedBox(height: 16), // Space between image and text
                     // Display userName
                     Text(
-                      customerData['userName'] ?? 'N/A',
+                      userName, // Use userName from customer data
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -107,7 +107,7 @@ class OrderDetailsScreen extends StatelessWidget {
                         height: 8), // Space between userName and email
                     // Display email
                     Text(
-                      customerData['emailAddress'] ?? 'N/A',
+                      emailAddress, // Use email from customer data
                       style: const TextStyle(
                         fontSize: 16,
                       ),

@@ -18,6 +18,10 @@ class ProductView extends StatefulWidget {
   final String emailAddress; // Non-nullable
   final String productType; // Non-nullable
   final String uid;
+  final String userAddress;
+  final String email;
+  final double latitude;
+  final double longitude;
 
   const ProductView({
     super.key,
@@ -34,6 +38,10 @@ class ProductView extends StatefulWidget {
     required this.emailAddress,
     required this.productType,
     required this.uid,
+    required this.userAddress,
+    required this.email,
+    required this.latitude,
+    required this.longitude,
   });
 
   @override
@@ -157,6 +165,11 @@ class _ProductViewState extends State<ProductView> {
                           userName: widget.userName,
                           emailAddress: widget.emailAddress,
                           uid: widget.uid,
+                          email: widget.email,
+                          userAddress: widget.userAddress,
+                          latitude: widget.latitude,
+                          longitude: widget.longitude,
+                          imageUrl: widget.imageUrl,
                         ),
                       ),
                     );
@@ -178,6 +191,11 @@ class _ProductViewState extends State<ProductView> {
                             userName: widget.userName,
                             emailAddress: widget.emailAddress,
                             uid: widget.uid,
+                            userAddress: widget.userAddress,
+                            email: widget.email,
+                            latitude: widget.latitude,
+                            longitude: widget.longitude,
+                            imageUrl: widget.imageUrl,
                           ),
                         ),
                       );
