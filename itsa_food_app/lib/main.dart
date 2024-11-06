@@ -6,8 +6,10 @@ import 'package:itsa_food_app/login/login.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
+import 'package:itsa_food_app/customer_pages/order_history.dart'; // Import OrderHistory
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:itsa_food_app/customer_pages/claim_vouchers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +75,28 @@ class MyApp extends StatelessWidget {
             latitude: args?['latitude'] ?? 0.0,
             longitude: args?['longitude'] ?? 0.0,
             imageUrl: args?['imageUrl'] ?? '',
+          );
+        },
+        '/orderHistory': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return OrderHistory(
+            emailAddress: args?['emailAddress'] ?? '',
+            userName: args?['userName'] ?? '',
+            uid: args?['uid'] ?? '',
+            latitude: args?['latitude'] ?? 0.0,
+            longitude: args?['longitude'] ?? 0.0,
+          );
+        },
+        '/vouchers': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return ClaimVouchers(
+            emailAddress: args?['emailAddress'] ?? '',
+            userName: args?['userName'] ?? '',
+            uid: args?['uid'] ?? '',
+            latitude: args?['latitude'] ?? 0.0,
+            longitude: args?['longitude'] ?? 0.0,
           );
         },
       },

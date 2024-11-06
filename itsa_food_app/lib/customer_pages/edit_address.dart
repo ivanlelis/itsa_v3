@@ -154,6 +154,10 @@ class _EditAddressState extends State<EditAddress> {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen width and height
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -203,7 +207,8 @@ class _EditAddressState extends State<EditAddress> {
           Center(
             child: Icon(
               Icons.location_pin,
-              size: 40,
+              size: screenHeight *
+                  0.05, // Adjust icon size based on screen height
               color: Colors.pink,
             ),
           ),
@@ -236,12 +241,13 @@ class _EditAddressState extends State<EditAddress> {
               ),
             ),
           Positioned(
-            top: 590,
-            left: 16,
-            right: 16,
+            top: screenHeight * 0.64, // Adjust position based on screen height
+            left: screenWidth * 0.04,
+            right: screenWidth * 0.04,
             child: Container(
-              height: 130,
-              padding: EdgeInsets.all(16),
+              height:
+                  screenHeight * 0.15, // Adjust height based on screen height
+              padding: EdgeInsets.all(screenWidth * 0.04),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
@@ -260,12 +266,12 @@ class _EditAddressState extends State<EditAddress> {
                     "Latitude: ${widget.latitude?.toStringAsFixed(6) ?? 'N/A'}, Longitude: ${widget.longitude?.toStringAsFixed(6) ?? 'N/A'}",
                     style: TextStyle(color: Colors.black54),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: screenHeight * 0.01),
                   Text(
                     "Current selected address",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: screenHeight * 0.01),
                   Expanded(
                     child: Text(
                       _currentAddress,
@@ -279,9 +285,10 @@ class _EditAddressState extends State<EditAddress> {
             ),
           ),
           Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
+            bottom: screenHeight *
+                0.02, // Adjust bottom position based on screen height
+            left: screenWidth * 0.04,
+            right: screenWidth * 0.04,
             child: ElevatedButton(
               onPressed: () async {
                 await _saveAddressToFirestore();
@@ -289,7 +296,7 @@ class _EditAddressState extends State<EditAddress> {
                     "New address saved: ${_selectedLocation.latitude}, ${_selectedLocation.longitude}");
               },
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
                 backgroundColor: Colors.pink,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -297,7 +304,8 @@ class _EditAddressState extends State<EditAddress> {
               ),
               child: Text(
                 "Save this as your new address",
-                style: TextStyle(fontSize: 18, color: Colors.white),
+                style: TextStyle(
+                    fontSize: screenWidth * 0.045, color: Colors.white),
               ),
             ),
           ),

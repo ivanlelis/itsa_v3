@@ -70,8 +70,16 @@ class _SidebarState extends State<Sidebar> {
           leading: const Icon(Icons.history),
           title: const Text('Order History'),
           onTap: () {
-            // Navigate to Order History page
-            Navigator.pushNamed(context, '/orderHistory');
+            final Map<String, dynamic> args = {
+              'emailAddress': widget.emailAddress,
+              'userName': widget.userName,
+              'uid': widget.uid,
+              'latitude': widget.latitude,
+              'longitude': widget.longitude,
+            };
+
+            // Navigate to Address page with arguments
+            Navigator.pushNamed(context, '/orderHistory', arguments: args);
           },
         ),
         ListTile(
@@ -104,8 +112,17 @@ class _SidebarState extends State<Sidebar> {
           leading: const Icon(Icons.card_giftcard),
           title: const Text('Vouchers'),
           onTap: () {
-            // Navigate to Vouchers page
-            Navigator.pushNamed(context, '/vouchers');
+            // Create a map to hold the arguments
+            final Map<String, dynamic> args = {
+              'emailAddress': widget.emailAddress,
+              'userName': widget.userName,
+              'uid': widget.uid,
+              'latitude': widget.latitude,
+              'longitude': widget.longitude,
+            };
+
+            // Navigate to Address page with arguments
+            Navigator.pushNamed(context, '/vouchers', arguments: args);
           },
         ),
         ListTile(

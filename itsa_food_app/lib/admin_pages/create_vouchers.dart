@@ -263,7 +263,7 @@ class _VouchersState extends State<Vouchers> {
       // Check if pickedDate is not null
       setState(() {
         _expirationDateController.text =
-            DateFormat('MM-DD-YYYY').format(pickedDate);
+            DateFormat('MM-dd-yyyy').format(pickedDate);
       });
     }
   }
