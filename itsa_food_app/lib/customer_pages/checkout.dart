@@ -1,9 +1,11 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_print
-
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/widgets/delivery_type_section.dart';
+import 'package:itsa_food_app/widgets/payment_method_section.dart';
+import 'package:itsa_food_app/widgets/voucher_section_delivery.dart';
+import 'package:itsa_food_app/widgets/cart_products_section.dart';
+import 'package:itsa_food_app/widgets/address_section.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
+import 'package:itsa_food_app/widgets/pickuptab.dart';
 
 class Checkout extends StatefulWidget {
   final String userName;
@@ -15,6 +17,7 @@ class Checkout extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String userAddress;
+  final List<Map<String, dynamic>> cartItems;
 
   const Checkout({
     super.key,
@@ -27,6 +30,7 @@ class Checkout extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     required this.userAddress,
+    required this.cartItems,
   });
 
   @override
@@ -35,1025 +39,392 @@ class Checkout extends StatefulWidget {
 
 class _CheckoutState extends State<Checkout>
     with SingleTickerProviderStateMixin {
-  List<Map<String, dynamic>> cartItems = [];
-  int selectedDeliveryType = 1; // Default to 'Standard'
-  double deliveryFee = 20.00; // Default fee for 'Standard' delivery
-  late double totalAmountWithDelivery;
-  late double originalTotalAmountWithDelivery;
-
-  late TabController _tabController;
-  int selectedPaymentMethod = -1; // -1 means no selection
-  String? selectedVoucherCode;
-  double totalDiscount = 0; // Variable to store total discount
-  String orderType = 'Delivery';
+  TabController? _tabController;
+  String? deliveryType = 'Standard';
+  String paymentMethod = 'Cash';
+  String selectedVoucher = ''; // Store the selected voucher
+  bool isVoucherButtonVisible = false;
+  String selectedPaymentMethod = 'Cash';
+  double originalTotalAmount = 0.0;
+  double totalAmount = 0.0;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize the TabController and set up a listener for tab changes
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_handleTabSelection);
 
-    // Fetch cart items initially
-    _fetchCartItems();
+    // Initialize the original total amount (without delivery charges)
+    originalTotalAmount = widget.totalAmount;
 
-    // Calculate the initial total amount with the default delivery fee for Delivery tab
-    totalAmountWithDelivery = widget.totalAmount + deliveryFee;
-    originalTotalAmountWithDelivery = totalAmountWithDelivery;
+    // Set the initial total amount (add delivery charge for Standard by default)
+    totalAmount =
+        originalTotalAmount + 20.0; // Default delivery charge for Standard
 
-    // Fetch available vouchers and apply any initial discounts
-    fetchVouchers();
-  }
-
-// Method to handle tab selection and update orderType and totalAmountWithDelivery
-  void _handleTabSelection() {
-    setState(() {
-      if (_tabController.index == 1) {
-        // Pickup tab selected: set orderType to 'Pickup' and reset total amount
-        orderType = 'Pickup';
-        totalAmountWithDelivery = widget.totalAmount;
-      } else if (_tabController.index == 0) {
-        // Delivery tab selected: set orderType to 'Delivery' and include delivery fee
-        orderType = 'Delivery';
-        totalAmountWithDelivery = widget.totalAmount + deliveryFee;
-      }
-    });
-  }
-
-// Method to update the total amount when a voucher is selected
-  void _updateVoucher(Map<String, dynamic> data) {
-    // Reset total amount before recalculating
-    totalAmountWithDelivery = originalTotalAmountWithDelivery;
-
-    // Calculate the new discount based on the selected voucher
-    if (data['discountType'] == 'Percentage') {
-      double discount =
-          data['discountAmt'] / 100; // Convert percentage to decimal
-      totalAmountWithDelivery -=
-          totalAmountWithDelivery * discount; // Apply discount
-    } else if (data['discountType'] == 'Fixed') {
-      totalAmountWithDelivery -= data['discountAmt']; // Apply fixed discount
-    }
-
-    // Update selected voucher code and refresh the UI
-    setState(() {
-      selectedVoucherCode = data['voucherCode'];
-    });
-  }
-
-// Fetch vouchers and apply any initial discount calculations
-  Future<void> fetchVouchers() async {
-    QuerySnapshot voucherSnapshot =
-        await FirebaseFirestore.instance.collection('voucher').get();
-
-    for (var doc in voucherSnapshot.docs) {
-      var data = doc.data() as Map<String, dynamic>;
-      double discountAmt = data['discountAmt'] ?? 0;
-      String discountType = data['discountType'] ?? '';
-
-      // Calculate totalDiscount based on discountType
-      if (discountType == 'Percentage') {
-        totalDiscount += discountAmt; // Use it as a percentage
-      } else if (discountType == 'Fixed') {
-        totalDiscount -= discountAmt; // Deduct fixed amount
-      }
-    }
-
-    // After fetching and calculating, update the totalAmountWithDelivery accordingly
-    setState(() {
-      totalAmountWithDelivery += totalDiscount;
-    });
-  }
-
-// Fetch cart items and update the cart items list
-  Future<void> _fetchCartItems() async {
-    try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('customer')
-          .doc(widget.uid)
-          .collection('cart')
-          .get();
-
-      setState(() {
-        cartItems = snapshot.docs.map((doc) {
-          return {
-            'id': doc.id,
-            'productName': doc['productName'],
-            'sizeQuantity': doc['sizeQuantity'],
-            'quantity': doc['quantity'],
-            'total': doc['total'],
-          };
-        }).toList();
-      });
-    } catch (e) {
-      print('Error fetching cart items: $e');
-    }
-  }
-
-// Method to update delivery fee based on delivery type
-  void _updateDeliveryFee(int deliveryType) {
-    setState(() {
-      selectedDeliveryType = deliveryType;
-      deliveryFee = selectedDeliveryType == 0
-          ? 50.00
-          : 20.00; // Fast vs. Standard delivery fee
-
-      // Update total amount if Delivery tab is selected
-      if (_tabController.index == 0) {
-        totalAmountWithDelivery = widget.totalAmount + deliveryFee;
+    // Listen for tab changes
+    _tabController?.addListener(() {
+      if (_tabController!.index == 1) {
+        // If the 'Pick Up' tab is selected, reset the total amount to the base amount
+        setState(() {
+          totalAmount =
+              originalTotalAmount; // Remove delivery charge for pickup
+        });
+      } else {
+        // If the 'Delivery' tab is selected, recalculate the total amount
+        _updateTotalAmount(
+            deliveryType ?? 'Standard'); // Reapply delivery charge
       }
     });
   }
 
   @override
   void dispose() {
-    // Remove the tab listener to avoid memory leaks
-    _tabController.removeListener(_handleTabSelection);
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
+  }
+
+  void selectPaymentMethod(String method) {
+    setState(() {
+      paymentMethod = method;
+      isVoucherButtonVisible = method == 'GCash';
+    });
+  }
+
+  void _handlePaymentMethodChange(String method) {
+    setState(() {
+      paymentMethod = method;
+    });
+  }
+
+  // Function to handle GCash selection
+  void _handleGcashSelected() {
+    // Example logic: You can show a modal, update UI, etc.
+    print('GCash selected');
+  }
+
+  void _showVoucherModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => VoucherSectionDelivery(
+        isVisible: true,
+        selectedVoucher: selectedVoucher,
+        onVoucherSelect: (value) {
+          setState(() {
+            selectedVoucher = value ?? ''; // Update the selected voucher
+            // Modal closes here without needing to call Navigator.pop again
+            // No need for Navigator.pop(context) in onVoucherSelect
+
+            // Recalculate the total amount when voucher is changed
+            _recalculateTotalAmount(); // Recalculate from base amount again
+          });
+        },
+        onDiscountApplied: (discountedAmount) {
+          // Apply the discount to the total amount
+          setState(() {
+            totalAmount = discountedAmount;
+          });
+        },
+      ),
+    );
+  }
+
+  void _recalculateTotalAmount() {
+    // Reset to the base amount (original total amount)
+    double updatedTotalAmount = originalTotalAmount;
+
+    // Apply the delivery charge based on the selected delivery type
+    double deliveryCharge = 0.0;
+
+    if (deliveryType == 'Standard') {
+      deliveryCharge = 20.0;
+    } else if (deliveryType == 'Fast') {
+      deliveryCharge = 50.0;
+    }
+
+    updatedTotalAmount += deliveryCharge; // Add delivery charge to base amount
+
+    // Apply the voucher discount if any
+    if (selectedVoucher.isNotEmpty) {
+      _applyVoucherDiscount(updatedTotalAmount); // Apply voucher discount
+    } else {
+      setState(() {
+        totalAmount = updatedTotalAmount; // Just set the amount if no voucher
+      });
+    }
+  }
+
+  void _applyVoucherDiscount(double currentTotalAmount) async {
+    if (selectedVoucher.isEmpty) return;
+
+    try {
+      DocumentSnapshot voucherSnapshot = await FirebaseFirestore.instance
+          .collection('voucher')
+          .doc(selectedVoucher)
+          .get();
+
+      if (voucherSnapshot.exists) {
+        final voucherData = voucherSnapshot.data() as Map<String, dynamic>;
+        final double discountAmt = voucherData['discountAmt'] ?? 0.0;
+        final String discountType = voucherData['discountType'] ?? '';
+
+        double newTotalAmount =
+            currentTotalAmount; // Start with the current total amount
+
+        if (discountType == 'Fixed Amount') {
+          // Apply fixed amount discount
+          newTotalAmount -= discountAmt;
+        } else if (discountType == 'Percentage') {
+          // Apply percentage discount
+          newTotalAmount -= currentTotalAmount * (discountAmt / 100);
+        }
+
+        // Ensure the total amount never goes below zero
+        if (newTotalAmount < 0) {
+          newTotalAmount = 0.0;
+        }
+
+        setState(() {
+          totalAmount = newTotalAmount;
+        });
+      }
+    } catch (e) {
+      print("Error applying voucher discount: $e");
+    }
+  }
+
+  void _updateTotalAmount(String deliveryType) {
+    double deliveryCharge = 0.0;
+
+    // Set delivery charge based on selected delivery type
+    if (deliveryType == 'Standard') {
+      deliveryCharge = 20.0;
+    } else if (deliveryType == 'Fast') {
+      deliveryCharge = 50.0;
+    }
+
+    // Start with the base (original) total amount
+    double updatedTotalAmount = originalTotalAmount + deliveryCharge;
+
+    // If a voucher is selected, apply the voucher discount after recalculating the delivery charge
+    if (selectedVoucher.isNotEmpty) {
+      _applyVoucherDiscount(
+          updatedTotalAmount); // Reapply discount based on new delivery type
+    } else {
+      // If no voucher is selected, set the updated total amount
+      setState(() {
+        totalAmount = updatedTotalAmount;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Order Details'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Delivery and Pickup Tabs
+          Stack(
+            children: [
+              AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                title: const Text('Order Details',
+                    style: TextStyle(color: Colors.white)),
+                iconTheme: const IconThemeData(color: Colors.white),
+              ),
+            ],
+          ),
           Container(
-            color: Colors.grey[200],
-            padding: const EdgeInsets.all(8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TabBar(
               controller: _tabController,
               tabs: const [
                 Tab(text: 'Delivery'),
-                Tab(text: 'Pickup'),
+                Tab(text: 'Pick Up'),
               ],
-              indicator: const BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(25)),
-                color: Color.fromARGB(255, 192, 153, 144),
-              ),
-              indicatorColor: Colors.transparent,
-              indicatorPadding: EdgeInsets.zero,
-              indicatorWeight: 0,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.black,
-              labelPadding:
-                  const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorColor: Colors.brown,
+              labelColor: Colors.brown,
+              unselectedLabelColor: Colors.grey,
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Tab Bar Views for Delivery and Pickup
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Delivery Tab View
-                _buildDeliveryView(),
-                // Pickup Tab View
-                _buildPickupView(),
+                // Delivery Tab
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ListView(
+                    children: [
+                      AddressSection(userAddress: widget.userAddress),
+                      const SizedBox(height: 16),
+                      DeliveryTypeSection(
+                        deliveryType: deliveryType ?? 'Standard',
+                        onDeliveryTypeChange: (value) {
+                          setState(() {
+                            deliveryType = value;
+                            _updateTotalAmount(
+                                value); // Update the total amount based on the delivery type
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      PaymentMethodSection(
+                        paymentMethod: selectedPaymentMethod,
+                        onPaymentMethodChange: (method) => setState(() {
+                          selectedPaymentMethod = method;
+                        }),
+                        onGcashSelected: () {
+                          setState(() {
+                            isVoucherButtonVisible = true;
+                          });
+                        },
+                      ),
+                      if (isVoucherButtonVisible)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: ElevatedButton(
+                            onPressed: _showVoucherModal,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 12.0),
+                              elevation: 2,
+                            ),
+                            child: Text(
+                              selectedVoucher.isEmpty
+                                  ? 'Select Voucher'
+                                  : 'Change Voucher', // Conditionally change button text
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (selectedVoucher.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: Card(
+                            color: Colors.green[50],
+                            elevation: 4.0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16.0),
+                              leading: Icon(
+                                Icons.card_giftcard,
+                                size: 40.0,
+                                color: Colors.teal,
+                              ),
+                              title: Text(
+                                selectedVoucher,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              subtitle: FutureBuilder<DocumentSnapshot>(
+                                future: FirebaseFirestore.instance
+                                    .collection('voucher')
+                                    .doc(selectedVoucher)
+                                    .get(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  }
+                                  if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  }
+                                  if (snapshot.hasData &&
+                                      snapshot.data != null) {
+                                    final voucherData = snapshot.data!.data()
+                                        as Map<String, dynamic>;
+                                    final description =
+                                        voucherData['description'] ??
+                                            'No description available';
+                                    return Text(
+                                      description,
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[600]),
+                                    );
+                                  }
+                                  return Text(
+                                    'Voucher not found',
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.grey[600]),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      CartProductsSection(cartItems: widget.cartItems),
+                    ],
+                  ),
+                ),
+                // Pick Up Tab
+                PickupTab(
+                  userAddress: widget.userAddress,
+                  paymentMethod:
+                      selectedPaymentMethod, // Pass the currently selected payment method
+                  onPaymentMethodChange: (method) => setState(() {
+                    selectedPaymentMethod = method;
+                  }),
+                  onGcashSelected: () {
+                    setState(() {
+                      isVoucherButtonVisible = true;
+                    });
+                  },
+                  cartItems: widget.cartItems,
+                  originalTotalAmount: originalTotalAmount,
+                ),
               ],
             ),
           ),
+          // Show the total and place order button only when the "Delivery" tab is selected
+          if (_tabController?.index ==
+              0) // Check if the selected tab is "Delivery"
+            Container(
+              color: Colors.brown,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total',
+                          style: TextStyle(color: Colors.white, fontSize: 18)),
+                      Text(
+                          '₱${totalAmount.toStringAsFixed(2)}', // Updated total amount
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 18)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Place order logic here
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      minimumSize: const Size.fromHeight(40),
+                    ),
+                    child: const Text('Place Order',
+                        style: TextStyle(color: Colors.brown)),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDeliveryView() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Address section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Dasmariñas, Cavite, Philippines',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            // Handle address editing
-                          },
-                          child: const Text(
-                            'Edit',
-                            style: TextStyle(color: Colors.green),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Delivery Type section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Delivery Type',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            RadioListTile(
-                              title: const Text('Fast'),
-                              subtitle: const Text('₱50.00'),
-                              value: 0,
-                              groupValue: selectedDeliveryType,
-                              onChanged: (value) {
-                                _updateDeliveryFee(value as int);
-                              },
-                              secondary: const Icon(Icons.delivery_dining),
-                            ),
-                            const Divider(height: 1),
-                            RadioListTile(
-                              title: const Text('Standard'),
-                              subtitle: const Text('₱20.00'),
-                              value: 1,
-                              groupValue: selectedDeliveryType,
-                              onChanged: (value) {
-                                _updateDeliveryFee(value as int);
-                              },
-                              secondary:
-                                  const Icon(Icons.delivery_dining_outlined),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Payment Method',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            ListTile(
-                              title: const Text('Cash'),
-                              trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: selectedPaymentMethod == 0
-                                      ? Colors.green
-                                      : null, // Default color
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedPaymentMethod = 0; // Select Cash
-                                  });
-                                },
-                                child: Text(
-                                  selectedPaymentMethod == 0
-                                      ? 'Selected'
-                                      : 'Select',
-                                  style: TextStyle(
-                                    color: selectedPaymentMethod == 0
-                                        ? Colors
-                                            .white // Change text color to white when selected
-                                        : Colors.black, // Default text color
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            ListTile(
-                              title: const Text('GCash'),
-                              trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: selectedPaymentMethod == 1
-                                      ? Colors.green
-                                      : null, // Default color
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedPaymentMethod = 1; // Select GCash
-                                  });
-                                },
-                                child: Text(
-                                  selectedPaymentMethod == 1
-                                      ? 'Selected'
-                                      : 'Select',
-                                  style: TextStyle(
-                                    color: selectedPaymentMethod == 1
-                                        ? Colors
-                                            .white // Change text color to white when selected
-                                        : Colors.black, // Default text color
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (selectedPaymentMethod == 1) ...[
-                        const Text(
-                          'Select Voucher',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            title: Text(selectedVoucherCode ??
-                                'Voucher Code'), // Update title based on selection
-                            trailing: ElevatedButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title:
-                                          const Text('All Available Vouchers'),
-                                      content: FutureBuilder<QuerySnapshot>(
-                                        future: FirebaseFirestore.instance
-                                            .collection('voucher')
-                                            .get(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return const Center(
-                                              child: CircularProgressIndicator(
-                                                color: Colors.black,
-                                                strokeWidth: 4.0,
-                                              ),
-                                            );
-                                          }
-
-                                          if (!snapshot.hasData ||
-                                              snapshot.data!.docs.isEmpty) {
-                                            return const Text(
-                                                'No vouchers available');
-                                          }
-
-                                          return SingleChildScrollView(
-                                            child: Column(
-                                              children: snapshot.data!.docs
-                                                  .map((doc) {
-                                                var data = doc.data()
-                                                    as Map<String, dynamic>;
-                                                DateTime startDate =
-                                                    (data['startDate']
-                                                            as Timestamp)
-                                                        .toDate();
-                                                DateTime expDate =
-                                                    (data['expDate']
-                                                            as Timestamp)
-                                                        .toDate();
-                                                String formattedStartDate =
-                                                    DateFormat('yyyy-MM-dd')
-                                                        .format(startDate);
-                                                String formattedExpDate =
-                                                    DateFormat('yyyy-MM-dd')
-                                                        .format(expDate);
-
-                                                return Card(
-                                                  margin: const EdgeInsets
-                                                      .symmetric(vertical: 8.0),
-                                                  child: ListTile(
-                                                    title: Text(
-                                                        data['voucherCode'] ??
-                                                            'No Code'),
-                                                    subtitle: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                            'Description: ${data['description'] ?? 'No Description'}'),
-                                                        Text(
-                                                            'Start Date: $formattedStartDate'),
-                                                        Text(
-                                                            'Expiration Date: $formattedExpDate'),
-                                                      ],
-                                                    ),
-                                                    onTap: () {
-                                                      // Update the selected voucher code and calculate discount
-                                                      setState(() {
-                                                        selectedVoucherCode =
-                                                            data['voucherCode'];
-
-                                                        // Fetch discount values
-                                                        double discountAmt =
-                                                            data['discountAmt']
-                                                                    ?.toDouble() ??
-                                                                0;
-                                                        String discountType =
-                                                            data['discountType'] ??
-                                                                'Fixed';
-
-                                                        double totalDiscount =
-                                                            0.0;
-
-                                                        // Calculate total discount based on type
-                                                        if (discountType ==
-                                                            'Percentage') {
-                                                          totalDiscount =
-                                                              totalAmountWithDelivery *
-                                                                  (discountAmt /
-                                                                      100); // Apply percentage discount
-                                                        } else if (discountType ==
-                                                            'Fixed') {
-                                                          totalDiscount =
-                                                              discountAmt; // Use fixed discount directly
-                                                        }
-
-                                                        // Update total amount with the discount
-                                                        totalAmountWithDelivery -=
-                                                            totalDiscount; // Subtract the discount from the total amount
-
-                                                        // Call the function to handle voucher updates
-                                                        _updateVoucher(
-                                                            data); // This will manage the total amount with the discount
-                                                      });
-                                                      Navigator.of(context)
-                                                          .pop(); // Close the dialog
-                                                    },
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(); // Close the dialog
-                                          },
-                                          child: const Text('Close'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: Text(selectedVoucherCode == null
-                                  ? 'Select'
-                                  : 'Change'), // Change button text based on selection
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 16,
-                ),
-
-                // Cart Items section
-                Card(
-                  elevation: 4,
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ListView.builder(
-                      shrinkWrap:
-                          true, // Allow ListView to take the height of its children
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Disable scrolling
-                      itemCount: cartItems.length,
-                      itemBuilder: (context, index) {
-                        final item = cartItems[index];
-                        return Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['productName'], // Update this line
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  '₱${item['total'].toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orangeAccent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Total Amount and Place Order button
-        _buildTotalAndOrderButton(),
-      ],
-    );
-  }
-
-  Widget _buildPickupView() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Ready to pick-up information
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Ready to pick up in 15-25 mins',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Icon(Icons.store),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Payment Method section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Payment Method',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            ListTile(
-                              title: const Text('Cash'),
-                              trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: selectedPaymentMethod == 0
-                                      ? Colors.green
-                                      : null, // Default color
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedPaymentMethod = 0; // Select Cash
-                                  });
-                                },
-                                child: Text(
-                                  selectedPaymentMethod == 0
-                                      ? 'Selected'
-                                      : 'Select',
-                                  style: TextStyle(
-                                    color: selectedPaymentMethod == 0
-                                        ? Colors
-                                            .white // Change text color to white when selected
-                                        : Colors.black, // Default text color
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            ListTile(
-                              title: const Text('GCash'),
-                              trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: selectedPaymentMethod == 1
-                                      ? Colors.green
-                                      : null, // Default color
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedPaymentMethod = 1; // Select GCash
-                                  });
-                                },
-                                child: Text(
-                                  selectedPaymentMethod == 1
-                                      ? 'Selected'
-                                      : 'Select',
-                                  style: TextStyle(
-                                    color: selectedPaymentMethod == 1
-                                        ? Colors
-                                            .white // Change text color to white when selected
-                                        : Colors.black, // Default text color
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (selectedPaymentMethod == 1) ...[
-                        const Text(
-                          'Select Voucher',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            title: Text(selectedVoucherCode ??
-                                'Voucher Code'), // Update title based on selection
-                            trailing: ElevatedButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title:
-                                          const Text('All Available Vouchers'),
-                                      content: FutureBuilder<QuerySnapshot>(
-                                        future: FirebaseFirestore.instance
-                                            .collection('voucher')
-                                            .get(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return const Center(
-                                              child: CircularProgressIndicator(
-                                                color: Colors.black,
-                                                strokeWidth: 4.0,
-                                              ),
-                                            );
-                                          }
-
-                                          if (!snapshot.hasData ||
-                                              snapshot.data!.docs.isEmpty) {
-                                            return const Text(
-                                                'No vouchers available');
-                                          }
-
-                                          return SingleChildScrollView(
-                                            child: Column(
-                                              children: snapshot.data!.docs
-                                                  .map((doc) {
-                                                var data = doc.data()
-                                                    as Map<String, dynamic>;
-                                                DateTime startDate =
-                                                    (data['startDate']
-                                                            as Timestamp)
-                                                        .toDate();
-                                                DateTime expDate =
-                                                    (data['expDate']
-                                                            as Timestamp)
-                                                        .toDate();
-                                                String formattedStartDate =
-                                                    DateFormat('yyyy-MM-dd')
-                                                        .format(startDate);
-                                                String formattedExpDate =
-                                                    DateFormat('yyyy-MM-dd')
-                                                        .format(expDate);
-
-                                                return Card(
-                                                  margin: const EdgeInsets
-                                                      .symmetric(vertical: 8.0),
-                                                  child: ListTile(
-                                                    title: Text(
-                                                        data['voucherCode'] ??
-                                                            'No Code'),
-                                                    subtitle: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                            'Description: ${data['description'] ?? 'No Description'}'),
-                                                        Text(
-                                                            'Start Date: $formattedStartDate'),
-                                                        Text(
-                                                            'Expiration Date: $formattedExpDate'),
-                                                      ],
-                                                    ),
-                                                    onTap: () {
-                                                      // Update the selected voucher code and calculate discount
-                                                      setState(() {
-                                                        selectedVoucherCode =
-                                                            data['voucherCode'];
-
-                                                        // Fetch discount values
-                                                        double discountAmt =
-                                                            data['discountAmt']
-                                                                    ?.toDouble() ??
-                                                                0;
-                                                        String discountType =
-                                                            data['discountType'] ??
-                                                                'Fixed';
-
-                                                        double totalDiscount =
-                                                            0.0;
-
-                                                        // Calculate total discount based on type
-                                                        if (discountType ==
-                                                            'Percentage') {
-                                                          totalDiscount =
-                                                              totalAmountWithDelivery *
-                                                                  (discountAmt /
-                                                                      100); // Apply percentage discount
-                                                        } else if (discountType ==
-                                                            'Fixed') {
-                                                          totalDiscount =
-                                                              discountAmt; // Use fixed discount directly
-                                                        }
-
-                                                        // Update total amount with the discount
-                                                        totalAmountWithDelivery -=
-                                                            totalDiscount; // Subtract the discount from the total amount
-
-                                                        // Call the function to handle voucher updates
-                                                        _updateVoucher(
-                                                            data); // This will manage the total amount with the discount
-                                                      });
-                                                      Navigator.of(context)
-                                                          .pop(); // Close the dialog
-                                                    },
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(); // Close the dialog
-                                          },
-                                          child: const Text('Close'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: Text(selectedVoucherCode == null
-                                  ? 'Select'
-                                  : 'Change'), // Change button text based on selection
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Cart Items section
-                Card(
-                  elevation: 4,
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ListView.builder(
-                      shrinkWrap:
-                          true, // Allow ListView to take the height of its children
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Disable scrolling
-                      itemCount: cartItems.length,
-                      itemBuilder: (context, index) {
-                        final item = cartItems[index];
-                        return Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['productName'], // Update this line
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  'Size/Quantity: ${item['sizeQuantity']} x ${item['quantity']}',
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  '₱${item['total'].toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orangeAccent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Total Amount and Place Order button
-        _buildTotalAndOrderButton(),
-      ],
-    );
-  }
-
-  Widget _buildTotalAndOrderButton() {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Colors.brown[200],
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Total Amount',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                '₱${totalAmountWithDelivery.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            // Collect all product names from the cart
-            List<String> productNames =
-                cartItems.map((item) => item['productName'] as String).toList();
-
-            // Define delivery type based on selectedDeliveryType (int)
-            String deliveryType;
-            switch (selectedDeliveryType) {
-              case 0:
-                deliveryType = 'Fast';
-                break;
-              case 1:
-                deliveryType = 'Standard';
-                break;
-              default:
-                deliveryType = 'Unknown Delivery';
-            }
-
-            // Define payment method based on selectedPaymentMethod (int)
-            String paymentMethod;
-            if (selectedPaymentMethod == 0) {
-              paymentMethod = 'Cash';
-            } else if (selectedPaymentMethod == 1) {
-              paymentMethod = 'GCash';
-            } else {
-              paymentMethod = 'Unknown';
-            }
-
-            // Get the selected voucher code, or use a default if none is selected
-            String voucherCode = selectedVoucherCode ?? 'No Voucher';
-
-            // Navigate to ConfirmPayment with all required information
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    ConfirmPayment(
-                  productNames: productNames,
-                  deliveryType: deliveryType,
-                  paymentMethod: paymentMethod,
-                  voucherCode: voucherCode,
-                  totalAmountWithDelivery: totalAmountWithDelivery,
-                  uid: widget.uid,
-                  orderType: orderType, // Pass orderType here
-                  userName: widget.userName,
-                  email: widget.email,
-                  emailAddress: widget.emailAddress,
-                  imageUrl: widget.imageUrl,
-                  latitude: widget.latitude,
-                  longitude: widget.longitude,
-                  userAddress: widget.userAddress,
-                ),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            color: Colors.brown,
-            child: const Center(
-              child: Text(
-                'Place Order',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

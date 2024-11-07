@@ -91,10 +91,10 @@ class _MainCartState extends State<MainCart> {
           latitude: widget.latitude,
           longitude: widget.longitude,
           userAddress: widget.userAddress,
+          cartItems: cartItems, // Pass cart items here
         ),
-        transitionDuration: Duration.zero, // Remove transition duration
-        reverseTransitionDuration:
-            Duration.zero, // Remove reverse transition duration
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
       ),
     );
   }
