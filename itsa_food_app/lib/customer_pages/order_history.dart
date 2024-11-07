@@ -9,7 +9,7 @@ class OrderHistory extends StatefulWidget {
   final double latitude;
   final double longitude;
 
-  const OrderHistory({
+  const OrderHistory({super.key, 
     required this.emailAddress,
     required this.userName,
     required this.uid,

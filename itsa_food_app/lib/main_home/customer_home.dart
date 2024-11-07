@@ -209,6 +209,8 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
           uid: user?.uid ?? '',
           latitude: user?.latitude ?? 0.0,
           longitude: user?.longitude ?? 0.0,
+          email: user?.email ?? '',
+          userAddress: user?.userAddress ?? '',
         ),
       ),
     );

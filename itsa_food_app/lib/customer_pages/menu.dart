@@ -159,6 +159,8 @@ class _MenuState extends State<Menu> {
           uid: widget.uid,
           latitude: widget.latitude,
           longitude: widget.longitude,
+          email: widget.email,
+          userAddress: widget.userAddress,
         ),
       ),
       body: Padding(

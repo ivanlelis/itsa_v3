@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/edit_address.dart';
+import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:itsa_food_app/login/login.dart';
@@ -61,6 +62,20 @@ class MyApp extends StatelessWidget {
             userAddress: args?['userAddress'] ?? '',
             latitude: args?['latitude'] ?? 0.0,
             longitude: args?['longitude'] ?? 0.0,
+          );
+        },
+        '/profile': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return ProfileView(
+            userName: args?['userName'] ?? '',
+            emailAddress: args?['emailAddress'] ?? '',
+            email: args?['email'] ?? '',
+            uid: args?['uid'] ?? '',
+            userAddress: args?['userAddress'] ?? '',
+            latitude: args?['latitude'] ?? 0.0,
+            longitude: args?['longitude'] ?? 0.0,
+            imageUrl: args?['imageUrl'] ?? '',
           );
         },
         '/menu': (context) {

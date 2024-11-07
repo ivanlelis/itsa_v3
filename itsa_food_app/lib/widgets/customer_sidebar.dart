@@ -8,6 +8,8 @@ import 'package:itsa_food_app/user_provider/user_provider.dart'; // Import your 
 class Sidebar extends StatefulWidget {
   final String userName;
   final String emailAddress;
+  final String email;
+  final String userAddress;
   final String imageUrl;
   final String uid;
   final double latitude;
@@ -17,6 +19,8 @@ class Sidebar extends StatefulWidget {
     super.key,
     required this.userName,
     required this.emailAddress,
+    required this.email,
+    required this.userAddress,
     required this.imageUrl,
     required this.uid,
     required this.latitude,
@@ -86,8 +90,18 @@ class _SidebarState extends State<Sidebar> {
           leading: const Icon(Icons.person),
           title: const Text('Profile'),
           onTap: () {
-            // Navigate to Profile page
-            Navigator.pushNamed(context, '/profile');
+            final Map<String, dynamic> args = {
+              'emailAddress': widget.emailAddress,
+              'userName': widget.userName,
+              'email': widget.email,
+              'userAddress': widget.userAddress,
+              'uid': widget.uid,
+              'latitude': widget.latitude,
+              'longitude': widget.longitude,
+              'imageUrl': widget.imageUrl,
+            };
+
+            Navigator.pushNamed(context, '/profile', arguments: args);
           },
         ),
         ListTile(
