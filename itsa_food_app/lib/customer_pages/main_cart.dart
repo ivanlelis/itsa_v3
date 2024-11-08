@@ -78,25 +78,46 @@ class _MainCartState extends State<MainCart> {
   }
 
   void _proceedToCheckout() {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => Checkout(
-          userName: widget.userName,
-          emailAddress: widget.emailAddress,
-          totalAmount: cartItems.fold(0.0, (sum, item) => sum + item['total']),
-          uid: widget.uid,
-          email: widget.email,
-          imageUrl: widget.imageUrl,
-          latitude: widget.latitude,
-          longitude: widget.longitude,
-          userAddress: widget.userAddress,
-          cartItems: cartItems, // Pass cart items here
+    if (cartItems.isEmpty) {
+      // Show a dialog if the cart is empty
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Cart is empty'),
+          content: const Text('Add some items to your cart first.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('OK'),
+            ),
+          ],
         ),
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-      ),
-    );
+      );
+    } else {
+      // Proceed to checkout if there are items in the cart
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => Checkout(
+            userName: widget.userName,
+            emailAddress: widget.emailAddress,
+            totalAmount:
+                cartItems.fold(0.0, (sum, item) => sum + item['total']),
+            uid: widget.uid,
+            email: widget.email,
+            imageUrl: widget.imageUrl,
+            latitude: widget.latitude,
+            longitude: widget.longitude,
+            userAddress: widget.userAddress,
+            cartItems: cartItems, // Pass cart items here
+          ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
   }
 
   @override

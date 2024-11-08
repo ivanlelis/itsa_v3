@@ -4,6 +4,7 @@ import 'package:itsa_food_app/widgets/payment_method_section.dart';
 import 'package:itsa_food_app/widgets/voucher_section_pickup.dart';
 import 'package:itsa_food_app/widgets/cart_products_section.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
 
 class PickupTab extends StatefulWidget {
   final String userAddress;
@@ -12,6 +13,14 @@ class PickupTab extends StatefulWidget {
   final VoidCallback onGcashSelected;
   final List<Map<String, dynamic>> cartItems;
   final double originalTotalAmount;
+  final String userName;
+  final String emailAddress;
+  final String uid;
+  final double latitude;
+  final double longitude;
+  final String imageUrl;
+  final String orderType;
+  final String email;
 
   const PickupTab({
     super.key,
@@ -20,7 +29,15 @@ class PickupTab extends StatefulWidget {
     required this.onPaymentMethodChange,
     required this.onGcashSelected,
     required this.cartItems,
-    required this.originalTotalAmount, // Add totalAmount parameter
+    required this.originalTotalAmount,
+    required this.userName,
+    required this.emailAddress,
+    required this.uid,
+    required this.latitude,
+    required this.longitude,
+    required this.imageUrl,
+    required this.orderType,
+    required this.email,
   });
 
   @override
@@ -32,21 +49,27 @@ class _PickupTabState extends State<PickupTab> {
   bool isVoucherVisible = false;
   String? selectedVoucher;
   String? voucherDescription;
-  double baseTotal = 0.0; // Set initial value to 0
-  double finalTotal = 0.0; // Set initial value to 0
+  double baseTotal = 0.0;
+  double finalTotal = 0.0;
 
   @override
   void initState() {
     super.initState();
-    baseTotal = widget
-        .originalTotalAmount; // Set baseTotal from widget.originalTotalAmount
-    finalTotal = baseTotal; // Set finalTotal to baseTotal initially
+    baseTotal = widget.originalTotalAmount;
+    finalTotal = baseTotal;
   }
 
   void _onPaymentMethodChange(String method) {
     setState(() {
       paymentMethod = method;
-      isVoucherVisible = method == 'GCash';
+      if (method == 'GCash') {
+        isVoucherVisible = true;
+      } else if (method == 'Cash') {
+        isVoucherVisible = false;
+        selectedVoucher = null;
+        voucherDescription = null;
+        finalTotal = baseTotal;
+      }
     });
   }
 
@@ -54,7 +77,6 @@ class _PickupTabState extends State<PickupTab> {
     if (selectedVoucher == null || selectedVoucher!.isEmpty) return;
 
     try {
-      // Fetch voucher data from Firestore
       DocumentSnapshot voucherSnapshot = await FirebaseFirestore.instance
           .collection('voucher')
           .doc(selectedVoucher)
@@ -65,29 +87,25 @@ class _PickupTabState extends State<PickupTab> {
         final double discountAmt = voucherData['discountAmt'] ?? 0.0;
         final String discountType = voucherData['discountType'] ?? '';
 
-        double newTotalAmount =
-            currentTotalAmount; // Start with the current total amount
+        double newTotalAmount = currentTotalAmount;
 
-        // Apply discount based on voucher type
         if (discountType == 'Fixed Amount') {
-          newTotalAmount -= discountAmt; // Apply fixed amount discount
+          newTotalAmount -= discountAmt;
           voucherDescription =
               'Fixed amount discount of ₱${discountAmt.toStringAsFixed(2)}';
         } else if (discountType == 'Percentage') {
-          newTotalAmount -= currentTotalAmount *
-              (discountAmt / 100); // Apply percentage discount
+          newTotalAmount -= currentTotalAmount * (discountAmt / 100);
           voucherDescription = '${discountAmt.toStringAsFixed(0)}% discount';
         } else {
           voucherDescription = 'No discount';
         }
 
-        // Ensure the total amount never goes below zero
         if (newTotalAmount < 0) {
           newTotalAmount = 0.0;
         }
 
         setState(() {
-          finalTotal = newTotalAmount; // Update finalTotal
+          finalTotal = newTotalAmount;
         });
       }
     } catch (e) {
@@ -96,15 +114,13 @@ class _PickupTabState extends State<PickupTab> {
   }
 
   void _recalculateTotalAmount() {
-    // Reset to the base amount (original total amount)
     double updatedTotalAmount = baseTotal;
 
-    // Apply the voucher discount if any
     if (selectedVoucher != null && selectedVoucher!.isNotEmpty) {
-      _applyVoucherDiscount(updatedTotalAmount); // Apply voucher discount
+      _applyVoucherDiscount(updatedTotalAmount);
     } else {
       setState(() {
-        finalTotal = updatedTotalAmount; // Just set the amount if no voucher
+        finalTotal = updatedTotalAmount;
       });
     }
   }
@@ -119,15 +135,13 @@ class _PickupTabState extends State<PickupTab> {
           onVoucherSelect: (voucherCode) {
             setState(() {
               selectedVoucher = voucherCode;
-              // Reset the total to baseTotal and recalculate the discount
               finalTotal = baseTotal;
-              _recalculateTotalAmount(); // Recalculate the total with new voucher
+              _recalculateTotalAmount();
             });
           },
           onDiscountApplied: (discount) {
             setState(() {
-              finalTotal = finalTotal -
-                  discount; // Update final total with the discount applied
+              finalTotal = finalTotal - discount;
             });
           },
           onVoucherDescriptionUpdate: (description) {
@@ -139,7 +153,7 @@ class _PickupTabState extends State<PickupTab> {
       },
     ).then((_) {
       if (selectedVoucher != null && selectedVoucher!.isNotEmpty) {
-        setState(() {}); // Trigger state update if voucher was selected
+        setState(() {});
       }
     });
   }
@@ -154,7 +168,6 @@ class _PickupTabState extends State<PickupTab> {
               padding: const EdgeInsets.all(16.0),
               child: ListView(
                 children: [
-                  // Use the actual userAddress from the widget properties
                   AddressSection(userAddress: widget.userAddress),
                   const SizedBox(height: 16),
                   PaymentMethodSection(
@@ -167,7 +180,6 @@ class _PickupTabState extends State<PickupTab> {
                     },
                   ),
                   if (isVoucherVisible) ...[
-                    // Show voucher option if GCash is selected
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),
@@ -243,7 +255,6 @@ class _PickupTabState extends State<PickupTab> {
               ),
             ),
           ),
-          // Container for the total and place order button, placed outside the padding
           Container(
             color: Colors.brown,
             padding:
@@ -268,7 +279,27 @@ class _PickupTabState extends State<PickupTab> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Place order logic here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ConfirmPayment(
+                            cartItems: widget.cartItems,
+                            deliveryType: widget.orderType,
+                            paymentMethod: paymentMethod,
+                            voucherCode: selectedVoucher ?? '',
+                            totalAmount: finalTotal,
+                            uid: widget.uid,
+                            userName: widget.userName,
+                            userAddress: widget.userAddress,
+                            latitude: widget.latitude,
+                            longitude: widget.longitude,
+                            orderType: widget.orderType,
+                            emailAddress: widget.emailAddress,
+                            email: widget.email,
+                            imageUrl: widget.imageUrl,
+                          ),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,

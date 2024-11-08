@@ -6,6 +6,7 @@ import 'package:itsa_food_app/widgets/cart_products_section.dart';
 import 'package:itsa_food_app/widgets/address_section.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/widgets/pickuptab.dart';
+import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
 
 class Checkout extends StatefulWidget {
   final String userName;
@@ -47,11 +48,13 @@ class _CheckoutState extends State<Checkout>
   String selectedPaymentMethod = 'Cash';
   double originalTotalAmount = 0.0;
   double totalAmount = 0.0;
+  String? orderType;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    orderType = _tabController?.index == 0 ? "Delivery" : "Pickup";
 
     // Initialize the original total amount (without delivery charges)
     originalTotalAmount = widget.totalAmount;
@@ -73,6 +76,18 @@ class _CheckoutState extends State<Checkout>
         _updateTotalAmount(
             deliveryType ?? 'Standard'); // Reapply delivery charge
       }
+    });
+
+    orderType = _tabController?.index == 0
+        ? "Delivery"
+        : "Pickup"; // Set initial orderType
+
+    _tabController?.addListener(() {
+      setState(() {
+        orderType = _tabController!.index == 0
+            ? "Delivery"
+            : "Pickup"; // Update based on selected tab
+      });
     });
   }
 
@@ -263,8 +278,7 @@ class _CheckoutState extends State<Checkout>
                         onDeliveryTypeChange: (value) {
                           setState(() {
                             deliveryType = value;
-                            _updateTotalAmount(
-                                value); // Update the total amount based on the delivery type
+                            _updateTotalAmount(value);
                           });
                         },
                       ),
@@ -273,6 +287,15 @@ class _CheckoutState extends State<Checkout>
                         paymentMethod: selectedPaymentMethod,
                         onPaymentMethodChange: (method) => setState(() {
                           selectedPaymentMethod = method;
+                          if (method == 'GCash') {
+                            isVoucherButtonVisible = true;
+                          } else if (method == 'Cash') {
+                            isVoucherButtonVisible = false;
+                            selectedVoucher =
+                                ''; // Reset voucher when "Cash" is selected
+                            totalAmount =
+                                originalTotalAmount; // Reset total amount
+                          }
                         }),
                         onGcashSelected: () {
                           setState(() {
@@ -293,7 +316,7 @@ class _CheckoutState extends State<Checkout>
                             child: Text(
                               selectedVoucher.isEmpty
                                   ? 'Select Voucher'
-                                  : 'Change Voucher', // Conditionally change button text
+                                  : 'Change Voucher',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -368,11 +391,25 @@ class _CheckoutState extends State<Checkout>
                 ),
                 // Pick Up Tab
                 PickupTab(
+                  userName: widget.userName,
+                  emailAddress: widget.emailAddress,
+                  email: widget.email,
+                  uid: widget.uid,
+                  latitude: widget.latitude,
+                  longitude: widget.longitude,
+                  imageUrl: widget.imageUrl,
+                  orderType: orderType ?? "Delivery",
                   userAddress: widget.userAddress,
-                  paymentMethod:
-                      selectedPaymentMethod, // Pass the currently selected payment method
+                  paymentMethod: selectedPaymentMethod,
                   onPaymentMethodChange: (method) => setState(() {
                     selectedPaymentMethod = method;
+                    if (method == 'GCash') {
+                      isVoucherButtonVisible = true;
+                    } else if (method == 'Cash') {
+                      isVoucherButtonVisible = false;
+                      selectedVoucher =
+                          ''; // Reset voucher when "Cash" is selected
+                    }
                   }),
                   onGcashSelected: () {
                     setState(() {
@@ -386,8 +423,7 @@ class _CheckoutState extends State<Checkout>
             ),
           ),
           // Show the total and place order button only when the "Delivery" tab is selected
-          if (_tabController?.index ==
-              0) // Check if the selected tab is "Delivery"
+          if (_tabController?.index == 0)
             Container(
               color: Colors.brown,
               padding:
@@ -399,8 +435,7 @@ class _CheckoutState extends State<Checkout>
                     children: [
                       const Text('Total',
                           style: TextStyle(color: Colors.white, fontSize: 18)),
-                      Text(
-                          '₱${totalAmount.toStringAsFixed(2)}', // Updated total amount
+                      Text('₱${totalAmount.toStringAsFixed(2)}',
                           style: const TextStyle(
                               color: Colors.white, fontSize: 18)),
                     ],
@@ -408,7 +443,28 @@ class _CheckoutState extends State<Checkout>
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () {
-                      // Place order logic here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ConfirmPayment(
+                            cartItems: widget.cartItems,
+                            deliveryType:
+                                deliveryType ?? 'Unknown Delivery Type',
+                            paymentMethod: selectedPaymentMethod,
+                            voucherCode: selectedVoucher,
+                            totalAmount: totalAmount,
+                            uid: widget.uid,
+                            userName: widget.userName,
+                            userAddress: widget.userAddress,
+                            emailAddress: widget.emailAddress,
+                            latitude: widget.latitude,
+                            longitude: widget.longitude,
+                            orderType: orderType ?? "Delivery",
+                            email: widget.email,
+                            imageUrl: widget.imageUrl,
+                          ),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -419,7 +475,7 @@ class _CheckoutState extends State<Checkout>
                     ),
                     child: const Text('Place Order',
                         style: TextStyle(color: Colors.brown)),
-                  ),
+                  )
                 ],
               ),
             ),

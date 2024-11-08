@@ -1,43 +1,39 @@
-import 'dart:io';
-import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:itsa_food_app/customer_pages/menu.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
+import 'package:itsa_food_app/main_home/customer_home.dart';
 
 class ConfirmPayment extends StatefulWidget {
-  final List<String> productNames;
+  final List<dynamic> cartItems;
   final String deliveryType;
   final String paymentMethod;
   final String voucherCode;
-  final double totalAmountWithDelivery;
-  final String uid;
-  final String orderType;
+  final double totalAmount;
+  final String uid; // Current customer’s ID
   final String userName;
-  final String email;
+  final String userAddress;
   final String emailAddress;
-  final String imageUrl;
   final double latitude;
   final double longitude;
-  final String userAddress;
+  final String orderType;
+  final String email;
+  final String imageUrl;
 
-  const ConfirmPayment({
-    super.key,
-    required this.productNames,
+  ConfirmPayment({
+    required this.cartItems,
     required this.deliveryType,
     required this.paymentMethod,
     required this.voucherCode,
-    required this.totalAmountWithDelivery,
+    required this.totalAmount,
     required this.uid,
-    required this.orderType,
     required this.userName,
-    required this.imageUrl,
-    required this.email,
+    required this.userAddress,
     required this.emailAddress,
     required this.latitude,
     required this.longitude,
-    required this.userAddress,
+    required this.orderType,
+    required this.email,
+    required this.imageUrl,
   });
 
   @override
@@ -45,113 +41,166 @@ class ConfirmPayment extends StatefulWidget {
 }
 
 class _ConfirmPaymentState extends State<ConfirmPayment> {
-  XFile? _image;
-  final ImagePicker _picker = ImagePicker();
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
+  String discountDescription = '';
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      _image = image;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchVoucherDetails();
   }
 
-  String _generateOrderID() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return List.generate(8, (index) => chars[Random().nextInt(chars.length)])
-        .join();
-  }
+  // Fetch voucher details from Firestore
+  Future<void> _fetchVoucherDetails() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('voucher')
+        .doc(widget.voucherCode)
+        .get();
 
-  Future<void> _submitPayment() async {
-    // Get the current logged-in user's document ID
-    final user = _auth.currentUser;
-    if (user == null) return; // Exit if no user is logged in
+    if (doc.exists) {
+      final data = doc.data();
+      if (data != null) {
+        final discountAmt = data['discountAmt'];
+        final discountType = data['discountType'];
 
-    // Generate a unique order ID
-    final orderID = _generateOrderID();
+        // Format discount string based on type
+        if (discountType == "Fixed Amount") {
+          discountDescription = '₱$discountAmt off';
+        } else if (discountType == "Percentage") {
+          discountDescription = '$discountAmt% off';
+        }
 
-    // Create order details with orderType included
-    final orderData = {
-      'productNames': widget.productNames,
-      'deliveryType': widget.deliveryType,
-      'paymentMethod': widget.paymentMethod,
-      'voucherCode': widget.voucherCode,
-      'totalAmountWithDelivery': widget.totalAmountWithDelivery,
-      'orderID': orderID,
-      'orderType': widget.orderType, // Added orderType field
-      'timestamp': FieldValue.serverTimestamp(),
-    };
-
-    try {
-      // Create "orders" subcollection in the "customer" collection
-      await _firestore
-          .collection('customer')
-          .doc(widget.uid)
-          .collection('orders')
-          .doc(orderID) // Document name as orderID
-          .set(orderData);
-
-      // Create document in the "notifications" collection at the root level
-      await _firestore
-          .collection('notifications')
-          .doc(orderID) // Document name as orderID
-          .set(orderData);
-
-      // Delete the entire "cart" subcollection after order submission
-      await _deleteCartSubcollection();
-
-      // Show the success modal
-      _showSuccessModal();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit payment. Try again!')),
-      );
+        setState(() {}); // Update the UI with the fetched discount
+      }
     }
   }
 
-  Future<void> _deleteCartSubcollection() async {
-    // Get the cart subcollection reference
-    final cartRef =
-        _firestore.collection('customer').doc(widget.uid).collection('cart');
+  // Generate a random 8-character order ID
+  String _generateOrderID() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    Random random = Random();
+    return List.generate(
+        8, (index) => characters[random.nextInt(characters.length)]).join();
+  }
 
-    // Get all documents in the cart subcollection
-    final cartDocs = await cartRef.get();
+  // Extract product names from cartItems
+  List<String> _getProductNames() {
+    return widget.cartItems
+        .map((item) => item['productName'] as String)
+        .toList();
+  }
 
-    // Delete each document in the cart subcollection
-    for (var doc in cartDocs.docs) {
+  Future<void> _deleteCart() async {
+    final cartRef = FirebaseFirestore.instance
+        .collection('customer')
+        .doc(widget.uid)
+        .collection('cart');
+
+    final cartItems = await cartRef.get();
+
+    for (var doc in cartItems.docs) {
       await doc.reference.delete();
     }
   }
 
-  void _showSuccessModal() {
-    showDialog(
+  // Create order in Firestore
+  Future<void> _createOrder() async {
+    String orderID = _generateOrderID();
+    List<String> productNames = _getProductNames();
+    Timestamp timestamp = Timestamp.now();
+
+    Map<String, dynamic> orderData = {
+      'deliveryType': widget.deliveryType,
+      'orderID': orderID,
+      'orderType': widget.orderType,
+      'paymentMethod': widget.paymentMethod,
+      'productNames': productNames,
+      'timestamp': timestamp,
+      'total': widget.totalAmount,
+      'voucherCode': widget.voucherCode,
+    };
+
+    try {
+      // Create the order in Firestore
+      await FirebaseFirestore.instance
+          .collection('customer')
+          .doc(widget.uid)
+          .collection('orders')
+          .doc(orderID)
+          .set(orderData);
+
+      // Create the notification in Firestore
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(orderID)
+          .set(orderData);
+
+      // Delete the cart items after order creation
+      await _deleteCart();
+
+      // Show success modal directly after completing Firestore operations
+      _showPaymentSuccessModal();
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to confirm order: $e')));
+    }
+  }
+
+  void _showPaymentSuccessModal() {
+    if (!mounted) return; // Check if the widget is still mounted
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Payment Successful'),
-          content: Text('Payment successful. Order is now processing.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the modal
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                      builder: (context) => Menu(
-                        userName: widget.userName,
+      isScrollControlled: true, // Allows the modal to take more space if needed
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Payment Successful',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text('Your order is now being processed.'),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close modal
+                      // Navigate to Track Order page (you might need to create this page)
+                    },
+                    child: Text('Track Order', style: TextStyle(fontSize: 16)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close modal
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CustomerMainHome(
+                            userName: widget.userName,
                             emailAddress: widget.emailAddress,
+                            email: widget.email,
                             imageUrl: widget.imageUrl,
                             uid: widget.uid,
-                            email: widget.email,
                             userAddress: widget.userAddress,
                             latitude: widget.latitude,
                             longitude: widget.longitude,
-                      )), // Direct route to Menu
-                );
-              },
-              child: Text('Go Back to Menu'),
-            ),
-          ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text('Back to Home', style: TextStyle(fontSize: 16)),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -162,97 +211,199 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Confirm Payment'),
-        backgroundColor: Color(0xFF2E0B0D),
+        backgroundColor: Colors.orangeAccent,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: EdgeInsets.all(16.0),
+        child: ListView(
           children: [
+            // Order Summary Title
             Text(
-              'Attach Proof of Payment',
+              'Order Summary',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E0B0D),
-              ),
-            ),
-            SizedBox(height: 20),
-            for (String productName in widget.productNames)
-              Text(
-                'Product: $productName',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            SizedBox(height: 20),
-            Text(
-              'Delivery Type: ${widget.deliveryType}',
-              style: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            Text(
-              'Payment Method: ${widget.paymentMethod}',
-              style: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            if (widget.voucherCode.isNotEmpty)
-              Text(
-                'Selected Voucher: ${widget.voucherCode}',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            SizedBox(height: 20),
-            Text(
-              'Order Type: ${widget.orderType}', // Displaying orderType
-              style: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Total Amount with Delivery: ₱${widget.totalAmountWithDelivery.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontSize: 16,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
+            SizedBox(height: 15),
+
+            // Cart Items
+            _buildSectionTitle('Cart Items'),
+            _buildCartItems(),
+
             SizedBox(height: 20),
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[400]!, width: 1),
-                ),
-                child: _image == null
-                    ? Center(
-                        child: Text('Tap to attach image',
-                            style: TextStyle(color: Colors.grey[600])))
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child:
-                            Image.file(File(_image!.path), fit: BoxFit.cover),
-                      ),
-              ),
-            ),
-            Spacer(),
+
+            // Delivery and Payment Details
+            _buildSectionTitle('Delivery & Payment Details'),
+            _buildDetailsRow('Delivery Type:', widget.deliveryType),
+            _buildDetailsRow('Payment Method:', widget.paymentMethod),
+            if (widget.voucherCode.isNotEmpty) ...[
+              _buildDetailsRow('Voucher Code:', widget.voucherCode),
+              if (discountDescription.isNotEmpty)
+                _buildDetailsRow('Discount:', discountDescription),
+            ],
+            _buildDetailsRow(
+                'Total Amount:', '₱${widget.totalAmount.toStringAsFixed(2)}'),
+
+            SizedBox(height: 20),
+
+            // User Information
+            _buildSectionTitle('User Information'),
+            _buildDetailsRow('Name:', widget.userName),
+            _buildDetailsRow('Address:', widget.userAddress),
+            _buildDetailsRow('Email:', widget.emailAddress),
+
+            SizedBox(height: 20),
+
+            // Order Information
+            _buildSectionTitle('Order Information'),
+            _buildDetailsRow('Order Type:', widget.orderType),
+
+            SizedBox(height: 30),
+
+            // Confirm Payment Button
             ElevatedButton(
-              onPressed: _submitPayment,
+              onPressed: _createOrder,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2E0B0D),
-                padding: EdgeInsets.symmetric(vertical: 20),
+                backgroundColor: Colors.orangeAccent,
+                padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                minimumSize: Size(double.infinity, 56),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: Text(
                 'Confirm Payment',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
+            )
           ],
         ),
+      ),
+    );
+  }
+
+  // Section Title Widget
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
+  }
+
+  // Cart Items Widget
+  Widget _buildCartItems() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey[300]!, blurRadius: 8, offset: Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        children: widget.cartItems.map((item) {
+          final total = item['total'] ?? 0.0;
+          final sizeQuantity = item['sizeQuantity'] ?? 'N/A';
+          final quantity = item['quantity'] ?? 1;
+
+          final size = (sizeQuantity == 'Small' ||
+                  sizeQuantity == 'Medium' ||
+                  sizeQuantity == 'Large')
+              ? sizeQuantity
+              : item['size'] ?? 'N/A';
+
+          final variant = (sizeQuantity == '4 pcs' ||
+                  sizeQuantity == '8 pcs' ||
+                  sizeQuantity == '12 pcs')
+              ? sizeQuantity
+              : 'N/A';
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2.0),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.symmetric(horizontal: 8),
+              title: Text(
+                item['productName'],
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              children: [
+                if (variant != 'N/A')
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Variant: $variant',
+                          style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                if (size != 'N/A')
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child:
+                          Text('Size: $size', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child:
+                        Text('Qty: $quantity', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Total: ₱${total.toStringAsFixed(2)}',
+                        style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // Details Row Widget
+  Widget _buildDetailsRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600]),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
       ),
     );
   }
