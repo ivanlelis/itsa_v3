@@ -19,7 +19,7 @@ class ConfirmPayment extends StatefulWidget {
   final String email;
   final String imageUrl;
 
-  ConfirmPayment({
+  const ConfirmPayment({super.key, 
     required this.cartItems,
     required this.deliveryType,
     required this.paymentMethod,

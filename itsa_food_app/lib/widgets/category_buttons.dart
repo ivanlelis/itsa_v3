@@ -19,19 +19,19 @@ class CategoryButtonsRow extends StatelessWidget {
       child: Row(
         children: [
           CategoryButton(
-            icon: Icons.fastfood, // Add appropriate icon for Takoyaki
+            label: 'Takoyaki', // Use text for 'Takoyaki'
             index: 0,
             selectedIndex: selectedIndex,
             onPressed: () => onCategorySelected(0),
           ),
           CategoryButton(
-            icon: Icons.local_drink, // Add appropriate icon for Milk Tea
+            label: 'Milk Tea', // Use text for 'Milk Tea'
             index: 1,
             selectedIndex: selectedIndex,
             onPressed: () => onCategorySelected(1),
           ),
           CategoryButton(
-            icon: Icons.restaurant, // Add appropriate icon for Meals
+            label: 'Meals', // Use text for 'Meals'
             index: 2,
             selectedIndex: selectedIndex,
             onPressed: () => onCategorySelected(2),

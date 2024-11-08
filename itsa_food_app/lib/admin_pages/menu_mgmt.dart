@@ -583,20 +583,28 @@ class CategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              selectedIndex == index ? Colors.deepPurple : Colors.grey[300],
-          padding:
-              EdgeInsets.symmetric(vertical: 12), // Adjust vertical padding
-        ),
-        onPressed: onPressed,
-        child: Text(
-          title,
-          textAlign: TextAlign.center, // Center the text
-          style: TextStyle(
-            color: selectedIndex == index ? Colors.white : Colors.black,
+    bool isSelected = index == selectedIndex;
+
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+            horizontal: 4.0), // Space between buttons
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected ? Colors.purple : Colors.grey[300],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding:
+                const EdgeInsets.symmetric(vertical: 12.0), // Uniform padding
+          ),
+          child: Text(
+            title, // Use title instead of label
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

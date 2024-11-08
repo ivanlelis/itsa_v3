@@ -172,7 +172,7 @@ class _MenuState extends State<Menu> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 CategoryButton(
-                  icon: Icons.view_list, // Example icon for 'All'
+                  label: 'All', // Use text for 'All'
                   index: 0,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -182,8 +182,7 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  icon: Icons
-                      .fastfood, // Replace with appropriate icon for 'Takoyaki'
+                  label: 'Takoyaki', // Use text for 'Takoyaki'
                   index: 1,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -193,8 +192,7 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  icon: Icons
-                      .local_drink, // Replace with appropriate icon for 'Milk Tea'
+                  label: 'Milk Tea', // Use text for 'Milk Tea'
                   index: 2,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -204,8 +202,7 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  icon: Icons
-                      .restaurant, // Replace with appropriate icon for 'Meals'
+                  label: 'Meals', // Use text for 'Meals'
                   index: 3,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -363,25 +360,26 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine product type
+    // Determine product type and starting price
     String productType;
+    String startingPriceText = "Starts at ₱";
+
     if (takoyakiPrices != null) {
       productType = 'takoyaki';
+      startingPriceText += takoyakiPrices!; // Display only 4pc price
     } else if (milkTeaSmall != null) {
       productType = 'milktea';
+      startingPriceText += milkTeaSmall!; // Display only Small price
     } else if (mealsPrice != null) {
       productType = 'meal';
+      startingPriceText = 'Price: ₱$mealsPrice';
     } else {
       productType = 'unknown'; // Default value
+      startingPriceText = 'Price Unavailable';
     }
 
     return GestureDetector(
       onTap: () {
-        // Debug print to check values before navigation
-        print('Navigating to ProductView...');
-        print('User Name: $userName');
-        print('Email: $emailAddress');
-
         // Navigate to the ProductView page and pass product details
         Navigator.push(
           context,
@@ -411,15 +409,14 @@ class ProductCard extends StatelessWidget {
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0), // Rounded all corners
+          borderRadius: BorderRadius.circular(16.0),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(16.0), // Rounded all corners
+                borderRadius: BorderRadius.circular(16.0),
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
@@ -437,21 +434,8 @@ class ProductCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  if (takoyakiPrices != null &&
-                      takoyakiPrices8 != null &&
-                      takoyakiPrices12 != null) ...[
-                    _buildPriceContainer('4pc: $takoyakiPrices'),
-                    _buildPriceContainer('8pc: $takoyakiPrices8'),
-                    _buildPriceContainer('12pc: $takoyakiPrices12'),
-                  ] else if (mealsPrice != null) ...[
-                    _buildPriceContainer('Price: $mealsPrice'),
-                  ] else if (milkTeaSmall != null &&
-                      milkTeaMedium != null &&
-                      milkTeaLarge != null) ...[
-                    _buildPriceContainer('Small: $milkTeaSmall'),
-                    _buildPriceContainer('Medium: $milkTeaMedium'),
-                    _buildPriceContainer('Large: $milkTeaLarge'),
-                  ],
+                  _buildPriceContainer(
+                      startingPriceText), // Display starting price only
                 ],
               ),
             ),
@@ -483,14 +467,14 @@ class ProductCard extends StatelessWidget {
 }
 
 class CategoryButton extends StatelessWidget {
-  final IconData icon; // Add icon property
+  final String label;
   final int index;
   final int selectedIndex;
   final VoidCallback onPressed;
 
   const CategoryButton({
     super.key,
-    required this.icon, // Require the icon parameter
+    required this.label,
     required this.index,
     required this.selectedIndex,
     required this.onPressed,
@@ -498,29 +482,29 @@ class CategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              selectedIndex == index ? Colors.deepPurple : Colors.grey[300],
-          padding: EdgeInsets.symmetric(vertical: 12),
-        ),
-        onPressed: onPressed,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: selectedIndex == index ? Colors.white : Colors.black,
+    bool isSelected = index == selectedIndex;
+
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+            horizontal: 4.0), // Space between buttons
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected ? Colors.purple : Colors.grey[300],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 4),
-            Text(
-              '', // Optionally keep the text empty or add a small label if needed
-              style: TextStyle(
-                color: selectedIndex == index ? Colors.white : Colors.black,
-              ),
+            padding:
+                const EdgeInsets.symmetric(vertical: 12.0), // Uniform padding
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
             ),
-          ],
+          ),
         ),
       ),
     );
