@@ -243,8 +243,8 @@ class _VouchersState extends State<Vouchers> {
       lastDate: DateTime(2101),
     );
 
+    // Check if pickedDate is not null
     if (pickedDate != null) {
-      // Check if pickedDate is not null
       setState(() {
         _startDateController.text = DateFormat('MM-dd-yyyy').format(pickedDate);
       });
@@ -259,8 +259,8 @@ class _VouchersState extends State<Vouchers> {
       lastDate: DateTime(2101),
     );
 
+    // Check if pickedDate is not null
     if (pickedDate != null) {
-      // Check if pickedDate is not null
       setState(() {
         _expirationDateController.text =
             DateFormat('MM-dd-yyyy').format(pickedDate);

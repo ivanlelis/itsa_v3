@@ -91,11 +91,10 @@ class _PickupTabState extends State<PickupTab> {
 
         if (discountType == 'Fixed Amount') {
           newTotalAmount -= discountAmt;
-          voucherDescription =
-              'Fixed amount discount of ₱${discountAmt.toStringAsFixed(2)}';
+          voucherDescription = '₱${discountAmt.toStringAsFixed(2)} off';
         } else if (discountType == 'Percentage') {
           newTotalAmount -= currentTotalAmount * (discountAmt / 100);
-          voucherDescription = '${discountAmt.toStringAsFixed(0)}% discount';
+          voucherDescription = '${discountAmt.toStringAsFixed(0)}% off';
         } else {
           voucherDescription = 'No discount';
         }
@@ -225,7 +224,7 @@ class _PickupTabState extends State<PickupTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Voucher Code: ${selectedVoucher ?? ''}',
+                                      '${selectedVoucher ?? ''}',
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -233,7 +232,7 @@ class _PickupTabState extends State<PickupTab> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Description: ${voucherDescription ?? 'No description available'}',
+                                      '${voucherDescription ?? 'No description available'}',
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.teal[700],

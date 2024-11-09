@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import for FirebaseAuth
 
 class VoucherSectionDelivery extends StatelessWidget {
   final bool isVisible; // To control whether the voucher section is visible
@@ -35,19 +36,23 @@ class VoucherSectionDelivery extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Correct StreamBuilder with proper stream
                 StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
-                      .collection('voucher')
+                      .collection('customer')
+                      .doc(FirebaseAuth.instance.currentUser!
+                          .uid) // Use FirebaseAuth for current user
+                      .collection('claimedVouchers')
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final vouchers = snapshot.data!.docs;
+                    final claimedVouchers = snapshot.data!.docs;
 
                     return Column(
-                      children: vouchers.map((doc) {
+                      children: claimedVouchers.map((doc) {
                         final data = doc.data() as Map<String, dynamic>;
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),

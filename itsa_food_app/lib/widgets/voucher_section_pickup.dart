@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import for FirebaseAuth
 
 class VoucherSection extends StatelessWidget {
   final bool isVisible; // To control whether the voucher section is visible
@@ -38,19 +39,23 @@ class VoucherSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // StreamBuilder now listens to the claimedVouchers subcollection
                 StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
-                      .collection('voucher')
+                      .collection('customer')
+                      .doc(FirebaseAuth.instance.currentUser!
+                          .uid) // Use FirebaseAuth to get the current user
+                      .collection('claimedVouchers')
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final vouchers = snapshot.data!.docs;
+                    final claimedVouchers = snapshot.data!.docs;
 
                     return Column(
-                      children: vouchers.map((doc) {
+                      children: claimedVouchers.map((doc) {
                         final data = doc.data() as Map<String, dynamic>;
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -86,8 +91,8 @@ class VoucherSection extends StatelessWidget {
                                   // Display the discount amount and type
                                   Text(
                                     data['discountType'] == 'Fixed Amount'
-                                        ? 'Discount: ₱${data['discountAmt'].toStringAsFixed(2)}'
-                                        : 'Discount: ${data['discountAmt'].toStringAsFixed(2)}% ${data['discountType']}',
+                                        ? '₱${data['discountAmt'].toStringAsFixed(2)}'
+                                        : '${data['discountAmt'].toStringAsFixed(2)}%',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.teal[700],

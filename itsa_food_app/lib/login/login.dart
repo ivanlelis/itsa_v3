@@ -98,9 +98,10 @@ class _LoginPageState extends State<LoginPage> {
         Map<String, dynamic>? adminInfo =
             await firebaseService.getAdminInfo(email);
 
-        // Access the email from the adminInfo map
-        String adminEmail =
-            adminInfo?['email'] ?? "No Email Provided"; // Add null check
+        // Ensure adminInfo is not null before accessing the email
+        String adminEmail = adminInfo != null && adminInfo.isNotEmpty
+            ? adminInfo['email'] ?? "No Email Provided"
+            : "No Email Provided";
 
         // Save the admin email in UserProvider
         Provider.of<UserProvider>(context, listen: false)
