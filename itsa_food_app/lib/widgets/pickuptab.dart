@@ -224,7 +224,7 @@ class _PickupTabState extends State<PickupTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${selectedVoucher ?? ''}',
+                                      selectedVoucher ?? '',
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -232,7 +232,7 @@ class _PickupTabState extends State<PickupTab> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '${voucherDescription ?? 'No description available'}',
+                                      voucherDescription ?? 'No description available',
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.teal[700],
