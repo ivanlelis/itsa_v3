@@ -40,10 +40,10 @@ class _RiderDashboardState extends State<RiderDashboard> {
   late Timer _debounce; // Timer for debouncing
   String? _routeDuration;
   late LatLng _routeMidpoint;
-  ScreenCoordinate? _durationPosition;
   StreamSubscription<Position>? _positionStreamSubscription;
   List<Map<String, dynamic>> _routeSteps = [];
   int _currentStepIndex = 0;
+  GlobalKey _orderDetailCardKey = GlobalKey();
 
   @override
   void initState() {
@@ -81,23 +81,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
     });
   }
 
-  bool _isRiderNearStep(LatLng riderPosition) {
-    if (_currentStepIndex >= _routeSteps.length) return false;
-
-    // Assuming route step contains a "location" key with lat/lng values
-    final stepLocation = _routePoints[_currentStepIndex];
-    const double distanceThreshold = 30.0; // Distance in meters
-
-    final distance = Geolocator.distanceBetween(
-      riderPosition.latitude,
-      riderPosition.longitude,
-      stepLocation.latitude,
-      stepLocation.longitude,
-    );
-
-    return distance <= distanceThreshold;
-  }
-
   void _rerouteIfNeeded(LatLng currentLatLng) async {
     const double rerouteDistanceThreshold =
         50.0; // Distance threshold in meters
@@ -123,6 +106,23 @@ class _RiderDashboardState extends State<RiderDashboard> {
         _currentStepIndex = 0; // Reset to the first step of the new route
       });
     }
+  }
+
+  bool _isRiderNearStep(LatLng riderPosition) {
+    if (_currentStepIndex >= _routeSteps.length) return false;
+
+    // Assuming route step contains a "location" key with lat/lng values
+    final stepLocation = _routePoints[_currentStepIndex];
+    const double distanceThreshold = 30.0; // Distance in meters
+
+    final distance = Geolocator.distanceBetween(
+      riderPosition.latitude,
+      riderPosition.longitude,
+      stepLocation.latitude,
+      stepLocation.longitude,
+    );
+
+    return distance <= distanceThreshold;
   }
 
   void _initializeLocation() async {
@@ -219,11 +219,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
 
         mapController
             .getScreenCoordinate(_routeMidpoint)
-            .then((screenCoordinate) {
-          setState(() {
-            _durationPosition = screenCoordinate;
-          });
-        });
+            .then((screenCoordinate) {});
       }
     }
   }
@@ -310,6 +306,36 @@ class _RiderDashboardState extends State<RiderDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    // You can either calculate these values dynamically based on the OrderDetailCard height
+    double navigateButtonBottom =
+        120; // Default position for the navigate button
+    double directionsCardBottom =
+        170; // Default position for the directions card
+
+    // You can use the same LayoutBuilder logic to calculate the height of OrderDetailCard
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final orderDetailHeight =
+          (_orderDetailCardKey.currentContext?.findRenderObject() as RenderBox?)
+                  ?.size
+                  .height ??
+              0;
+
+      // Adjust the bottom positioning based on the height of the Order Details Card
+      if (orderDetailHeight > 0) {
+        // If the Order Details Card is taller (more than 3 lines of text)
+        if (orderDetailHeight > 80) {
+          directionsCardBottom = 180; // Move Directions Card down
+          navigateButtonBottom = 130; // Move Navigate Button down
+        } else {
+          // If the card has 3 lines or less
+          directionsCardBottom = 146; // Move Directions Card up
+          navigateButtonBottom = 98; // Move Navigate Button up
+        }
+      }
+
+      setState(() {}); // Update the UI after recalculating the bottom positions
+    });
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       drawer: RiderDrawer(
@@ -322,34 +348,15 @@ class _RiderDashboardState extends State<RiderDashboard> {
           _buildMapView(),
           _buildTopBar(),
           _buildSearchBar(),
-          _buildNavigateButton(),
+
+          // Pass the dynamic 'bottom' values
+          _buildNavigateButton(
+              navigateButtonBottom), // Pass navigateButtonBottom here
+          _buildDirectionsCard(
+              directionsCardBottom), // Pass directionsCardBottom here
+
+          // Order Details Card
           _buildOrderDetailCard(),
-
-          // Dynamically positioned duration text overlay
-          if (_routeDuration != null && _durationPosition != null)
-            Positioned(
-              left: _durationPosition!.x.toDouble() -
-                  50, // Adjust offset as needed
-              top: _durationPosition!.y.toDouble() -
-                  30, // Adjust offset as needed
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Text(
-                  _routeDuration!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-          _buildDirectionsCard(),
         ],
       ),
     );
@@ -384,8 +391,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
               width: 5,
             ),
         },
-        myLocationEnabled: true,
-        myLocationButtonEnabled: false,
         onLongPress: _setPinnedLocation,
       ),
     );
@@ -423,27 +428,14 @@ class _RiderDashboardState extends State<RiderDashboard> {
             ),
           ),
 
-          // Rider Status
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              "Available",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          // Notification Icon with Badge
           Stack(
             children: [
               Container(
+                width: 40, // Reduced width
+                height: 40, // Reduced height
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(12), // Rounded corners
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
@@ -462,23 +454,27 @@ class _RiderDashboardState extends State<RiderDashboard> {
                 top: 2,
                 right: 2,
                 child: Container(
-                  padding: const EdgeInsets.all(2),
+                  width:
+                      15, // Adjust width and height to make the badge a circle
+                  height: 15,
                   decoration: BoxDecoration(
                     color: Colors.red,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(10), // Circular badge
                   ),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                  child: const Center(
+                    child: Text(
+                      '3',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 7,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
-          ),
+          )
         ],
       ),
     );
@@ -487,19 +483,20 @@ class _RiderDashboardState extends State<RiderDashboard> {
   // Search Bar with Debounced Suggestions
   Widget _buildSearchBar() {
     return Positioned(
-      top: 120,
-      left: 16,
-      right: 16,
+      top: 40.5,
+      left: 62,
+      right: 62.3, // Adjust this value to reduce the length
       child: Column(
         children: [
           Container(
+            height: 40, // Set the height of the search bar here
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black12,
-                  blurRadius: 6,
+                  blurRadius: 1,
                   offset: Offset(0, 2),
                 ),
               ],
@@ -517,7 +514,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
               decoration: InputDecoration(
                 hintText: "Search Location...",
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 9), // Reduce the vertical padding
               ),
             ),
           ),
@@ -541,25 +539,41 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  Widget _buildDirectionsCard() {
+  Widget _buildDirectionsCard(double bottom) {
     // Check if there are steps to show and that the current step index is within range
     if (_routeSteps.isEmpty || _currentStepIndex >= _routeSteps.length) {
-      return SizedBox.shrink(); // No steps to show
+      return Positioned(
+        bottom: bottom,
+        left: 16,
+        right: 16,
+        child: Card(
+          elevation: 1,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              'No directions available',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+      );
     }
 
-    // Get the current step based on _currentStepIndex
+    // Get the current step based on _currentStepIndex, with default values for safety
     final currentStep = _routeSteps[_currentStepIndex];
-
-    // Convert HTML instructions to plain text
     final instruction =
-        currentStep['instruction'].replaceAll(RegExp(r'<[^>]*>'), '');
+        currentStep['instruction']?.replaceAll(RegExp(r'<[^>]*>'), '') ??
+            'No instructions available';
+    final distance = currentStep['distance'] ?? '';
 
     return Positioned(
-      bottom: 145, // Position above the Navigate button
+      bottom: bottom, // Use the dynamic bottom value passed as argument
       left: 16,
       right: 16,
       child: Card(
-        elevation: 2,
+        elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -581,7 +595,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
                     ),
                   ),
                   Text(
-                    currentStep['distance'],
+                    distance,
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -593,10 +607,9 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  // Navigate Button
-  Widget _buildNavigateButton() {
+  Widget _buildNavigateButton(double bottom) {
     return Positioned(
-      bottom: 100,
+      bottom: bottom, // Use dynamic bottom position
       left: 16,
       right: 16,
       child: ElevatedButton(
@@ -606,22 +619,35 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  // Order Details Card
   Widget _buildOrderDetailCard() {
     return Positioned(
-      bottom: 16,
+      bottom: 10, // Default, can be dynamically adjusted later
       left: 16,
       right: 16,
       child: Card(
-        elevation: 8,
+        key: _orderDetailCardKey, // Assign the global key
+        elevation: 1,
         child: ListTile(
           title: const Text('Order ID: 12345'),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Amount: 350 PHP'),
+              const Text(
+                'Amount: 350 PHP',
+                maxLines: 1, // Ensure Amount is displayed in a single line
+                overflow:
+                    TextOverflow.ellipsis, // Adds "..." if the text overflows
+              ),
               if (_routeDuration != null) // Display duration if available
-                Text('Estimated Duration: $_routeDuration'),
+                Text(
+                  'Estimated Duration: ',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              Text(
+                '$_routeDuration',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              // Add any additional text or fields here
             ],
           ),
           trailing: IconButton(
@@ -630,6 +656,60 @@ class _RiderDashboardState extends State<RiderDashboard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildResponsiveLayout() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Get the height of the Order Details Card dynamically
+        final orderDetailHeight = (_orderDetailCardKey.currentContext
+                    ?.findRenderObject() as RenderBox?)
+                ?.size
+                .height ??
+            0;
+
+        // Adjust the bottom positioning of the Directions Card and Navigate Button based on the Order Details Card height
+        double directionsCardBottom =
+            170; // Default bottom position for Directions Card
+        double navigateButtonBottom =
+            120; // Default bottom position for Navigate Button
+
+        if (orderDetailHeight > 0) {
+          // If the Order Details Card is taller, adjust the positioning
+          if (orderDetailHeight > 80) {
+            // If the card has more than 3 lines of text
+            directionsCardBottom = 180; // Move Directions Card down
+            navigateButtonBottom = 130; // Move Navigate Button down
+          } else {
+            // 3 lines or less
+            directionsCardBottom = 146; // Move Directions Card up
+            navigateButtonBottom = 98; // Move Navigate Button up
+          }
+        }
+
+        return Stack(
+          children: [
+            // Map view
+            _buildMapView(),
+
+            // Top bar
+            _buildTopBar(),
+
+            // Search bar
+            _buildSearchBar(),
+
+            // Navigate Button (with dynamic bottom position)
+            _buildNavigateButton(navigateButtonBottom), // Pass bottom here
+
+            // Order Details Card
+            _buildOrderDetailCard(),
+
+            // Directions Card (with dynamic bottom position)
+            _buildDirectionsCard(directionsCardBottom), // Pass bottom here
+          ],
+        );
+      },
     );
   }
 
