@@ -50,7 +50,7 @@ class ProductView extends StatefulWidget {
 
 class _ProductViewState extends State<ProductView> {
   int _selectedQuantityIndex = 0;
-  final int _quantity = 1;
+  int _quantity = 1;
   double _totalPrice = 0.0;
   bool _takoyakiSauce = false;
   bool _bonitoFlakes = false;
@@ -273,6 +273,32 @@ class _ProductViewState extends State<ProductView> {
                       },
                     );
                   }),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.remove),
+                        onPressed: _quantity > 1
+                            ? () {
+                                setState(() {
+                                  _quantity--;
+                                  _updateTotalPrice();
+                                });
+                              }
+                            : null,
+                      ),
+                      Text('$_quantity', style: TextStyle(fontSize: 18)),
+                      IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: () {
+                          setState(() {
+                            _quantity++;
+                            _updateTotalPrice();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                   if (widget.takoyakiPrices != null) ...[
                     const SizedBox(height: 16.0),
                     Text('Add-ons:', style: const TextStyle(fontSize: 16)),
@@ -346,13 +372,33 @@ class _ProductViewState extends State<ProductView> {
       sizeQuantity = ''; // Meals don't have size/quantity specified
     }
 
-    await addToCart(
-      userName: widget.userName, // Pass the user name to the function
-      productName: widget.productName, // Pass the product name to the function
-      productType: widget.productType,
-      sizeQuantity: sizeQuantity,
-      quantity: _quantity,
-      total: _totalPrice,
-    );
+    try {
+      CollectionReference cart = FirebaseFirestore.instance
+          .collection('customer')
+          .doc(widget.uid)
+          .collection('cart');
+
+      // Add a new document with unique ID to allow multiple configurations
+      await cart.add({
+        'productName': widget.productName,
+        'productType': widget.productType,
+        'sizeQuantity': sizeQuantity,
+        'quantity': _quantity,
+        'total': _totalPrice,
+        'takoyakiSauce': _takoyakiSauce,
+        'bonitoFlakes': _bonitoFlakes,
+        'mayonnaise': _mayonnaise,
+      });
+
+      print('Item added to cart successfully!');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${widget.productName} added to cart!')),
+      );
+    } catch (e) {
+      print('Error adding to cart: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add to cart. Please try again.')),
+      );
+    }
   }
 }

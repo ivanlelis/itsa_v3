@@ -46,8 +46,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
   int _currentStepIndex = 0;
   final GlobalKey _orderDetailCardKey = GlobalKey();
   bool _showSearchOverlay = false;
-  List<String> _recentSearches = [];
-  Set<Polyline> _polylines = {};
+  final List<String> _recentSearches = [];
+  final Set<Polyline> _polylines = {};
 
   @override
   void initState() {
