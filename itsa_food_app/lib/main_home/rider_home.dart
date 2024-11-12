@@ -6,7 +6,8 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async'; // For debouncing
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' hide LocationAccuracy;
+import 'package:url_launcher/url_launcher.dart';
 
 class RiderDashboard extends StatefulWidget {
   final String userName;
@@ -43,7 +44,10 @@ class _RiderDashboardState extends State<RiderDashboard> {
   StreamSubscription<Position>? _positionStreamSubscription;
   List<Map<String, dynamic>> _routeSteps = [];
   int _currentStepIndex = 0;
-  GlobalKey _orderDetailCardKey = GlobalKey();
+  final GlobalKey _orderDetailCardKey = GlobalKey();
+  bool _showSearchOverlay = false;
+  List<String> _recentSearches = [];
+  Set<Polyline> _polylines = {};
 
   @override
   void initState() {
@@ -68,7 +72,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
       _rerouteIfNeeded(currentLatLng);
 
       if (_currentLocation != null && _routeSteps.isNotEmpty) {
-        // Check if rider is near the current step and move to next step if so
+        // Check if rider is near the current step and move to the next step if so
         if (_isRiderNearStep(currentLatLng)) {
           _nextStep();
         }
@@ -82,10 +86,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
   }
 
   void _rerouteIfNeeded(LatLng currentLatLng) async {
-    const double rerouteDistanceThreshold =
-        50.0; // Distance threshold in meters
+    const double rerouteDistanceThreshold = 100.0;
 
-    // Find the closest point on the route to the current location
     double minDistance = double.infinity;
     for (LatLng routePoint in _routePoints) {
       double distance = Geolocator.distanceBetween(
@@ -99,11 +101,10 @@ class _RiderDashboardState extends State<RiderDashboard> {
       }
     }
 
-    // If the rider is too far from the route, trigger a re-route
     if (minDistance > rerouteDistanceThreshold) {
-      await _calculateRoute(); // Recalculate route from current location to pinned location
+      await _calculateRoute(); // Ensure this recalculates and updates route
       setState(() {
-        _currentStepIndex = 0; // Reset to the first step of the new route
+        _currentStepIndex = 0;
       });
     }
   }
@@ -111,10 +112,9 @@ class _RiderDashboardState extends State<RiderDashboard> {
   bool _isRiderNearStep(LatLng riderPosition) {
     if (_currentStepIndex >= _routeSteps.length) return false;
 
-    // Assuming route step contains a "location" key with lat/lng values
     final stepLocation = _routePoints[_currentStepIndex];
-    const double distanceThreshold = 30.0; // Distance in meters
-
+    const double distanceThreshold =
+        30.0; // Check if close enough to the current step
     final distance = Geolocator.distanceBetween(
       riderPosition.latitude,
       riderPosition.longitude,
@@ -128,6 +128,11 @@ class _RiderDashboardState extends State<RiderDashboard> {
   void _initializeLocation() async {
     final permissionGranted = await _locationService.requestPermission();
     if (permissionGranted == PermissionStatus.granted) {
+      _locationService.changeSettings(
+        accuracy: LocationAccuracy.high, // Use high accuracy
+        interval: 1000, // Update location every 1 second
+      );
+
       _locationService.onLocationChanged.listen((locationData) {
         setState(() {
           _currentLocation = locationData;
@@ -199,7 +204,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
       final steps = route['legs'][0]['steps'];
       _routeSteps = steps.map<Map<String, dynamic>>((step) {
         return {
-          'instruction': step['html_instructions'],
+          'instruction':
+              step['html_instructions'] ?? 'No instruction available',
           'distance': step['distance']['text'],
         };
       }).toList();
@@ -217,11 +223,48 @@ class _RiderDashboardState extends State<RiderDashboard> {
           (firstPoint.longitude + lastPoint.longitude) / 2,
         );
 
-        mapController
-            .getScreenCoordinate(_routeMidpoint)
-            .then((screenCoordinate) {});
+        // Update map with the new midpoint and adjust camera position
+        mapController.animateCamera(CameraUpdate.newLatLngZoom(
+            _routeMidpoint, 14)); // Adjust zoom level as needed
       }
+
+      // Update polyline on map
+      _updatePolyline();
+    } else {
+      print("Error calculating route: ${response.statusCode}");
     }
+  }
+
+  void _checkStepProgress(LatLng currentLatLng) {
+    if (_currentStepIndex < _routeSteps.length) {
+      // Get the current step's target location (you can use the lat/lng of the step or polyline points)
+      LatLng stepLocation = _routePoints[_currentStepIndex];
+
+      // Calculate distance between rider's current location and step location
+      Geolocator.distanceBetween(
+        currentLatLng.latitude,
+        currentLatLng.longitude,
+        stepLocation.latitude,
+        stepLocation.longitude,
+      );
+    }
+  }
+
+  void _updatePolyline() {
+    // Clear the existing polyline (if any)
+    _polylines.clear();
+
+    // Create a new polyline
+    final polyline = Polyline(
+      polylineId: PolylineId('route'),
+      points: _routePoints, // List of LatLng points for the route
+      color: Colors.blue, // Set the polyline color
+      width: 5, // Set the polyline width
+    );
+
+    setState(() {
+      _polylines.add(polyline); // Add the new polyline to the set
+    });
   }
 
   void _nextStep() {
@@ -274,6 +317,18 @@ class _RiderDashboardState extends State<RiderDashboard> {
     }
   }
 
+  void _addToRecentSearches(String search) {
+    if (!_recentSearches.contains(search)) {
+      setState(() {
+        _recentSearches.insert(0, search); // Add new search at the start
+        if (_recentSearches.length > 5) {
+          _recentSearches.removeLast(); // Limit the list to 5 items
+        }
+      });
+      // Save to persistent storage if needed (e.g., SharedPreferences)
+    }
+  }
+
   Future<void> _selectPlace(String placeId) async {
     final String detailsUrl =
         'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
@@ -283,6 +338,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
       final location = data['result']['geometry']['location'];
       final lat = location['lat'];
       final lng = location['lng'];
+      final placeName = data['result']['name']; // Extract place name
 
       final newLocation = LatLng(lat, lng);
 
@@ -290,10 +346,16 @@ class _RiderDashboardState extends State<RiderDashboard> {
       mapController.animateCamera(CameraUpdate.newLatLng(newLocation));
       _setPinnedLocation(newLocation);
 
+      // Add the place name to recent searches
+      _addToRecentSearches(placeName);
+
       // Close the suggestions after a place is selected
       setState(() {
         _placeSuggestions = [];
       });
+    } else {
+      // Handle error
+      print('Failed to load place details');
     }
   }
 
@@ -306,13 +368,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    // You can either calculate these values dynamically based on the OrderDetailCard height
-    double navigateButtonBottom =
-        120; // Default position for the navigate button
-    double directionsCardBottom =
-        170; // Default position for the directions card
+    double navigateButtonBottom = 120;
 
-    // You can use the same LayoutBuilder logic to calculate the height of OrderDetailCard
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final orderDetailHeight =
           (_orderDetailCardKey.currentContext?.findRenderObject() as RenderBox?)
@@ -320,20 +377,15 @@ class _RiderDashboardState extends State<RiderDashboard> {
                   .height ??
               0;
 
-      // Adjust the bottom positioning based on the height of the Order Details Card
       if (orderDetailHeight > 0) {
-        // If the Order Details Card is taller (more than 3 lines of text)
         if (orderDetailHeight > 80) {
-          directionsCardBottom = 180; // Move Directions Card down
-          navigateButtonBottom = 130; // Move Navigate Button down
+          navigateButtonBottom = 130;
         } else {
-          // If the card has 3 lines or less
-          directionsCardBottom = 146; // Move Directions Card up
-          navigateButtonBottom = 98; // Move Navigate Button up
+          navigateButtonBottom = 98;
         }
       }
 
-      setState(() {}); // Update the UI after recalculating the bottom positions
+      setState(() {});
     });
 
     return Scaffold(
@@ -349,14 +401,12 @@ class _RiderDashboardState extends State<RiderDashboard> {
           _buildTopBar(),
           _buildSearchBar(),
 
-          // Pass the dynamic 'bottom' values
-          _buildNavigateButton(
-              navigateButtonBottom), // Pass navigateButtonBottom here
-          _buildDirectionsCard(
-              directionsCardBottom), // Pass directionsCardBottom here
+          // Show the search overlay if activated
+          if (_showSearchOverlay) _buildSearchOverlay(),
 
-          // Order Details Card
-          _buildOrderDetailCard(),
+          // Only show the following widgets if the search overlay is not active
+          if (!_showSearchOverlay) _buildNavigateButton(navigateButtonBottom),
+          if (!_showSearchOverlay) _buildOrderDetailDraggable(),
         ],
       ),
     );
@@ -480,127 +530,166 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  // Search Bar with Debounced Suggestions
   Widget _buildSearchBar() {
     return Positioned(
-      top: 40.5,
-      left: 62,
-      right: 62.3, // Adjust this value to reduce the length
-      child: Column(
-        children: [
-          Container(
-            height: 40, // Set the height of the search bar here
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 1,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (query) {
-                if (_debounce.isActive) {
-                  _debounce.cancel(); // Cancel previous debounce timer
-                }
-                _debounce = Timer(const Duration(milliseconds: 800), () {
-                  _searchLocation(query);
-                });
-              },
-              decoration: InputDecoration(
-                hintText: "Search Location...",
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 9), // Reduce the vertical padding
+      top: 100,
+      left: 16,
+      right: 16,
+      child: GestureDetector(
+        onTap: () {
+          // Set state to show overlay
+          setState(() {
+            _showSearchOverlay = true;
+          });
+
+          // Add delay to trigger fade-in animation properly
+          Future.delayed(Duration(milliseconds: 100), () {
+            setState(() {
+              _showSearchOverlay = true;
+            });
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                offset: Offset(0, 4),
               ),
-            ),
+            ],
           ),
-          if (_placeSuggestions.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.white,
-              child: Column(
-                children: _placeSuggestions.map((suggestion) {
-                  final placeName = suggestion['description'];
-                  final placeId = suggestion['place_id'];
-                  return ListTile(
-                    title: Text(placeName),
-                    onTap: () => _selectPlace(placeId),
-                  );
-                }).toList(),
+          child: Row(
+            children: [
+              Icon(Icons.search, color: Colors.grey[600]),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  "Search location...",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                ),
               ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildDirectionsCard(double bottom) {
-    // Check if there are steps to show and that the current step index is within range
-    if (_routeSteps.isEmpty || _currentStepIndex >= _routeSteps.length) {
-      return Positioned(
-        bottom: bottom,
-        left: 16,
-        right: 16,
-        child: Card(
-          elevation: 1,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Text(
-              'No directions available',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Get the current step based on _currentStepIndex, with default values for safety
-    final currentStep = _routeSteps[_currentStepIndex];
-    final instruction =
-        currentStep['instruction']?.replaceAll(RegExp(r'<[^>]*>'), '') ??
-            'No instructions available';
-    final distance = currentStep['distance'] ?? '';
-
-    return Positioned(
-      bottom: bottom, // Use the dynamic bottom value passed as argument
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Directions',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      instruction,
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+  Widget _buildSearchOverlay() {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _showSearchOverlay = false; // Close overlay with fade-out effect
+          });
+        },
+        child: AnimatedOpacity(
+          opacity:
+              _showSearchOverlay ? 1.0 : 0.0, // Animate opacity between 0 and 1
+          duration: Duration(milliseconds: 300), // Set the fade-in/out duration
+          child: Material(
+            color: Colors.grey[900]?.withOpacity(1), // Greyish overlay
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 100.0, left: 16.0, right: 16.0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, color: Colors.grey[600]),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration.collapsed(
+                              hintText: "Search location...",
+                              hintStyle: TextStyle(color: Colors.grey[600]),
+                            ),
+                            onChanged: _searchLocation,
+                            style: TextStyle(
+                                color:
+                                    Colors.black), // Text color in search bar
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: Colors.grey[600]),
+                          onPressed: () {
+                            setState(() {
+                              _showSearchOverlay =
+                                  false; // Close overlay with fade-out effect
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    distance,
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                if (_searchController.text.isEmpty &&
+                    _recentSearches.isNotEmpty)
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _recentSearches.length,
+                      itemBuilder: (context, index) {
+                        final recentSearch = _recentSearches[index];
+                        return ListTile(
+                          leading: Icon(Icons.history, color: Colors.white),
+                          title: Text(
+                            recentSearch,
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                          onTap: () {
+                            _searchController.text = recentSearch;
+                            _searchLocation(recentSearch);
+                          },
+                        );
+                      },
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _placeSuggestions.length,
+                      itemBuilder: (context, index) {
+                        var suggestion = _placeSuggestions[index];
+                        return ListTile(
+                          leading:
+                              Icon(Icons.location_on, color: Colors.blue[300]),
+                          title: Text(
+                            suggestion['description'],
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                          onTap: () {
+                            _selectPlace(suggestion['place_id']);
+                            setState(() {
+                              _showSearchOverlay =
+                                  false; // Close overlay after selecting
+                            });
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -610,106 +699,191 @@ class _RiderDashboardState extends State<RiderDashboard> {
   Widget _buildNavigateButton(double bottom) {
     return Positioned(
       bottom: bottom, // Use dynamic bottom position
-      left: 16,
-      right: 16,
+      left: MediaQuery.of(context).size.width / 2 -
+          28, // Center the button horizontally
       child: ElevatedButton(
-        onPressed: _calculateRoute,
-        child: const Text("Navigate"),
-      ),
-    );
-  }
-
-  Widget _buildOrderDetailCard() {
-    return Positioned(
-      bottom: 10, // Default, can be dynamically adjusted later
-      left: 16,
-      right: 16,
-      child: Card(
-        key: _orderDetailCardKey, // Assign the global key
-        elevation: 1,
-        child: ListTile(
-          title: const Text('Order ID: 12345'),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Amount: 350 PHP',
-                maxLines: 1, // Ensure Amount is displayed in a single line
-                overflow:
-                    TextOverflow.ellipsis, // Adds "..." if the text overflows
-              ),
-              if (_routeDuration != null) // Display duration if available
-                Text(
-                  'Estimated Duration: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              Text(
-                '$_routeDuration',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              // Add any additional text or fields here
-            ],
+        onPressed: () async {
+          // First, calculate the route
+          await _calculateRoute();
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              Colors.orangeAccent, // Modern accent color for visibility
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+                12), // Slightly rounded corners for modern look
           ),
-          trailing: IconButton(
-            icon: const Icon(Icons.arrow_forward),
-            onPressed: () {},
-          ),
+          padding: EdgeInsets.all(16), // Padding for square shape
+          minimumSize: Size(56, 56), // Square size
+          maximumSize: Size(56, 56),
+          elevation: 4, // Shadow for floating effect
+        ),
+        child: Icon(
+          Icons.navigation, // Navigation icon
+          color: Colors.white,
+          size: 24,
         ),
       ),
     );
   }
 
-  Widget _buildResponsiveLayout() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Get the height of the Order Details Card dynamically
-        final orderDetailHeight = (_orderDetailCardKey.currentContext
-                    ?.findRenderObject() as RenderBox?)
-                ?.size
-                .height ??
-            0;
+// New method to start the navigation after the route is calculated
+  Future<void> _startNavigation() async {
+    // Check if route steps exist
+    if (_routeSteps.isNotEmpty) {}
 
-        // Adjust the bottom positioning of the Directions Card and Navigate Button based on the Order Details Card height
-        double directionsCardBottom =
-            170; // Default bottom position for Directions Card
-        double navigateButtonBottom =
-            120; // Default bottom position for Navigate Button
+    // Replace this with actual code to launch navigation in Google Maps
+    final destinationLatitude = 14.6339; // Example latitude
+    final destinationLongitude = 120.9772; // Example longitude
 
-        if (orderDetailHeight > 0) {
-          // If the Order Details Card is taller, adjust the positioning
-          if (orderDetailHeight > 80) {
-            // If the card has more than 3 lines of text
-            directionsCardBottom = 180; // Move Directions Card down
-            navigateButtonBottom = 130; // Move Navigate Button down
-          } else {
-            // 3 lines or less
-            directionsCardBottom = 146; // Move Directions Card up
-            navigateButtonBottom = 98; // Move Navigate Button up
-          }
-        }
+    // Construct the navigation URL for Google Maps
+    final googleMapsUrl =
+        'google.navigation:q=$destinationLatitude,$destinationLongitude&mode=d';
 
-        return Stack(
-          children: [
-            // Map view
-            _buildMapView(),
+    // Launch Google Maps navigation using the URL
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      throw 'Could not launch $googleMapsUrl';
+    }
+  }
 
-            // Top bar
-            _buildTopBar(),
-
-            // Search bar
-            _buildSearchBar(),
-
-            // Navigate Button (with dynamic bottom position)
-            _buildNavigateButton(navigateButtonBottom), // Pass bottom here
-
-            // Order Details Card
-            _buildOrderDetailCard(),
-
-            // Directions Card (with dynamic bottom position)
-            _buildDirectionsCard(directionsCardBottom), // Pass bottom here
-          ],
+  Widget _buildOrderDetailDraggable() {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.153, // Initial height when partially visible
+      minChildSize: 0.153, // Minimum height when fully collapsed
+      maxChildSize: 1, // Maximum height when fully expanded
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 2,
+                spreadRadius: 2,
+                offset: Offset(0, -3),
+              ),
+            ],
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            children: [
+              // Pull-bar for aesthetics and ease of dragging
+              Center(
+                child: Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              // Order Details Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Order Details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.grey[600]),
+                    onPressed: () {
+                      // Close or dismiss the sheet
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+              Divider(thickness: 1, color: Colors.grey[300]),
+              SizedBox(height: 10),
+              // Order Information
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.orangeAccent,
+                  child: Icon(Icons.receipt_long, color: Colors.white),
+                ),
+                title: Text(
+                  'Order ID: 12345',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 4),
+                    Text(
+                      'Amount: 350 PHP',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    if (_routeDuration != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: Text(
+                          'Estimated Duration: $_routeDuration',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                trailing: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Colors.orangeAccent, // Updated to backgroundColor
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: Text(
+                    'View',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () {
+                    // Add your desired action here
+                  },
+                ),
+              ),
+              // Add any additional sections here
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildResponsiveLayout() {
+    return Stack(
+      children: [
+        _buildMapView(),
+        _buildTopBar(),
+        _buildSearchBar(),
+        _buildNavigateButton(120), // Adjust position as needed
+
+        // Order Details Draggable Card
+        _buildOrderDetailDraggable(),
+      ],
     );
   }
 
