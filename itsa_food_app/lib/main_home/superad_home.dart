@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/widgets/superad_navbar.dart'; // Your Bottom Nav Bar widget
+import 'package:itsa_food_app/superad_pages/inv_mgmt.dart'; // Inventory Management screen
+import 'package:itsa_food_app/widgets/superad_appbar.dart'; // Import the new AppBar widget
 
 class SuperAdminHome extends StatefulWidget {
   final String userName;
@@ -12,11 +15,39 @@ class SuperAdminHome extends StatefulWidget {
     this.imageUrl = '',
   });
 
+  @override
   _SuperAdminHomeState createState() => _SuperAdminHomeState();
 }
 
 class _SuperAdminHomeState extends State<SuperAdminHome> {
   int _selectedIndex = 0;
+
+  // A list of widgets to display based on the selected index
+  final List<Widget> _pages = [
+    // Placeholder for the Home page
+    Center(
+      child: Text(
+        'Dashboard',
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      ),
+    ),
+    // Placeholder for the Analytics page
+    Center(
+      child: Text(
+        'Analytics Page',
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      ),
+    ),
+    // Inventory Management page (no navbar included here)
+    InvMgmt(),
+    // Profile page
+    Center(
+      child: Text(
+        'Profile Page',
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      ),
+    ),
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -27,16 +58,7 @@ class _SuperAdminHomeState extends State<SuperAdminHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.brown,
-        leading: IconButton(
-          icon: Icon(Icons.menu),
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-        ),
-        elevation: 0,
-      ),
+      appBar: const SuperAdminAppBar(), // Use the SuperAdminAppBar widget here
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -45,7 +67,7 @@ class _SuperAdminHomeState extends State<SuperAdminHome> {
               decoration: BoxDecoration(
                 color: Colors.brown,
               ),
-              child: Text(
+              child: const Text(
                 'Menu',
                 style: TextStyle(
                   color: Colors.white,
@@ -54,8 +76,8 @@ class _SuperAdminHomeState extends State<SuperAdminHome> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
               onTap: () {
                 Navigator.pop(context);
               },
@@ -64,58 +86,14 @@ class _SuperAdminHomeState extends State<SuperAdminHome> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Container(
-            color: Colors.brown,
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search',
-                prefixIcon: Icon(Icons.search),
-                fillColor: Colors.white,
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                  borderSide: BorderSide.none,
+      body: _pages[_selectedIndex], // Display the selected page
+      bottomNavigationBar:
+          _selectedIndex == 2 // Do not show BottomNavBar for InvMgmt
+              ? null // Set null if the Inventory page is active
+              : SuperAdNavBar(
+                  selectedIndex: _selectedIndex,
+                  onItemTapped: _onItemTapped,
                 ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Dashboard',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Analytics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Orders',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.brown,
-        unselectedItemColor: Colors.black,
-        onTap: _onItemTapped,
-      ),
     );
   }
 }
