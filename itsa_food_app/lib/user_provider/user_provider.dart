@@ -8,9 +8,11 @@ import 'package:itsa_food_app/user_model/user_model.dart';
 class UserProvider with ChangeNotifier {
   UserModel? _currentUser;
   String? _adminEmail; // This will store the admin email
+  String? _superadEmail;
 
   UserModel? get currentUser => _currentUser;
   String? get adminEmail => _adminEmail; // Getter for admin email
+  String? get superadEmail => _superadEmail;
 
   // Method to fetch the current user from Firestore
   Future<void> fetchCurrentUser() async {
@@ -93,6 +95,11 @@ class UserProvider with ChangeNotifier {
   // Method to set the admin email
   void setAdminEmail(String email) {
     _adminEmail = email;
+    notifyListeners();
+  }
+
+  void setSuperadEmail(String email) {
+    _superadEmail = email;
     notifyListeners();
   }
 

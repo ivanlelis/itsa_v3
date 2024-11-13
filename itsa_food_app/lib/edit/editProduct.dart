@@ -73,8 +73,7 @@ class _ProductEditModalState extends State<ProductEditModal> {
     // Add specific fields based on product type
     if (newProductType == 'Milk Tea') {
       newProductData.addAll({
-        'small': _priceControllers['Milk Tea Small']?.text.trim() ?? '',
-        'medium': _priceControllers['Milk Tea Medium']?.text.trim() ?? '',
+        'regular': _priceControllers['Milk Tea Regular']?.text.trim() ?? '',
         'large': _priceControllers['Milk Tea Large']?.text.trim() ?? '',
       });
     } else if (newProductType == 'Takoyaki') {
@@ -147,8 +146,7 @@ class _ProductEditModalState extends State<ProductEditModal> {
       };
     } else if (productType == 'Milk Tea') {
       _priceControllers = {
-        'Milk Tea Small': TextEditingController(),
-        'Milk Tea Medium': TextEditingController(),
+        'Milk Tea Regular': TextEditingController(),
         'Milk Tea Large': TextEditingController(),
       };
     } else if (productType == 'Meals') {

@@ -10,8 +10,7 @@ class ProductView extends StatefulWidget {
   final String? takoyakiPrices;
   final String? takoyakiPrices8;
   final String? takoyakiPrices12;
-  final String? milkTeaSmall;
-  final String? milkTeaMedium;
+  final String? milkTeaRegular;
   final String? milkTeaLarge;
   final String? mealsPrice;
   final String userName; // Non-nullable
@@ -30,8 +29,7 @@ class ProductView extends StatefulWidget {
     this.takoyakiPrices,
     this.takoyakiPrices8,
     this.takoyakiPrices12,
-    this.milkTeaSmall,
-    this.milkTeaMedium,
+    this.milkTeaRegular,
     this.milkTeaLarge,
     this.mealsPrice,
     required this.userName,
@@ -55,6 +53,11 @@ class _ProductViewState extends State<ProductView> {
   bool _takoyakiSauce = false;
   bool _bonitoFlakes = false;
   bool _mayonnaise = false;
+  bool _pearls = false;
+  bool _creampuff = false;
+  bool _nata = false;
+  bool _oreo = false;
+  bool _jelly = false;
 
   List<String> quantityOptions = [];
   List<String> prices = [];
@@ -72,11 +75,10 @@ class _ProductViewState extends State<ProductView> {
     } else if (widget.mealsPrice != null) {
       quantityOptions = ['Price'];
       prices = [widget.mealsPrice ?? '0'];
-    } else if (widget.milkTeaSmall != null) {
-      quantityOptions = ['Small', 'Medium', 'Large'];
+    } else if (widget.milkTeaRegular != null) {
+      quantityOptions = ['Regular', 'Large'];
       prices = [
-        widget.milkTeaSmall ?? '0',
-        widget.milkTeaMedium ?? '0',
+        widget.milkTeaRegular ?? '0',
         widget.milkTeaLarge ?? '0',
       ];
     }
@@ -88,7 +90,12 @@ class _ProductViewState extends State<ProductView> {
     double basePrice = double.parse(prices[_selectedQuantityIndex]);
     double addOnsPrice = (_takoyakiSauce ? 15 : 0) +
         (_bonitoFlakes ? 15 : 0) +
-        (_mayonnaise ? 15 : 0);
+        (_mayonnaise ? 15 : 0) +
+        (_pearls ? 15 : 0) +
+        (_creampuff ? 20 : 0) +
+        (_nata ? 15 : 0) +
+        (_oreo ? 15 : 0) +
+        (_jelly ? 15 : 0);
     setState(() {
       _totalPrice = (basePrice + addOnsPrice) * _quantity;
     });
@@ -118,6 +125,11 @@ class _ProductViewState extends State<ProductView> {
         'takoyakiSauce': _takoyakiSauce,
         'bonitoFlakes': _bonitoFlakes,
         'mayonnaise': _mayonnaise,
+        'pearls': _pearls,
+        'creampuff': _creampuff,
+        'nata': _nata,
+        'oreo': _oreo,
+        'jelly': _jelly,
       });
       print('Item added to cart successfully!');
       // Optional: Show a success message to the user
@@ -329,6 +341,60 @@ class _ProductViewState extends State<ProductView> {
                       onChanged: (value) {
                         setState(() {
                           _mayonnaise = value!;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                  ],
+                  if (widget.milkTeaRegular != null) ...[
+                    const SizedBox(height: 16.0),
+                    Text('Add-ons:', style: const TextStyle(fontSize: 16)),
+                    CheckboxListTile(
+                      title: const Text('Black Pearls - ₱15'),
+                      value: _pearls,
+                      onChanged: (value) {
+                        setState(() {
+                          _pearls = value!;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Cream Puff - ₱20'),
+                      value: _creampuff,
+                      onChanged: (value) {
+                        setState(() {
+                          _creampuff = value!;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Nata - ₱15'),
+                      value: _nata,
+                      onChanged: (value) {
+                        setState(() {
+                          _nata = value!;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Oreo Crushed - ₱15'),
+                      value: _oreo,
+                      onChanged: (value) {
+                        setState(() {
+                          _oreo = value!;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Coffee Jelly - ₱15'),
+                      value: _jelly,
+                      onChanged: (value) {
+                        setState(() {
+                          _jelly = value!;
                           _updateTotalPrice();
                         });
                       },

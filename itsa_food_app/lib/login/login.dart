@@ -7,6 +7,7 @@ import 'package:itsa_food_app/main_home/rider_home.dart';
 import 'package:itsa_food_app/main_home/admin_home.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
+import 'package:itsa_food_app/main_home/superad_home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -103,22 +104,51 @@ class _LoginPageState extends State<LoginPage> {
             ? adminInfo['email'] ?? "No Email Provided"
             : "No Email Provided";
 
-        // Save the admin email in UserProvider
-        Provider.of<UserProvider>(context, listen: false)
-            .setAdminEmail(adminEmail);
+        if (adminInfo != null && adminInfo.isNotEmpty) {
+          // Save the admin email in UserProvider
+          Provider.of<UserProvider>(context, listen: false)
+              .setAdminEmail(adminEmail);
 
-        // Navigate to the Admin Home Page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdminHome(
-              userName:
-                  "Admin", // Set default name or get from adminInfo if applicable
-              email: adminEmail, // Use the admin email
-              imageUrl: "", // Placeholder for admin image
+          // Navigate to the Admin Home Page
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminHome(
+                userName:
+                    "Admin", // Set default name or get from adminInfo if applicable
+                email: adminEmail, // Use the admin email
+                imageUrl: "", // Placeholder for admin image
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          // Super Admin login check
+          Map<String, dynamic>? superadInfo =
+              await firebaseService.getSuperAdInfo(email);
+
+          String superadEmail = superadInfo != null && superadInfo.isNotEmpty
+              ? superadInfo['email'] ?? "No Email Provided"
+              : "No Email Provided";
+
+          if (superadInfo != null && superadInfo.isNotEmpty) {
+            // Navigate to the Super Admin Home Page
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SuperAdminHome(
+                  userName: "Super Admin",
+                  email: superadEmail,
+                  imageUrl: "",
+                ),
+              ),
+            );
+          } else {
+            setState(() {
+              _errorMessage = "User information not found.";
+              _isLoading = false;
+            });
+          }
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {

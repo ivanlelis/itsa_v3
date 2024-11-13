@@ -171,8 +171,7 @@ class _MenuManagementState extends State<MenuManagement> {
       };
     } else if (productType == 'Milk Tea') {
       return {
-        'Milk Tea Small': product['small'],
-        'Milk Tea Medium': product['medium'],
+        'Milk Tea Regular': product['regular'],
         'Milk Tea Large': product['large'],
       };
     } else if (productType == 'Meals') {
@@ -293,8 +292,7 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     } else if (_selectedProductType == 'Milk Tea') {
       productData.addAll({
-        'small': _variantPrices['Milk Tea Small'] ?? '',
-        'medium': _variantPrices['Milk Tea Medium'] ?? '',
+        'regular': _variantPrices['Milk Tea Regular'] ?? '',
         'large': _variantPrices['Milk Tea Large'] ?? '',
       });
     } else if (_selectedProductType == 'Meals') {
@@ -377,15 +375,9 @@ class _AddProductModalState extends State<AddProductModal> {
                 ),
               ] else if (_selectedProductType == 'Milk Tea') ...[
                 TextField(
-                  decoration: InputDecoration(labelText: 'Small Price'),
+                  decoration: InputDecoration(labelText: 'Regular Price'),
                   onChanged: (value) {
-                    _variantPrices['Milk Tea Small'] = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Medium Price'),
-                  onChanged: (value) {
-                    _variantPrices['Milk Tea Medium'] = value;
+                    _variantPrices['Milk Tea Regular'] = value;
                   },
                 ),
                 TextField(

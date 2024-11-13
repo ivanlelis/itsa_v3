@@ -269,13 +269,9 @@ class _MenuState extends State<Menu> {
                           product['productType'] == 'Takoyaki'
                               ? product['12pc']?.toString()
                               : null;
-                      String? milkTeaSmall =
+                      String? milkTeaRegular =
                           product['productType'] == 'Milk Tea'
-                              ? product['small']?.toString()
-                              : null;
-                      String? milkTeaMedium =
-                          product['productType'] == 'Milk Tea'
-                              ? product['medium']?.toString()
+                              ? product['regular']?.toString()
                               : null;
                       String? milkTeaLarge =
                           product['productType'] == 'Milk Tea'
@@ -292,8 +288,7 @@ class _MenuState extends State<Menu> {
                         takoyakiPrices: takoyakiPrice4,
                         takoyakiPrices8: takoyakiPrice8,
                         takoyakiPrices12: takoyakiPrice12,
-                        milkTeaSmall: milkTeaSmall,
-                        milkTeaMedium: milkTeaMedium,
+                        milkTeaRegular: milkTeaRegular,
                         milkTeaLarge: milkTeaLarge,
                         mealsPrice: mealsPrice,
                         userName: widget.userName,
@@ -326,8 +321,7 @@ class ProductCard extends StatelessWidget {
   final String? takoyakiPrices;
   final String? takoyakiPrices8;
   final String? takoyakiPrices12;
-  final String? milkTeaSmall;
-  final String? milkTeaMedium;
+  final String? milkTeaRegular;
   final String? milkTeaLarge;
   final String? mealsPrice;
   final String userName;
@@ -345,8 +339,7 @@ class ProductCard extends StatelessWidget {
     this.takoyakiPrices,
     this.takoyakiPrices8,
     this.takoyakiPrices12,
-    this.milkTeaSmall,
-    this.milkTeaMedium,
+    this.milkTeaRegular,
     this.milkTeaLarge,
     this.mealsPrice,
     required this.userName,
@@ -367,9 +360,9 @@ class ProductCard extends StatelessWidget {
     if (takoyakiPrices != null) {
       productType = 'takoyaki';
       startingPriceText += takoyakiPrices!; // Display only 4pc price
-    } else if (milkTeaSmall != null) {
+    } else if (milkTeaRegular != null) {
       productType = 'milktea';
-      startingPriceText += milkTeaSmall!; // Display only Small price
+      startingPriceText += milkTeaRegular!; // Display only Small price
     } else if (mealsPrice != null) {
       productType = 'meal';
       startingPriceText = 'Price: ₱$mealsPrice';
@@ -390,8 +383,7 @@ class ProductCard extends StatelessWidget {
               takoyakiPrices: takoyakiPrices,
               takoyakiPrices8: takoyakiPrices8,
               takoyakiPrices12: takoyakiPrices12,
-              milkTeaSmall: milkTeaSmall,
-              milkTeaMedium: milkTeaMedium,
+              milkTeaRegular: milkTeaRegular,
               milkTeaLarge: milkTeaLarge,
               mealsPrice: mealsPrice,
               userName: userName,

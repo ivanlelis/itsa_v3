@@ -67,6 +67,21 @@ class FirebaseService {
     return null; // Return null if no matching admin found
   }
 
+  Future<Map<String, dynamic>?> getSuperAdInfo(String email) async {
+    try {
+      DocumentSnapshot snapshot =
+          await _firestore.collection('super_ad').doc('super_ad_1').get();
+      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+
+      if (data != null && data['email'] == email) {
+        return data; // Return admin data if email matches
+      }
+    } catch (e) {
+      print("Error fetching super admin info: $e");
+    }
+    return null; // Return null if no matching admin found
+  }
+
   Future<void> initializeFirebase() async {
     if (_isInitialized) {
       return; // Prevent multiple initializations
