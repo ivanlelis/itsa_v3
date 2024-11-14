@@ -19,7 +19,8 @@ class ConfirmPayment extends StatefulWidget {
   final String email;
   final String imageUrl;
 
-  const ConfirmPayment({super.key, 
+  const ConfirmPayment({
+    super.key,
     required this.cartItems,
     required this.deliveryType,
     required this.paymentMethod,
@@ -134,6 +135,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .doc(orderID)
           .set(orderData);
 
+      await _updateStockFromCartItems();
+
       // Delete the cart items after order creation
       await _deleteCart();
 
@@ -142,6 +145,72 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Failed to confirm order: $e')));
+    }
+  }
+
+  Future<void> _updateStockFromCartItems() async {
+    // Get product names directly from the cart items
+    List<String> productNames = _getProductNames();
+
+    for (String productName in productNames) {
+      // Fetch product details from Firestore based on the productName
+      QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .where('productName', isEqualTo: productName)
+          .limit(1)
+          .get();
+
+      if (productSnapshot.docs.isNotEmpty) {
+        DocumentSnapshot productDoc = productSnapshot.docs.first;
+        List ingredients = productDoc['ingredients'];
+
+        for (var ingredient in ingredients) {
+          String matName =
+              ingredient['name']; // Use 'name' as field key in products
+          String ingredientQuantityStr = ingredient['quantity'];
+
+          // Extract numeric part and unit from quantity string (e.g., "0.1875 liters" -> 0.1875 and "liters")
+          List<String> quantityParts = ingredientQuantityStr.split(' ');
+          double ingredientQuantity = double.tryParse(quantityParts[0]) ?? 0.0;
+          String ingredientUnit =
+              quantityParts.length > 1 ? quantityParts[1] : '';
+
+          // Get current raw material stock from rawStock collection
+          DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
+              .collection('rawStock')
+              .doc(matName)
+              .get();
+
+          if (rawMaterialDoc.exists) {
+            double availableStock =
+                double.tryParse(rawMaterialDoc['quantity'].toString()) ?? 0.0;
+            String stockUnit = rawMaterialDoc['unit'];
+
+            // Ensure units match before subtracting
+            if (stockUnit == ingredientUnit) {
+              if (availableStock >= ingredientQuantity) {
+                // Update stock
+                await FirebaseFirestore.instance
+                    .collection('rawStock')
+                    .doc(matName)
+                    .update({'quantity': availableStock - ingredientQuantity});
+                print(
+                    "Subtracted $ingredientQuantity $ingredientUnit from $matName in rawStock.");
+              } else {
+                print(
+                    "Not enough stock for $matName. Needed: $ingredientQuantity $ingredientUnit, Available: $availableStock $stockUnit");
+              }
+            } else {
+              print(
+                  "Unit mismatch for $matName. Ingredient unit: $ingredientUnit, Stock unit: $stockUnit");
+            }
+          } else {
+            print("Ingredient $matName not found in rawStock.");
+          }
+        }
+      } else {
+        print("Product $productName not found in products.");
+      }
     }
   }
 

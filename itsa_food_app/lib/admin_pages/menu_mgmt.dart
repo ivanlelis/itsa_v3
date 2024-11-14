@@ -198,10 +198,11 @@ class _AddProductModalState extends State<AddProductModal> {
     'Milk Tea': '',
     'Meals': '',
   };
+  File? _selectedImage;
 
-  File? _selectedImage; // Variable to store selected image file
+  // List to store ingredient name, quantity, and unit type controllers
+  final List<Map<String, TextEditingController>> _ingredients = [];
 
-  // Method to pick an image from the device
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
@@ -210,19 +211,15 @@ class _AddProductModalState extends State<AddProductModal> {
         _selectedImage = File(pickedImage.path);
       });
     } else {
-      // Notify user that image selection failed
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No image selected. Please select an image.')),
       );
     }
   }
 
-  // Method to upload the selected image to Firebase Storage
   Future<String?> _uploadImageToFirebase(String productID) async {
     if (_selectedImage == null) return null;
-
     final destination = 'product_image/$productID.jpg';
-
     try {
       final ref = FirebaseStorage.instance.ref(destination);
       await ref.putFile(_selectedImage!);
@@ -234,7 +231,6 @@ class _AddProductModalState extends State<AddProductModal> {
     }
   }
 
-  // Method to generate a random productID
   String _generateProductID() {
     const characters =
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -244,18 +240,15 @@ class _AddProductModalState extends State<AddProductModal> {
     return 'itsa-$randomString';
   }
 
-  // Method to save product details to Firestore
   Future<void> _saveProductToFirestore() async {
     final productName = _productNameController.text.trim();
     if (productName.isEmpty || _selectedProductType == null) {
-      // Show an error if no product name or type is selected
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please enter product name and select type')),
       );
       return;
     }
 
-    // Ensure an image has been selected
     if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select an image')),
@@ -263,10 +256,7 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
-    // Generate productID
     final productID = _generateProductID();
-
-    // Upload image to Firebase Storage with productID as the filename
     final imageUrl = await _uploadImageToFirebase(productID);
     if (imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -275,15 +265,22 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
-    // Create a document with the productID as the ID
     final productData = {
       'productID': productID,
       'productName': productName,
       'productType': _selectedProductType,
-      'imageUrl': imageUrl, // Store the image URL in Firestore
+      'imageUrl': imageUrl,
+      'ingredients': _ingredients
+          .map((ingredient) {
+            final name = ingredient['name']?.text.trim();
+            final quantity = ingredient['quantity']?.text.trim();
+            final unit = ingredient['unit']?.text.trim();
+            return {'name': name, 'quantity': '$quantity $unit'};
+          })
+          .where((ingredient) => ingredient['name']!.isNotEmpty)
+          .toList(),
     };
 
-    // Add variant-specific prices to the document
     if (_selectedProductType == 'Takoyaki') {
       productData.addAll({
         '4pc': _variantPrices['Takoyaki 4pcs'] ?? '',
@@ -301,21 +298,27 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     }
 
-    // Save to Firestore using the productID as the document ID
     await FirebaseFirestore.instance
         .collection('products')
-        .doc(productID) // Document ID is the generated productID
+        .doc(productID)
         .set(productData);
+    Navigator.pop(context);
+  }
 
-    Navigator.pop(context); // Close the modal after saving
+  void _addIngredientField() {
+    setState(() {
+      _ingredients.add({
+        'name': TextEditingController(),
+        'quantity': TextEditingController(),
+        'unit': TextEditingController(),
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
-        height:
-            MediaQuery.of(context).size.height * 0.85, // 85% of screen height
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -346,8 +349,7 @@ class _AddProductModalState extends State<AddProductModal> {
               onChanged: (String? newValue) {
                 setState(() {
                   _selectedProductType = newValue;
-                  _variantPrices
-                      .clear(); // Reset prices for the selected product type
+                  _variantPrices.clear();
                 });
               },
             ),
@@ -395,9 +397,74 @@ class _AddProductModalState extends State<AddProductModal> {
                 ),
               ],
               const SizedBox(height: 16),
-              if (_selectedImage != null) ...[
-                Image.file(_selectedImage!, height: 200, width: 200), // Preview
-              ],
+              Text('Ingredients:'),
+              Column(
+                children: _ingredients
+                    .asMap()
+                    .entries
+                    .map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex:
+                                  2, // Adjusts the width proportion of this field
+                              child: TextField(
+                                controller: entry.value['name'],
+                                decoration: InputDecoration(
+                                  labelText: 'Ingredient ${entry.key + 1}',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex:
+                                  1, // Adjusts the width proportion of this field
+                              child: TextField(
+                                controller: entry.value['quantity'],
+                                decoration: InputDecoration(
+                                  labelText: 'Quantity',
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex:
+                                  1, // Adjusts the width proportion of this field
+                              child: DropdownButtonFormField<String>(
+                                hint: Text('Unit'),
+                                value: entry.value['unit']?.text.isEmpty ?? true
+                                    ? null
+                                    : entry.value['unit']?.text,
+                                items: ['pcs', 'ml', 'liters', 'grams', 'kg']
+                                    .map((String unit) {
+                                  return DropdownMenuItem<String>(
+                                    value: unit,
+                                    child: Text(unit),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    entry.value['unit']?.text = newValue ?? '';
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              TextButton(
+                onPressed: _addIngredientField,
+                child: Text('Add Ingredient'),
+              ),
+              const SizedBox(height: 16),
+              if (_selectedImage != null)
+                Image.file(_selectedImage!, height: 200, width: 200),
               TextButton(
                 onPressed: _pickImage,
                 child: Text('Select Image'),
@@ -405,7 +472,7 @@ class _AddProductModalState extends State<AddProductModal> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _saveProductToFirestore,
-                child: const Text('Add Product'),
+                child: Text('Save Product'),
               ),
             ],
           ],
