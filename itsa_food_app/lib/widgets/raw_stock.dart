@@ -11,11 +11,13 @@ class _RawStockState extends State<RawStock> {
   final _quantityController = TextEditingController();
   final _unitController = TextEditingController();
   final _lowStockAlertController = TextEditingController();
+  final _pricePerUnitController = TextEditingController(); // New controller
 
   String? _unitError;
   String? _lowStockAlertError;
   String? _nameError;
   String? _quantityError;
+  String? _pricePerUnitError; // New error message for price
 
   final List<String> allowedUnits = [
     'kg',
@@ -39,12 +41,14 @@ class _RawStockState extends State<RawStock> {
       _lowStockAlertError = null;
       _nameError = null;
       _quantityError = null;
+      _pricePerUnitError = null; // Reset price error
     });
 
     String name = _nameController.text;
     String unit = _unitController.text;
     int quantity = int.tryParse(_quantityController.text) ?? 0;
     double lowStockAlert = double.tryParse(_lowStockAlertController.text) ?? 0;
+    double pricePerUnit = double.tryParse(_pricePerUnitController.text) ?? -1;
 
     if (name.isEmpty) {
       _nameError = 'Required field';
@@ -58,11 +62,15 @@ class _RawStockState extends State<RawStock> {
     if (lowStockAlert <= 0) {
       _lowStockAlertError = 'Value must be greater than 0';
     }
+    if (pricePerUnit <= 0) {
+      _pricePerUnitError = 'Value must be greater than 0';
+    }
 
     return _nameError == null &&
         _quantityError == null &&
         _unitError == null &&
-        _lowStockAlertError == null;
+        _lowStockAlertError == null &&
+        _pricePerUnitError == null; // Include price validation
   }
 
   Future<void> addRawMaterial() async {
@@ -72,6 +80,8 @@ class _RawStockState extends State<RawStock> {
       String unit = _unitController.text;
       double lowStockAlert =
           double.tryParse(_lowStockAlertController.text) ?? 0;
+      double pricePerUnit =
+          double.tryParse(_pricePerUnitController.text) ?? 0; // Get price
 
       // Add to Firestore with document name as the material name
       await FirebaseFirestore.instance.collection('rawStock').doc(name).set({
@@ -79,6 +89,7 @@ class _RawStockState extends State<RawStock> {
         'quantity': quantity,
         'unit': unit,
         'stockAlert': lowStockAlert, // Store the decimal value
+        'pricePerUnit': pricePerUnit, // Save price per unit
       });
 
       // Clear the input fields
@@ -86,8 +97,7 @@ class _RawStockState extends State<RawStock> {
       _quantityController.clear();
       _unitController.clear();
       _lowStockAlertController.clear();
-
-      Navigator.pop(context); // Close the modal after adding
+      _pricePerUnitController.clear(); // Clear price field
     }
   }
 
@@ -174,72 +184,84 @@ class _RawStockState extends State<RawStock> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (BuildContext context) {
         return Padding(
           padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 16,
             left: 16,
             right: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 16),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Raw Material Name',
-                  border: OutlineInputBorder(),
-                  errorText: _nameError,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Add Raw Material',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: _quantityController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Quantity',
-                  border: OutlineInputBorder(),
-                  errorText: _quantityError,
+                SizedBox(height: 16),
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Material Name',
+                    errorText: _nameError,
+                  ),
                 ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: _unitController,
-                decoration: InputDecoration(
-                  labelText: 'Unit (e.g., kg, pcs)',
-                  border: OutlineInputBorder(),
-                  errorText: _unitError,
+                TextField(
+                  controller: _quantityController,
+                  decoration: InputDecoration(
+                    labelText: 'Quantity',
+                    errorText: _quantityError,
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: _lowStockAlertController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Low Stock Alert Threshold',
-                  border: OutlineInputBorder(),
-                  errorText: _lowStockAlertError,
+                TextField(
+                  controller: _unitController,
+                  decoration: InputDecoration(
+                    labelText: 'Unit',
+                    errorText: _unitError,
+                  ),
                 ),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    validateInput();
-                  });
-
-                  if (_nameError == null &&
-                      _quantityError == null &&
-                      _unitError == null &&
-                      _lowStockAlertError == null) {
-                    addRawMaterial();
-                  }
-                },
-                child: Text('Save'),
-              ),
-              SizedBox(height: 16),
-            ],
+                TextField(
+                  controller: _lowStockAlertController,
+                  decoration: InputDecoration(
+                    labelText: 'Low Stock Alert',
+                    errorText: _lowStockAlertError,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller:
+                      _pricePerUnitController, // New controller for Price per Unit
+                  decoration: InputDecoration(
+                    labelText: 'Price per Unit',
+                    errorText: _pricePerUnitError,
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        addRawMaterial();
+                        Navigator.pop(context);
+                      },
+                      child: Text('Add Material'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
