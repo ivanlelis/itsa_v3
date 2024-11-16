@@ -100,11 +100,9 @@ class _LoginPageState extends State<LoginPage> {
             await firebaseService.getAdminInfo(email);
 
         // Ensure adminInfo is not null before accessing the email
-        String adminEmail = adminInfo != null && adminInfo.isNotEmpty
-            ? adminInfo['email'] ?? "No Email Provided"
-            : "No Email Provided";
-
         if (adminInfo != null && adminInfo.isNotEmpty) {
+          String adminEmail = adminInfo['email'] ?? "No Email Provided";
+
           // Save the admin email in UserProvider
           Provider.of<UserProvider>(context, listen: false)
               .setAdminEmail(adminEmail);
@@ -126,11 +124,9 @@ class _LoginPageState extends State<LoginPage> {
           Map<String, dynamic>? superadInfo =
               await firebaseService.getSuperAdInfo(email);
 
-          String superadEmail = superadInfo != null && superadInfo.isNotEmpty
-              ? superadInfo['email'] ?? "No Email Provided"
-              : "No Email Provided";
-
           if (superadInfo != null && superadInfo.isNotEmpty) {
+            String superadEmail = superadInfo['email'] ?? "No Email Provided";
+
             // Navigate to the Super Admin Home Page
             Navigator.pushReplacement(
               context,

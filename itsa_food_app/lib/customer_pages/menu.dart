@@ -282,6 +282,8 @@ class _MenuState extends State<Menu> {
                           : null;
 
                       return ProductCard(
+                        productID: product['productID'] ??
+                            '', // Pass the productID here
                         productName:
                             product['productName'] ?? 'Unknown Product',
                         imageUrl: product['imageUrl'] ?? '',
@@ -315,7 +317,8 @@ class _MenuState extends State<Menu> {
   }
 }
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
+  final String productID; // Updated to use productID
   final String productName;
   final String imageUrl;
   final String? takoyakiPrices;
@@ -334,6 +337,7 @@ class ProductCard extends StatelessWidget {
 
   const ProductCard({
     super.key,
+    required this.productID,
     required this.productName,
     required this.imageUrl,
     this.takoyakiPrices,
@@ -352,51 +356,127 @@ class ProductCard extends StatelessWidget {
   });
 
   @override
+  _ProductCardState createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  List<Map<String, String>> ingredientsStatus = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIngredientsAndStock();
+  }
+
+  Future<void> _fetchIngredientsAndStock() async {
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      // Fetch product's ingredients field using productID as document ID
+      final productDoc =
+          await firestore.collection('products').doc(widget.productID).get();
+      final List<dynamic> ingredients = productDoc.data()!['ingredients'] ?? [];
+
+      // Check stock status for each ingredient in rawStock
+      List<Map<String, String>> fetchedIngredientsStatus = [];
+
+      for (var ingredient in ingredients) {
+        final String ingredientName =
+            ingredient['name']; // Assuming each ingredient has a name field
+
+        // Fetch raw stock document using ingredient name as the document ID
+        final rawStockQuery = await firestore
+            .collection('rawStock')
+            .where('matName', isEqualTo: ingredientName)
+            .get();
+
+        if (rawStockQuery.docs.isNotEmpty) {
+          // Retrieve the quantity value from the raw stock document
+          final int quantity = rawStockQuery.docs.first.data()['quantity'] ?? 0;
+
+          // Determine stock status based on quantity
+          final bool inStock = quantity >= 1;
+
+          // Add ingredient status to the list
+          fetchedIngredientsStatus.add({
+            'name': ingredientName,
+            'status': inStock ? 'In Stock' : 'Out of Stock',
+          });
+        } else {
+          // If no matching ingredient is found in rawStock, mark as Out of Stock
+          fetchedIngredientsStatus.add({
+            'name': ingredientName,
+            'status': 'Out of Stock',
+          });
+        }
+      }
+
+      setState(() {
+        ingredientsStatus = fetchedIngredientsStatus;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching ingredients or stock: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Determine product type and starting price
     String productType;
     String startingPriceText = "Starts at ₱";
 
-    if (takoyakiPrices != null) {
+    if (widget.takoyakiPrices != null) {
       productType = 'takoyaki';
-      startingPriceText += takoyakiPrices!; // Display only 4pc price
-    } else if (milkTeaRegular != null) {
+      startingPriceText += widget.takoyakiPrices!;
+    } else if (widget.milkTeaRegular != null) {
       productType = 'milktea';
-      startingPriceText += milkTeaRegular!; // Display only Small price
-    } else if (mealsPrice != null) {
+      startingPriceText += widget.milkTeaRegular!;
+    } else if (widget.mealsPrice != null) {
       productType = 'meal';
-      startingPriceText = 'Price: ₱$mealsPrice';
+      startingPriceText = 'Price: ₱${widget.mealsPrice}';
     } else {
-      productType = 'unknown'; // Default value
+      productType = 'unknown';
       startingPriceText = 'Price Unavailable';
     }
 
+    // Check if any ingredient is out of stock
+    bool isOutOfStock = ingredientsStatus
+        .any((ingredient) => ingredient['status'] == 'Out of Stock');
+
     return GestureDetector(
       onTap: () {
-        // Navigate to the ProductView page and pass product details
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductView(
-              productName: productName,
-              imageUrl: imageUrl,
-              takoyakiPrices: takoyakiPrices,
-              takoyakiPrices8: takoyakiPrices8,
-              takoyakiPrices12: takoyakiPrices12,
-              milkTeaRegular: milkTeaRegular,
-              milkTeaLarge: milkTeaLarge,
-              mealsPrice: mealsPrice,
-              userName: userName,
-              emailAddress: emailAddress,
-              productType: productType,
-              uid: uid,
-              userAddress: userAddress,
-              email: email,
-              latitude: latitude,
-              longitude: longitude,
+        if (isOutOfStock) {
+          // Show the dialog when the product is out of stock
+          _showOutOfStockDialog(context);
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductView(
+                productName: widget.productName,
+                imageUrl: widget.imageUrl,
+                takoyakiPrices: widget.takoyakiPrices,
+                takoyakiPrices8: widget.takoyakiPrices8,
+                takoyakiPrices12: widget.takoyakiPrices12,
+                milkTeaRegular: widget.milkTeaRegular,
+                milkTeaLarge: widget.milkTeaLarge,
+                mealsPrice: widget.mealsPrice,
+                userName: widget.userName,
+                emailAddress: widget.emailAddress,
+                productType: productType,
+                uid: widget.uid,
+                userAddress: widget.userAddress,
+                email: widget.email,
+                latitude: widget.latitude,
+                longitude: widget.longitude,
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       child: Card(
         elevation: 4,
@@ -406,28 +486,54 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.0),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
+            // Stack to dim the image if any ingredient is out of stock
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 160, // Set a fixed height or adjust as needed
+                    child: Image.network(
+                      widget.imageUrl,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
                 ),
-              ),
+                if (isOutOfStock)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: Container(
+                      width: double.infinity,
+                      height: 160, // Match the height of the image
+                      color: Colors.black.withOpacity(0.5), // Dim the image
+                      child: Center(
+                        child: Text(
+                          'Out of Stock',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    productName,
+                    widget.productName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  _buildPriceContainer(
-                      startingPriceText), // Display starting price only
+                  _buildPriceContainer(startingPriceText),
                 ],
               ),
             ),
@@ -437,21 +543,40 @@ class ProductCard extends StatelessWidget {
     );
   }
 
+  // Method to show the out-of-stock dialog
+  void _showOutOfStockDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Product Unavailable"),
+          content: Text("This product is currently unavailable."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildPriceContainer(String price) {
     return Container(
-      margin:
-          const EdgeInsets.symmetric(vertical: 4.0), // Margin between prices
-      padding: const EdgeInsets.symmetric(
-          horizontal: 12.0, vertical: 6.0), // Padding inside the rectangle
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
       decoration: BoxDecoration(
-        color: Colors.green, // Green background
-        borderRadius: BorderRadius.circular(12.0), // Rounded corners
+        color: Colors.green,
+        borderRadius: BorderRadius.circular(12.0),
       ),
       child: Text(
         price,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 12.0, // Adjust the font size to make it smaller
+          fontSize: 12.0,
         ),
       ),
     );

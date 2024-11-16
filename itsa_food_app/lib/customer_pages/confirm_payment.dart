@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:itsa_food_app/main_home/customer_home.dart';
+import 'package:intl/intl.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<dynamic> cartItems;
@@ -103,18 +104,22 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-  // Create order in Firestore
   Future<void> _createOrder() async {
     String orderID = _generateOrderID();
-    List<String> productNames = _getProductNames();
     Timestamp timestamp = Timestamp.now();
 
+    // Format the date for transactions collection
+    String currentDate = DateFormat('MM-dd-yy').format(DateTime.now());
+    String transactionsCollectionName = 'transactions_$currentDate';
+
+    // Order data to be saved in customer orders
     Map<String, dynamic> orderData = {
       'deliveryType': widget.deliveryType,
       'orderID': orderID,
       'orderType': widget.orderType,
       'paymentMethod': widget.paymentMethod,
-      'productNames': productNames,
+      'productNames':
+          widget.cartItems.map((item) => item['productName']).toList(),
       'timestamp': timestamp,
       'total': widget.totalAmount,
       'voucherCode': widget.voucherCode,
@@ -135,6 +140,31 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .doc(orderID)
           .set(orderData);
 
+      // Calculate raw material costs and profit for each product
+      List<Map<String, dynamic>> rawMatCostPerProd =
+          await _calculateRawMatCosts(
+              widget.cartItems.cast<Map<String, dynamic>>());
+
+      // Calculate the total cost and total net profit for the order
+      double totalCost =
+          rawMatCostPerProd.fold(0, (sum, item) => sum + item['productCost']);
+      double totalNetProfit =
+          rawMatCostPerProd.fold(0, (sum, item) => sum + item['netProfit']);
+
+      // Create the transaction document
+      Map<String, dynamic> transactionData = {
+        'totalCost': totalCost,
+        'matCostPerProduct': rawMatCostPerProd,
+        'totalNetProfitPerOrder': totalNetProfit,
+      };
+
+      // Save the transaction data in Firestore
+      await FirebaseFirestore.instance
+          .collection(transactionsCollectionName)
+          .doc(orderID)
+          .set(transactionData);
+
+      // Update stock from cart items
       await _updateStockFromCartItems();
 
       // Delete the cart items after order creation
@@ -146,6 +176,79 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Failed to confirm order: $e')));
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _calculateRawMatCosts(
+      List<Map<String, dynamic>> cartItems) async {
+    List<Map<String, dynamic>> rawMatCostPerProd = [];
+
+    // Loop through each cart item to get the ingredients
+    for (var cartItem in cartItems) {
+      try {
+        String productName = cartItem['productName'];
+        double productCost = cartItem['total'] ?? 0.0;
+        List<dynamic> ingredients = cartItem['ingredients'] ?? [];
+
+        // Ensure ingredients are available in the cart item
+        if (ingredients.isEmpty) {
+          print('No ingredients found for $productName in the cart.');
+          continue;
+        }
+
+        double rawMatCost = 0.0;
+
+        // Log ingredients for debugging
+        print('Ingredients for $productName: $ingredients');
+
+        // Calculate raw material cost for each ingredient
+        for (var ingredient in ingredients) {
+          String rawMaterialName = ingredient['name'];
+          String quantityWithUnit = ingredient['quantity'];
+
+          // Extract the quantity and unit
+          double ingredientQuantity =
+              double.tryParse(quantityWithUnit.split(' ')[0]) ?? 0.0;
+          String unit = quantityWithUnit.split(' ')[1];
+
+          // Log individual ingredient details
+          print(
+              'Ingredient: $rawMaterialName, Quantity: $ingredientQuantity, Unit: $unit');
+
+          // Fetch raw stock details by filtering for matName
+          QuerySnapshot rawStockQuery = await FirebaseFirestore.instance
+              .collection('rawStock')
+              .where('matName', isEqualTo: rawMaterialName)
+              .get();
+
+          if (rawStockQuery.docs.isEmpty) {
+            print('No raw stock found for $rawMaterialName');
+          } else {
+            Map<String, dynamic> rawStockData =
+                rawStockQuery.docs.first.data() as Map<String, dynamic>;
+            double pricePerUnit = rawStockData['pricePerUnit'] ?? 0.0;
+
+            // Log price per unit for debugging
+            print('Price per unit for $rawMaterialName: $pricePerUnit');
+
+            if (pricePerUnit > 0.0) {
+              rawMatCost += ingredientQuantity * pricePerUnit;
+            }
+          }
+        }
+
+        double netProfit = productCost - rawMatCost;
+
+        rawMatCostPerProd.add({
+          'productCost': productCost,
+          'rawMatCost': rawMatCost,
+          'netProfit': netProfit,
+        });
+      } catch (e) {
+        debugPrint('Failed to calculate raw material cost for cart item: $e');
+      }
+    }
+
+    return rawMatCostPerProd;
   }
 
   Future<void> _updateStockFromCartItems() async {
@@ -172,8 +275,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           // Extract numeric part and unit from quantity string (e.g., "0.1875 liters" -> 0.1875 and "liters")
           List<String> quantityParts = ingredientQuantityStr.split(' ');
           double ingredientQuantity = double.tryParse(quantityParts[0]) ?? 0.0;
-          String ingredientUnit =
-              quantityParts.length > 1 ? quantityParts[1] : '';
 
           // Get current raw material stock from rawStock collection
           DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
@@ -186,23 +287,15 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 double.tryParse(rawMaterialDoc['quantity'].toString()) ?? 0.0;
             String stockUnit = rawMaterialDoc['unit'];
 
-            // Ensure units match before subtracting
-            if (stockUnit == ingredientUnit) {
-              if (availableStock >= ingredientQuantity) {
-                // Update stock
-                await FirebaseFirestore.instance
-                    .collection('rawStock')
-                    .doc(matName)
-                    .update({'quantity': availableStock - ingredientQuantity});
-                print(
-                    "Subtracted $ingredientQuantity $ingredientUnit from $matName in rawStock.");
-              } else {
-                print(
-                    "Not enough stock for $matName. Needed: $ingredientQuantity $ingredientUnit, Available: $availableStock $stockUnit");
-              }
+            if (availableStock >= ingredientQuantity) {
+              await FirebaseFirestore.instance
+                  .collection('rawStock')
+                  .doc(matName)
+                  .update({'quantity': availableStock - ingredientQuantity});
+              print("Subtracted $ingredientQuantity $stockUnit from $matName.");
             } else {
               print(
-                  "Unit mismatch for $matName. Ingredient unit: $ingredientUnit, Stock unit: $stockUnit");
+                  "Not enough stock for $matName. Needed: $ingredientQuantity, Available: $availableStock $stockUnit");
             }
           } else {
             print("Ingredient $matName not found in rawStock.");
@@ -367,7 +460,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     );
   }
 
-  // Cart Items Widget
   Widget _buildCartItems() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -376,7 +468,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey[300]!, blurRadius: 8, offset: Offset(0, 2))
+              color: Colors.grey[300]!, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -397,50 +489,118 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               ? sizeQuantity
               : 'N/A';
 
+          final productName = item['productName']; // Get the productName
+          List<dynamic> ingredients = [];
+
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child: ExpansionTile(
-              tilePadding: EdgeInsets.symmetric(horizontal: 8),
-              title: Text(
-                item['productName'],
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              children: [
-                if (variant != 'N/A')
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Variant: $variant',
-                          style: TextStyle(fontSize: 16)),
+            child: FutureBuilder<QuerySnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('products')
+                  .where('productName',
+                      isEqualTo: productName) // Query by productName
+                  .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator(); // While waiting for data
+                }
+
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Text('Product not found');
+                }
+
+                // Now that we have the correct document, fetch its productID
+                DocumentSnapshot productDoc = snapshot.data!.docs.first;
+                Map<String, dynamic> productData =
+                    productDoc.data() as Map<String, dynamic>;
+
+                // Fetch ingredients
+                ingredients = productData['ingredients'] ?? [];
+
+                // Pass the ingredients to _calculateRawMatCosts
+                _calculateRawMatCosts([
+                  {
+                    'productName': productName,
+                    'total': total,
+                    'ingredients': ingredients,
+                    'quantity': quantity,
+                  }
+                ]);
+
+                return ExpansionTile(
+                  tilePadding: EdgeInsets.symmetric(horizontal: 8),
+                  title: Text(
+                    item['productName'],
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  children: [
+                    if (variant != 'N/A')
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Variant: $variant',
+                              style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                    if (size != 'N/A')
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Size: $size',
+                              style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Qty: $quantity',
+                            style: TextStyle(fontSize: 16)),
+                      ),
                     ),
-                  ),
-                if (size != 'N/A')
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child:
-                          Text('Size: $size', style: TextStyle(fontSize: 16)),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Total: ₱${total.toStringAsFixed(2)}',
+                            style: TextStyle(fontSize: 16)),
+                      ),
                     ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child:
-                        Text('Qty: $quantity', style: TextStyle(fontSize: 16)),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Total: ₱${total.toStringAsFixed(2)}',
-                        style: TextStyle(fontSize: 16)),
-                  ),
-                ),
-              ],
+                    if (ingredients.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Ingredients:',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold)),
+                              ...ingredients.map<Widget>((ingredient) {
+                                final ingredientName =
+                                    ingredient['name'] ?? 'Unknown';
+                                final ingredientQuantity =
+                                    ingredient['quantity'] ?? 'N/A';
+                                return Text(
+                                  '- $ingredientName: $ingredientQuantity',
+                                  style: TextStyle(fontSize: 14),
+                                );
+                              }).toList(),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           );
         }).toList(),
