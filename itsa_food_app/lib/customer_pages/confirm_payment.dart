@@ -148,15 +148,18 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           await _calculateRawMatCosts(
               widget.cartItems.cast<Map<String, dynamic>>());
 
-      // Calculate the total cost and total net profit for the order
-      double totalCost =
-          rawMatCostPerProd.fold(0, (sum, item) => sum + item['productCost']);
+      // Calculate the total raw material cost, product cost, and total net profit
+      double totalRawMatCost =
+          rawMatCostPerProd.fold(0, (sum, item) => sum + item['rawMatCost']);
+      double totalProdCost =
+          rawMatCostPerProd.fold(0, (sum, item) => sum + item['prodCost']);
       double totalNetProfit =
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['netProfit']);
 
       // Create the transaction document
       Map<String, dynamic> transactionData = {
-        'totalCost': totalCost,
+        'totalRawMatCost': totalRawMatCost,
+        'prodCost': totalProdCost,
         'matCostPerProduct': rawMatCostPerProd,
         'totalNetProfitPerOrder': totalNetProfit,
       };
@@ -181,77 +184,70 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
+// Helper function to calculate raw material costs for each product
   Future<List<Map<String, dynamic>>> _calculateRawMatCosts(
       List<Map<String, dynamic>> cartItems) async {
-    List<Map<String, dynamic>> rawMatCostPerProd = [];
+    List<Map<String, dynamic>> costs = [];
 
-    // Loop through each cart item to get the ingredients
-    for (var cartItem in cartItems) {
-      try {
-        String productName = cartItem['productName'];
-        double productCost = cartItem['total'] ?? 0.0;
-        List<dynamic> ingredients = cartItem['ingredients'] ?? [];
+    for (var item in cartItems) {
+      String productName = item['productName'];
+      double prodCost = item['total'] ?? 0.0; // Total from buildCartItems
 
-        // Ensure ingredients are available in the cart item
-        if (ingredients.isEmpty) {
-          print('No ingredients found for $productName in the cart.');
-          continue;
-        }
+      // Fetch product details from Firestore
+      QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .where('productName', isEqualTo: productName)
+          .limit(1)
+          .get();
 
+      if (productSnapshot.docs.isNotEmpty) {
+        DocumentSnapshot productDoc = productSnapshot.docs.first;
+
+        List ingredients = productDoc['ingredients'];
         double rawMatCost = 0.0;
 
-        // Log ingredients for debugging
-        print('Ingredients for $productName: $ingredients');
+        List<Map<String, dynamic>> productIngredients = [];
 
-        // Calculate raw material cost for each ingredient
         for (var ingredient in ingredients) {
-          String rawMaterialName = ingredient['name'];
-          String quantityWithUnit = ingredient['quantity'];
+          String ingredientName = ingredient['name'];
+          double quantity =
+              double.tryParse(ingredient['quantity'].split(' ')[0]) ?? 0;
 
-          // Extract the quantity and unit
-          double ingredientQuantity =
-              double.tryParse(quantityWithUnit.split(' ')[0]) ?? 0.0;
-          String unit = quantityWithUnit.split(' ')[1];
-
-          // Log individual ingredient details
-          print(
-              'Ingredient: $rawMaterialName, Quantity: $ingredientQuantity, Unit: $unit');
-
-          // Fetch raw stock details by filtering for matName
-          QuerySnapshot rawStockQuery = await FirebaseFirestore.instance
+          // Fetch raw material details
+          DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
               .collection('rawStock')
-              .where('matName', isEqualTo: rawMaterialName)
+              .doc(ingredientName)
               .get();
 
-          if (rawStockQuery.docs.isEmpty) {
-            print('No raw stock found for $rawMaterialName');
-          } else {
-            Map<String, dynamic> rawStockData =
-                rawStockQuery.docs.first.data() as Map<String, dynamic>;
-            double pricePerUnit = rawStockData['pricePerUnit'] ?? 0.0;
+          if (rawMaterialDoc.exists) {
+            double pricePerUnit = rawMaterialDoc['pricePerUnit'] ?? 0.0;
+            double conversionRate = rawMaterialDoc['conversionRate'] ?? 1.0;
 
-            // Log price per unit for debugging
-            print('Price per unit for $rawMaterialName: $pricePerUnit');
+            double cost = (quantity / conversionRate) * pricePerUnit;
+            rawMatCost += cost;
 
-            if (pricePerUnit > 0.0) {
-              rawMatCost += ingredientQuantity * pricePerUnit;
-            }
+            productIngredients.add({
+              'name': ingredientName,
+              'quantity': ingredient['quantity'],
+              'cost': cost,
+            });
           }
         }
 
-        double netProfit = productCost - rawMatCost;
+        double productPrice = item['price'] ?? 0.0;
+        double netProfit = productPrice - rawMatCost;
 
-        rawMatCostPerProd.add({
-          'productCost': productCost,
+        costs.add({
+          'productName': productName,
           'rawMatCost': rawMatCost,
+          'prodCost': prodCost,
           'netProfit': netProfit,
+          'productIngredients': productIngredients,
         });
-      } catch (e) {
-        debugPrint('Failed to calculate raw material cost for cart item: $e');
       }
     }
 
-    return rawMatCostPerProd;
+    return costs;
   }
 
   Future<void> _updateStockFromCartItems() async {
