@@ -491,7 +491,7 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
-                  child: Container(
+                  child: SizedBox(
                     width: double.infinity,
                     height: 160, // Set a fixed height or adjust as needed
                     child: Image.network(

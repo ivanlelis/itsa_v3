@@ -112,7 +112,7 @@ class ProductsStock extends StatelessWidget {
           .get();
 
       if (ingredientDoc.docs.isNotEmpty) {
-        var stockData = ingredientDoc.docs.first.data() as Map<String, dynamic>;
+        var stockData = ingredientDoc.docs.first.data();
         ingredientStockList.add({
           'name': ingredientName,
           'quantity': ingredientQuantity,

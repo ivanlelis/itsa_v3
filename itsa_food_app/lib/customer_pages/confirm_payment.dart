@@ -106,10 +106,13 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _createOrder() async {
     String orderID = _generateOrderID();
-    Timestamp timestamp = Timestamp.now();
 
-    // Format the date for transactions collection
-    String currentDate = DateFormat('MM-dd-yy').format(DateTime.now());
+    // Use the current date and time in the Philippines
+    DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
+    Timestamp timestamp = Timestamp.fromDate(now);
+
+    // Format the date for the transactions collection
+    String currentDate = DateFormat('MM-dd-yy').format(now);
     String transactionsCollectionName = 'transactions_$currentDate';
 
     // Order data to be saved in customer orders
@@ -272,11 +275,12 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               ingredient['name']; // Use 'name' as field key in products
           String ingredientQuantityStr = ingredient['quantity'];
 
-          // Extract numeric part and unit from quantity string (e.g., "0.1875 liters" -> 0.1875 and "liters")
+          // Extract numeric part and unit from quantity string (e.g., "100 ml")
           List<String> quantityParts = ingredientQuantityStr.split(' ');
           double ingredientQuantity = double.tryParse(quantityParts[0]) ?? 0.0;
+          String ingredientUnit = quantityParts[1];
 
-          // Get current raw material stock from rawStock collection
+          // Get current raw material stock and conversion details from Firestore
           DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
               .collection('rawStock')
               .doc(matName)
@@ -286,16 +290,49 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             double availableStock =
                 double.tryParse(rawMaterialDoc['quantity'].toString()) ?? 0.0;
             String stockUnit = rawMaterialDoc['unit'];
+            double conversionRate =
+                double.tryParse(rawMaterialDoc['conversionRate'].toString()) ??
+                    1.0;
 
-            if (availableStock >= ingredientQuantity) {
-              await FirebaseFirestore.instance
-                  .collection('rawStock')
-                  .doc(matName)
-                  .update({'quantity': availableStock - ingredientQuantity});
-              print("Subtracted $ingredientQuantity $stockUnit from $matName.");
+            // Handle unit conversions if necessary
+            if (stockUnit != ingredientUnit) {
+              if ((stockUnit == 'kg' && ingredientUnit == 'grams') ||
+                  (stockUnit == 'liters' && ingredientUnit == 'ml') ||
+                  (stockUnit == 'kg' && ingredientUnit == 'ml')) {
+                // Convert ingredient quantity to stock unit
+                double ingredientQuantityInStockUnit =
+                    ingredientQuantity / conversionRate;
+
+                if (availableStock >= ingredientQuantityInStockUnit) {
+                  await FirebaseFirestore.instance
+                      .collection('rawStock')
+                      .doc(matName)
+                      .update({
+                    'quantity': availableStock - ingredientQuantityInStockUnit
+                  });
+                  print(
+                      "Subtracted ${ingredientQuantityInStockUnit.toStringAsFixed(4)} $stockUnit from $matName.");
+                } else {
+                  print(
+                      "Not enough stock for $matName. Needed: ${ingredientQuantityInStockUnit.toStringAsFixed(4)} $stockUnit, Available: $availableStock $stockUnit.");
+                }
+              } else {
+                print(
+                    "Unsupported unit conversion for $matName. Stock unit: $stockUnit, Ingredient unit: $ingredientUnit.");
+              }
             } else {
-              print(
-                  "Not enough stock for $matName. Needed: $ingredientQuantity, Available: $availableStock $stockUnit");
+              // Units match, no conversion needed
+              if (availableStock >= ingredientQuantity) {
+                await FirebaseFirestore.instance
+                    .collection('rawStock')
+                    .doc(matName)
+                    .update({'quantity': availableStock - ingredientQuantity});
+                print(
+                    "Subtracted $ingredientQuantity $stockUnit from $matName.");
+              } else {
+                print(
+                    "Not enough stock for $matName. Needed: $ingredientQuantity $stockUnit, Available: $availableStock $stockUnit.");
+              }
             }
           } else {
             print("Ingredient $matName not found in rawStock.");
@@ -593,7 +630,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                                   '- $ingredientName: $ingredientQuantity',
                                   style: TextStyle(fontSize: 14),
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RawStock extends StatefulWidget {
+  const RawStock({super.key});
+
   @override
   _RawStockState createState() => _RawStockState();
 }
@@ -23,9 +25,7 @@ class _RawStockState extends State<RawStock> {
     'kg',
     'ml',
     'pcs',
-    'g',
     'grams',
-    'l',
     'liters',
   ];
 
@@ -83,6 +83,13 @@ class _RawStockState extends State<RawStock> {
       double pricePerUnit =
           double.tryParse(_pricePerUnitController.text) ?? 0; // Get price
 
+      // Determine conversionRate based on the unit
+      double? conversionRate;
+      if (unit == 'kg' || unit == 'liters') {
+        conversionRate =
+            1000.0; // Default conversion for kg->grams and liters->ml
+      }
+
       // Add to Firestore with document name as the material name
       await FirebaseFirestore.instance.collection('rawStock').doc(name).set({
         'matName': name,
@@ -90,6 +97,8 @@ class _RawStockState extends State<RawStock> {
         'unit': unit,
         'stockAlert': lowStockAlert, // Store the decimal value
         'pricePerUnit': pricePerUnit, // Save price per unit
+        if (conversionRate != null)
+          'conversionRate': conversionRate, // Add only if applicable
       });
 
       // Clear the input fields
@@ -98,6 +107,11 @@ class _RawStockState extends State<RawStock> {
       _unitController.clear();
       _lowStockAlertController.clear();
       _pricePerUnitController.clear(); // Clear price field
+
+      // Provide feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Raw material added successfully')),
+      );
     }
   }
 
@@ -164,11 +178,11 @@ class _RawStockState extends State<RawStock> {
                         );
                       }
                     },
-                    child: Text('Delete'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           Colors.red, // Set the button background color to red
                     ),
+                    child: Text('Delete'),
                   ),
                 ],
               ),
@@ -352,11 +366,11 @@ class _RawStockState extends State<RawStock> {
                                         lowStockAlert,
                                       );
                                     },
-                                    child: Text('View'),
                                     style: ElevatedButton.styleFrom(
                                       padding: EdgeInsets.symmetric(
                                           horizontal: 12, vertical: 6),
                                     ),
+                                    child: Text('View'),
                                   ),
                                 ],
                               ),
