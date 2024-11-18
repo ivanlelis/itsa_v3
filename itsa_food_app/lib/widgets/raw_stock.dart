@@ -80,33 +80,80 @@ class _RawStockState extends State<RawStock> {
       String unit = _unitController.text;
       double lowStockAlert =
           double.tryParse(_lowStockAlertController.text) ?? 0;
-      double pricePerUnit =
-          double.tryParse(_pricePerUnitController.text) ?? 0; // Get price
+      double pricePerUnit = double.tryParse(_pricePerUnitController.text) ?? 0;
 
-      // Determine conversionRate based on the unit
+      // Initialize cost fields
+      double? costPerMl;
+      double? costPerGram;
+      double? costPerLiter;
       double? conversionRate;
-      if (unit == 'kg' || unit == 'liters') {
-        conversionRate =
-            1000.0; // Default conversion for kg->grams and liters->ml
+
+      // Calculate cost and conversion rates based on unit
+      if (unit == 'kg') {
+        // Convert price per kg to cost per gram
+        costPerGram = pricePerUnit / 1000.0;
+
+        // Define brewing ratio (grams needed for 1 liter)
+        double gramsPerLiter = 10.0; // Example: 10 grams per liter
+        costPerLiter = gramsPerLiter * costPerGram;
+
+        // Calculate cost per ml from cost per liter
+        costPerMl = costPerLiter / 1000.0;
+
+        // Set conversionRate for kg to grams (1 kg = 1000 grams)
+        conversionRate = 1000.0;
+      } else if (unit == 'liters') {
+        // For liters, calculate cost per ml
+        costPerLiter =
+            pricePerUnit; // Price per liter is directly the cost for 1 liter
+        costPerMl =
+            costPerLiter / 1000.0; // Convert price per liter to price per ml
+
+        // Set conversionRate for liters to milliliters (1 liter = 1000 ml)
+        conversionRate = 1000.0;
+
+        // Set costPerGram to null when unit is liters
+        costPerGram = null;
+      } else if (unit == 'grams') {
+        // Set conversionRate for grams to kilograms (1 gram = 0.001 kg)
+        conversionRate = 0.001;
+
+        // Set costPerGram for grams
+        costPerGram = pricePerUnit / 1000.0;
+      } else if (unit == 'ml') {
+        // Set conversionRate for milliliters to liters (1 ml = 0.001 liters)
+        conversionRate = 0.001;
       }
 
-      // Add to Firestore with document name as the material name
-      await FirebaseFirestore.instance.collection('rawStock').doc(name).set({
+      // Add to Firestore if conversionRate is not null
+      Map<String, dynamic> rawMaterialData = {
         'matName': name,
         'quantity': quantity,
         'unit': unit,
-        'stockAlert': lowStockAlert, // Store the decimal value
-        'pricePerUnit': pricePerUnit, // Save price per unit
-        if (conversionRate != null)
-          'conversionRate': conversionRate, // Add only if applicable
-      });
+        'stockAlert': lowStockAlert,
+        'pricePerUnit': pricePerUnit,
+        if (costPerGram != null) 'costPerGram': costPerGram,
+        if (costPerLiter != null) 'costPerLiter': costPerLiter,
+        if (costPerMl != null) 'costPerMl': costPerMl,
+      };
 
-      // Clear the input fields
+      // Add conversionRate only if it's available (not for 'pcs')
+      if (conversionRate != null) {
+        rawMaterialData['conversionRate'] = conversionRate;
+      }
+
+      // Add to Firestore
+      await FirebaseFirestore.instance
+          .collection('rawStock')
+          .doc(name)
+          .set(rawMaterialData);
+
+      // Clear input fields
       _nameController.clear();
       _quantityController.clear();
       _unitController.clear();
       _lowStockAlertController.clear();
-      _pricePerUnitController.clear(); // Clear price field
+      _pricePerUnitController.clear();
 
       // Provide feedback
       ScaffoldMessenger.of(context).showSnackBar(
@@ -290,7 +337,7 @@ class _RawStockState extends State<RawStock> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Card(
-            elevation: 4,
+            elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

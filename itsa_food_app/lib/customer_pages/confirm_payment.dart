@@ -153,6 +153,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['rawMatCost']);
       double totalProdCost =
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['prodCost']);
+
+      // Calculate total net profit by summing the netProfit of each product
       double totalNetProfit =
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['netProfit']);
 
@@ -160,8 +162,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       Map<String, dynamic> transactionData = {
         'totalRawMatCost': totalRawMatCost,
         'prodCost': totalProdCost,
+        'totalNetProfit':
+            totalNetProfit, // Add totalNetProfit to transaction data
         'matCostPerProduct': rawMatCostPerProd,
-        'totalNetProfitPerOrder': totalNetProfit,
       };
 
       // Save the transaction data in Firestore
@@ -169,6 +172,12 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .collection(transactionsCollectionName)
           .doc(orderID)
           .set(transactionData);
+
+      // Update the dailySales document in the same transactions collection
+      await _updateDailySales(currentDate, totalProdCost);
+
+      // Update the dailyNetProfit document in the same transactions collection
+      await _updateDailyNetProfit(currentDate, totalNetProfit);
 
       // Update stock from cart items
       await _updateStockFromCartItems();
@@ -181,6 +190,64 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Failed to confirm order: $e')));
+    }
+  }
+
+// Function to update daily sales within the same transactions collection
+  Future<void> _updateDailySales(
+      String currentDate, double totalProdCost) async {
+    // Reference to the document within the transactions collection
+    DocumentReference dailySalesDoc = FirebaseFirestore.instance
+        .collection('transactions_$currentDate')
+        .doc('dailySales');
+
+    try {
+      // Fetch the existing daily sales document
+      DocumentSnapshot snapshot = await dailySalesDoc.get();
+
+      if (snapshot.exists) {
+        // If document exists, update the sales field by adding the new totalProdCost
+        double existingSales = snapshot['sales'] ?? 0.0;
+        await dailySalesDoc.update({
+          'sales': existingSales + totalProdCost,
+        });
+      } else {
+        // If document doesn't exist, create a new document with the sales value
+        await dailySalesDoc.set({
+          'sales': totalProdCost,
+        });
+      }
+    } catch (e) {
+      print('Error updating daily sales: $e');
+    }
+  }
+
+// Function to update daily net profit within the same transactions collection
+  Future<void> _updateDailyNetProfit(
+      String currentDate, double totalNetProfit) async {
+    // Reference to the document within the transactions collection
+    DocumentReference dailyNetProfitDoc = FirebaseFirestore.instance
+        .collection('transactions_$currentDate')
+        .doc('dailyNetProfit');
+
+    try {
+      // Fetch the existing daily net profit document
+      DocumentSnapshot snapshot = await dailyNetProfitDoc.get();
+
+      if (snapshot.exists) {
+        // If document exists, update the netProfit field by adding the new totalNetProfit
+        double existingNetProfit = snapshot['netProfit'] ?? 0.0;
+        await dailyNetProfitDoc.update({
+          'netProfit': existingNetProfit + totalNetProfit,
+        });
+      } else {
+        // If document doesn't exist, create a new document with the netProfit value
+        await dailyNetProfitDoc.set({
+          'netProfit': totalNetProfit,
+        });
+      }
+    } catch (e) {
+      print('Error updating daily net profit: $e');
     }
   }
 
@@ -210,8 +277,14 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
         for (var ingredient in ingredients) {
           String ingredientName = ingredient['name'];
-          double quantity =
-              double.tryParse(ingredient['quantity'].split(' ')[0]) ?? 0;
+          String quantityString = ingredient['quantity'];
+          double quantity = double.tryParse(quantityString.split(' ')[0]) ?? 0;
+
+          // Extract unit from the quantity (e.g., "ml", "grams", "liters")
+          String unit = quantityString.split(' ')[1];
+
+          // Log ingredient and quantity
+          print('Ingredient: ${ingredient['name']}, Quantity: $quantity $unit');
 
           // Fetch raw material details
           DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
@@ -220,22 +293,52 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               .get();
 
           if (rawMaterialDoc.exists) {
+            double costPerMl = rawMaterialDoc['costPerMl'] ?? 0.0; // costPerMl
+            double costPerGram =
+                rawMaterialDoc['costPerGram'] ?? 0.0; // costPerGram
+            double costPerLiter =
+                rawMaterialDoc['costPerLiter'] ?? 0.0; // costPerLiter
             double pricePerUnit = rawMaterialDoc['pricePerUnit'] ?? 0.0;
             double conversionRate = rawMaterialDoc['conversionRate'] ?? 1.0;
 
-            double cost = (quantity / conversionRate) * pricePerUnit;
+            // Log raw material document values
+            print(
+                'Raw Material: $ingredientName, Unit: ${rawMaterialDoc['unit']}');
+            print(
+                'costPerMl: $costPerMl, costPerGram: $costPerGram, costPerLiter: $costPerLiter');
+
+            double cost = 0.0;
+
+            // Calculate cost based on unit
+            if (unit == 'ml') {
+              cost = (quantity * costPerMl); // Calculate cost using costPerMl
+              print('Cost for $ingredientName (ml): $cost');
+            } else if (unit == 'grams') {
+              cost =
+                  (quantity * costPerGram); // Calculate cost using costPerGram
+              print('Cost for $ingredientName (grams): $cost');
+            } else if (unit == 'liters') {
+              cost = (quantity *
+                  costPerLiter); // Calculate cost using costPerLiter
+              print('Cost for $ingredientName (liters): $cost');
+            } else {
+              // Fallback to the existing logic for other units
+              cost = (quantity / conversionRate) * pricePerUnit;
+              print('Fallback cost for $ingredientName: $cost');
+            }
+
             rawMatCost += cost;
 
             productIngredients.add({
               'name': ingredientName,
-              'quantity': ingredient['quantity'],
+              'quantity': ingredient[
+                  'quantity'], // Keep the full quantity string like "150 ml"
               'cost': cost,
             });
           }
         }
 
-        double productPrice = item['price'] ?? 0.0;
-        double netProfit = productPrice - rawMatCost;
+        double netProfit = prodCost - rawMatCost;
 
         costs.add({
           'productName': productName,

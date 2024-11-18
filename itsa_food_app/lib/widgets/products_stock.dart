@@ -20,6 +20,7 @@ class ProductsStock extends StatelessWidget {
 
         return Card(
           margin: EdgeInsets.all(19.0),
+          elevation: 2,
           child: Column(
             children: snapshot.data!.docs.map((doc) {
               Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
