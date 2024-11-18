@@ -171,6 +171,30 @@ class _MenuState extends State<Menu> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12.0,
+                        horizontal:
+                            10.0), // Adjust horizontal padding to reduce width
+                    backgroundColor: Colors.grey[300], // Set button color
+                    minimumSize: Size(40,
+                        40), // Set the minimum width and height of the button (adjust as needed)
+                  ),
+                  child: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Makes the Row take minimum space
+                    mainAxisAlignment: MainAxisAlignment
+                        .center, // Center the icon within the button
+                    children: [
+                      Icon(Icons.filter_alt, size: 20), // Funnel icon
+                    ],
+                  ),
+                ),
                 CategoryButton(
                   label: 'All', // Use text for 'All'
                   index: 0,
@@ -182,7 +206,7 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  label: 'Takoyaki', // Use text for 'Takoyaki'
+                  label: 'Takoyaki',
                   index: 1,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -192,7 +216,7 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  label: 'Milk Tea', // Use text for 'Milk Tea'
+                  label: 'Milk Tea',
                   index: 2,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -202,7 +226,7 @@ class _MenuState extends State<Menu> {
                   },
                 ),
                 CategoryButton(
-                  label: 'Meals', // Use text for 'Meals'
+                  label: 'Meals',
                   index: 3,
                   selectedIndex: _selectedCategoryIndex,
                   onPressed: () {
@@ -213,6 +237,7 @@ class _MenuState extends State<Menu> {
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
             // StreamBuilder to listen to products in Firestore
             Expanded(

@@ -193,6 +193,7 @@ class AddProductModal extends StatefulWidget {
 class _AddProductModalState extends State<AddProductModal> {
   String? _selectedProductType;
   final TextEditingController _productNameController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
   final Map<String, String> _variantPrices = {
     'Takoyaki': '',
     'Milk Tea': '',
@@ -202,6 +203,8 @@ class _AddProductModalState extends State<AddProductModal> {
 
   // List to store ingredient name, quantity, and unit type controllers
   final List<Map<String, TextEditingController>> _ingredients = [];
+  // List to store tags
+  final List<String> _tags = [];
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -279,6 +282,7 @@ class _AddProductModalState extends State<AddProductModal> {
           })
           .where((ingredient) => ingredient['name']!.isNotEmpty)
           .toList(),
+      'tags': _tags,
     };
 
     if (_selectedProductType == 'Takoyaki') {
@@ -312,6 +316,21 @@ class _AddProductModalState extends State<AddProductModal> {
         'quantity': TextEditingController(),
         'unit': TextEditingController(),
       });
+    });
+  }
+
+  void _addTag(String tag) {
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+      });
+      _tagController.clear(); // Clear the input field after adding the tag
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
     });
   }
 
@@ -354,127 +373,109 @@ class _AddProductModalState extends State<AddProductModal> {
               },
             ),
             const SizedBox(height: 16),
-            if (_selectedProductType != null) ...[
-              Text('Set Prices for ${_selectedProductType!} Variants:'),
-              if (_selectedProductType == 'Takoyaki') ...[
-                TextField(
-                  decoration: InputDecoration(labelText: '4pcs Price'),
-                  onChanged: (value) {
-                    _variantPrices['Takoyaki 4pcs'] = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: '8pcs Price'),
-                  onChanged: (value) {
-                    _variantPrices['Takoyaki 8pcs'] = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: '12pcs Price'),
-                  onChanged: (value) {
-                    _variantPrices['Takoyaki 12pcs'] = value;
-                  },
-                ),
-              ] else if (_selectedProductType == 'Milk Tea') ...[
-                TextField(
-                  decoration: InputDecoration(labelText: 'Regular Price'),
-                  onChanged: (value) {
-                    _variantPrices['Milk Tea Regular'] = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Large Price'),
-                  onChanged: (value) {
-                    _variantPrices['Milk Tea Large'] = value;
-                  },
-                ),
-              ] else if (_selectedProductType == 'Meals') ...[
-                TextField(
-                  decoration: InputDecoration(labelText: 'Meals Price'),
-                  onChanged: (value) {
-                    _variantPrices['Meals Price'] = value;
-                  },
-                ),
-              ],
-              const SizedBox(height: 16),
-              Text('Ingredients:'),
-              Column(
-                children: _ingredients
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex:
-                                  2, // Adjusts the width proportion of this field
-                              child: TextField(
-                                controller: entry.value['name'],
-                                decoration: InputDecoration(
-                                  labelText: 'Ingredient ${entry.key + 1}',
-                                ),
+            // Variant Prices Logic Here...
+
+            Text('Ingredients:'),
+            Column(
+              children: _ingredients
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: TextField(
+                              controller: entry.value['name'],
+                              decoration: InputDecoration(
+                                labelText: 'Ingredient ${entry.key + 1}',
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex:
-                                  1, // Adjusts the width proportion of this field
-                              child: TextField(
-                                controller: entry.value['quantity'],
-                                decoration: InputDecoration(
-                                  labelText: 'Quantity',
-                                ),
-                                keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 1,
+                            child: TextField(
+                              controller: entry.value['quantity'],
+                              decoration: InputDecoration(
+                                labelText: 'Quantity',
                               ),
+                              keyboardType: TextInputType.number,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex:
-                                  1, // Adjusts the width proportion of this field
-                              child: DropdownButtonFormField<String>(
-                                hint: Text('Unit'),
-                                value: entry.value['unit']?.text.isEmpty ?? true
-                                    ? null
-                                    : entry.value['unit']?.text,
-                                items: ['pcs', 'ml', 'liters', 'grams', 'kg']
-                                    .map((String unit) {
-                                  return DropdownMenuItem<String>(
-                                    value: unit,
-                                    child: Text(unit),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    entry.value['unit']?.text = newValue ?? '';
-                                  });
-                                },
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 1,
+                            child: DropdownButtonFormField<String>(
+                              hint: Text('Unit'),
+                              value: entry.value['unit']?.text.isEmpty ?? true
+                                  ? null
+                                  : entry.value['unit']?.text,
+                              items: ['pcs', 'ml', 'liters', 'grams', 'kg']
+                                  .map((String unit) {
+                                return DropdownMenuItem<String>(
+                                  value: unit,
+                                  child: Text(unit),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  entry.value['unit']?.text = newValue ?? '';
+                                });
+                              },
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    )
-                    .toList(),
+                    ),
+                  )
+                  .toList(),
+            ),
+            TextButton(
+              onPressed: _addIngredientField,
+              child: Text('Add Ingredient'),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0, vertical: 4.0), // Reduced padding
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
               ),
-              TextButton(
-                onPressed: _addIngredientField,
-                child: Text('Add Ingredient'),
+              child: Wrap(
+                spacing: 8.0,
+                crossAxisAlignment:
+                    WrapCrossAlignment.center, // Align tags vertically
+                children: [
+                  // Display existing tags
+                  ..._tags.map((tag) => Chip(
+                        label: Text(tag),
+                        deleteIcon: Icon(Icons.close, size: 18),
+                        onDeleted: () => _removeTag(tag),
+                      )),
+                  // TextField for new tag input
+                  TextField(
+                    controller: _tagController,
+                    decoration: InputDecoration(
+                      hintText: 'Add Tags Here...',
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (value) {
+                      _addTag(value.trim());
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              if (_selectedImage != null)
-                Image.file(_selectedImage!, height: 200, width: 200),
-              TextButton(
-                onPressed: _pickImage,
-                child: Text('Select Image'),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saveProductToFirestore,
-                child: Text('Save Product'),
-              ),
-            ],
+            ),
+
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _saveProductToFirestore,
+              child: Text('Save Product'),
+            ),
           ],
         ),
       ),
