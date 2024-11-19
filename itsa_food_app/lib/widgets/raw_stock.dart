@@ -29,7 +29,7 @@ class _RawStockState extends State<RawStock> {
     'liters',
   ];
 
-  String determineStockStatus(int quantity, double lowStockAlert) {
+  String determineStockStatus(num quantity, double lowStockAlert) {
     if (quantity > lowStockAlert) return 'In Stock';
     if (quantity == lowStockAlert) return 'Low Stock';
     return 'Out of Stock';
@@ -386,7 +386,8 @@ class _RawStockState extends State<RawStock> {
                             ),
                             child: ListTile(
                               title: Text(name),
-                              subtitle: Text('Quantity: $quantity $unit'),
+                              subtitle: Text(
+                                  'Quantity: ${quantity.toStringAsFixed(2)} $unit'),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

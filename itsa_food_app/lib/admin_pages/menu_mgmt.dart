@@ -245,13 +245,14 @@ class _AddProductModalState extends State<AddProductModal> {
 
   Future<void> _saveProductToFirestore() async {
     final productName = _productNameController.text.trim();
+
+    // Check for product name, type, and image selection
     if (productName.isEmpty || _selectedProductType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please enter product name and select type')),
       );
       return;
     }
-
     if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select an image')),
@@ -268,6 +269,7 @@ class _AddProductModalState extends State<AddProductModal> {
       return;
     }
 
+    // Prepare data to save to Firestore
     final productData = {
       'productID': productID,
       'productName': productName,
@@ -282,9 +284,10 @@ class _AddProductModalState extends State<AddProductModal> {
           })
           .where((ingredient) => ingredient['name']!.isNotEmpty)
           .toList(),
-      'tags': _tags,
+      'tags': _tags, // Store the list of tags
     };
 
+    // Add specific fields based on product type
     if (_selectedProductType == 'Takoyaki') {
       productData.addAll({
         '4pc': _variantPrices['Takoyaki 4pcs'] ?? '',
@@ -302,10 +305,12 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     }
 
+    // Save product data to Firestore
     await FirebaseFirestore.instance
         .collection('products')
         .doc(productID)
         .set(productData);
+
     Navigator.pop(context);
   }
 
@@ -368,13 +373,53 @@ class _AddProductModalState extends State<AddProductModal> {
               onChanged: (String? newValue) {
                 setState(() {
                   _selectedProductType = newValue;
-                  _variantPrices.clear();
+                  _variantPrices
+                      .clear(); // Clear previous prices when type changes
                 });
               },
             ),
             const SizedBox(height: 16),
-            // Variant Prices Logic Here...
 
+            // Display price input fields based on product type
+            if (_selectedProductType == 'Takoyaki') ...[
+              TextField(
+                onChanged: (value) => _variantPrices['Takoyaki 4pcs'] = value,
+                decoration: InputDecoration(labelText: 'Price for 4pcs'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                onChanged: (value) => _variantPrices['Takoyaki 8pcs'] = value,
+                decoration: InputDecoration(labelText: 'Price for 8pcs'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                onChanged: (value) => _variantPrices['Takoyaki 12pcs'] = value,
+                decoration: InputDecoration(labelText: 'Price for 12pcs'),
+                keyboardType: TextInputType.number,
+              ),
+            ] else if (_selectedProductType == 'Milk Tea') ...[
+              TextField(
+                onChanged: (value) =>
+                    _variantPrices['Milk Tea Regular'] = value,
+                decoration: InputDecoration(labelText: 'Price for Regular'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                onChanged: (value) => _variantPrices['Milk Tea Large'] = value,
+                decoration: InputDecoration(labelText: 'Price for Large'),
+                keyboardType: TextInputType.number,
+              ),
+            ] else if (_selectedProductType == 'Meals') ...[
+              TextField(
+                onChanged: (value) => _variantPrices['Meals Price'] = value,
+                decoration: InputDecoration(labelText: 'Meal Price'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+
+            const SizedBox(height: 16),
+
+            // Ingredients section
             Text('Ingredients:'),
             Column(
               children: _ingredients
@@ -438,6 +483,8 @@ class _AddProductModalState extends State<AddProductModal> {
               child: Text('Add Ingredient'),
             ),
             const SizedBox(height: 16),
+
+            // Tags section
             Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 8.0, vertical: 4.0), // Reduced padding
@@ -470,7 +517,18 @@ class _AddProductModalState extends State<AddProductModal> {
                 ],
               ),
             ),
-
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _pickImage,
+              child: Text('Select Image'),
+            ),
+            const SizedBox(height: 16),
+            if (_selectedImage != null)
+              Image.file(
+                _selectedImage!,
+                width: 100,
+                height: 100,
+              ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _saveProductToFirestore,

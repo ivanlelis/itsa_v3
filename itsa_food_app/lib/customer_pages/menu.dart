@@ -11,6 +11,7 @@ import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
+import 'package:itsa_food_app/widgets/tag_filtering.dart';
 
 class Menu extends StatefulWidget {
   final String userName;
@@ -38,6 +39,7 @@ class Menu extends StatefulWidget {
 }
 
 class _MenuState extends State<Menu> {
+  List<String> _selectedTags = [];
   int _selectedIndex = 1; // Set the default to Menu (index 1)
   int _selectedCategoryIndex = 0; // Default category index
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -114,7 +116,20 @@ class _MenuState extends State<Menu> {
   }
 
   Stream<QuerySnapshot> _getProducts() {
-    return FirebaseFirestore.instance.collection('products').snapshots();
+    final collection = FirebaseFirestore.instance.collection('products');
+
+    if (_selectedTags.isNotEmpty) {
+      return collection
+          .where('tags', arrayContainsAny: _selectedTags)
+          .snapshots();
+    }
+    return collection.snapshots();
+  }
+
+  void _handleApplyFilters(List<String> selectedTags) {
+    setState(() {
+      _selectedTags = selectedTags;
+    });
   }
 
   @override
@@ -172,28 +187,41 @@ class _MenuState extends State<Menu> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (context) => SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: ProductFilterModal(
+                          selectedTags:
+                              _selectedTags, // Pass selected tags to the modal
+                          onApplyFilters: (selectedTags) {
+                            setState(() {
+                              _selectedTags =
+                                  selectedTags; // Update the selected tags in parent
+                            });
+                          },
+                          onResetFilters: () {
+                            setState(() {
+                              _selectedTags =
+                                  []; // Reset selected tags in parent
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        vertical: 12.0,
-                        horizontal:
-                            10.0), // Adjust horizontal padding to reduce width
-                    backgroundColor: Colors.grey[300], // Set button color
-                    minimumSize: Size(40,
-                        40), // Set the minimum width and height of the button (adjust as needed)
+                        vertical: 12.0, horizontal: 10.0),
+                    backgroundColor: Colors.grey[300],
+                    minimumSize: const Size(40, 40),
                   ),
-                  child: Row(
-                    mainAxisSize:
-                        MainAxisSize.min, // Makes the Row take minimum space
-                    mainAxisAlignment: MainAxisAlignment
-                        .center, // Center the icon within the button
-                    children: [
-                      Icon(Icons.filter_alt, size: 20), // Funnel icon
-                    ],
-                  ),
+                  child: const Icon(Icons.filter_alt, size: 20),
                 ),
                 CategoryButton(
                   label: 'All', // Use text for 'All'
@@ -237,7 +265,6 @@ class _MenuState extends State<Menu> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
             // StreamBuilder to listen to products in Firestore
             Expanded(
@@ -271,9 +298,8 @@ class _MenuState extends State<Menu> {
 
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Number of columns
-                      childAspectRatio:
-                          0.75, // Adjust the aspect ratio as needed
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
@@ -281,7 +307,6 @@ class _MenuState extends State<Menu> {
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
 
-                      // Ensure to access fields safely
                       String? takoyakiPrice4 =
                           product['productType'] == 'Takoyaki'
                               ? product['4pc']?.toString()
@@ -307,8 +332,7 @@ class _MenuState extends State<Menu> {
                           : null;
 
                       return ProductCard(
-                        productID: product['productID'] ??
-                            '', // Pass the productID here
+                        productID: product['productID'] ?? '',
                         productName:
                             product['productName'] ?? 'Unknown Product',
                         imageUrl: product['imageUrl'] ?? '',
