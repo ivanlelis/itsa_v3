@@ -6,7 +6,7 @@ class ProductFilterModal extends StatefulWidget {
   final Function(List<String>) onApplyFilters;
   final Function onResetFilters;
 
-  ProductFilterModal({
+  const ProductFilterModal({super.key, 
     required this.selectedTags, // Receive selected tags as a parameter
     required this.onApplyFilters,
     required this.onResetFilters,

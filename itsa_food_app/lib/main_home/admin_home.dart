@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:itsa_food_app/widgets/tags_chart.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
@@ -284,6 +285,9 @@ class _AdminHomeState extends State<AdminHome> {
                       ),
                     ),
                   ),
+                const SizedBox(height: 20),
+                // Add the Frequent Orders By Tags Chart here
+                const FrequentOrdersByTagsChart(),
               ],
             ),
           ),

@@ -354,38 +354,64 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
   }
 
   Future<void> _updateStockFromCartItems() async {
-    // Get product names directly from the cart items
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+
+    // Step 1: Fetch all product names from cart items
     List<String> productNames = _getProductNames();
 
-    for (String productName in productNames) {
-      // Fetch product details from Firestore based on the productName
-      QuerySnapshot productSnapshot = await FirebaseFirestore.instance
-          .collection('products')
-          .where('productName', isEqualTo: productName)
-          .limit(1)
-          .get();
+    // Step 2: Fetch all product details in parallel
+    List<QuerySnapshot> productSnapshots = await Future.wait(
+      productNames.map(
+        (productName) => FirebaseFirestore.instance
+            .collection('products')
+            .where('productName', isEqualTo: productName)
+            .limit(1)
+            .get(),
+      ),
+    );
 
+    // Step 3: Collect all raw material stock IDs needed
+    Set<String> rawStockIds = {};
+    for (var productSnapshot in productSnapshots) {
       if (productSnapshot.docs.isNotEmpty) {
-        DocumentSnapshot productDoc = productSnapshot.docs.first;
-        List ingredients = productDoc['ingredients'];
+        var productDoc = productSnapshot.docs.first;
+        var ingredients = productDoc['ingredients'];
+        for (var ingredient in ingredients) {
+          rawStockIds.add(ingredient['name']);
+        }
+      }
+    }
+
+    // Step 4: Fetch all required raw material documents in one query
+    List<DocumentSnapshot> rawMaterialDocs = await Future.wait(
+      rawStockIds.map(
+        (matName) => FirebaseFirestore.instance
+            .collection('rawStock')
+            .doc(matName)
+            .get(),
+      ),
+    );
+
+    // Convert raw material docs to a map for quick access
+    Map<String, DocumentSnapshot> rawMaterialMap = {
+      for (var doc in rawMaterialDocs) doc.id: doc,
+    };
+
+    // Step 5: Process and prepare stock updates
+    for (var productSnapshot in productSnapshots) {
+      if (productSnapshot.docs.isNotEmpty) {
+        var productDoc = productSnapshot.docs.first;
+        var ingredients = productDoc['ingredients'];
 
         for (var ingredient in ingredients) {
-          String matName =
-              ingredient['name']; // Use 'name' as field key in products
+          String matName = ingredient['name'];
           String ingredientQuantityStr = ingredient['quantity'];
-
-          // Extract numeric part and unit from quantity string (e.g., "100 ml")
           List<String> quantityParts = ingredientQuantityStr.split(' ');
           double ingredientQuantity = double.tryParse(quantityParts[0]) ?? 0.0;
           String ingredientUnit = quantityParts[1];
 
-          // Get current raw material stock and conversion details from Firestore
-          DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
-              .collection('rawStock')
-              .doc(matName)
-              .get();
-
-          if (rawMaterialDoc.exists) {
+          if (rawMaterialMap.containsKey(matName)) {
+            var rawMaterialDoc = rawMaterialMap[matName]!;
             double availableStock =
                 double.tryParse(rawMaterialDoc['quantity'].toString()) ?? 0.0;
             String stockUnit = rawMaterialDoc['unit'];
@@ -393,54 +419,27 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 double.tryParse(rawMaterialDoc['conversionRate'].toString()) ??
                     1.0;
 
-            // Handle unit conversions if necessary
-            if (stockUnit != ingredientUnit) {
-              if ((stockUnit == 'kg' && ingredientUnit == 'grams') ||
-                  (stockUnit == 'liters' && ingredientUnit == 'ml') ||
-                  (stockUnit == 'kg' && ingredientUnit == 'ml')) {
-                // Convert ingredient quantity to stock unit
-                double ingredientQuantityInStockUnit =
-                    ingredientQuantity / conversionRate;
+            // Handle unit conversion
+            double ingredientQuantityInStockUnit = (stockUnit != ingredientUnit)
+                ? ingredientQuantity / conversionRate
+                : ingredientQuantity;
 
-                if (availableStock >= ingredientQuantityInStockUnit) {
-                  await FirebaseFirestore.instance
-                      .collection('rawStock')
-                      .doc(matName)
-                      .update({
-                    'quantity': availableStock - ingredientQuantityInStockUnit
-                  });
-                  print(
-                      "Subtracted ${ingredientQuantityInStockUnit.toStringAsFixed(4)} $stockUnit from $matName.");
-                } else {
-                  print(
-                      "Not enough stock for $matName. Needed: ${ingredientQuantityInStockUnit.toStringAsFixed(4)} $stockUnit, Available: $availableStock $stockUnit.");
-                }
-              } else {
-                print(
-                    "Unsupported unit conversion for $matName. Stock unit: $stockUnit, Ingredient unit: $ingredientUnit.");
-              }
+            if (availableStock >= ingredientQuantityInStockUnit) {
+              batch.update(
+                FirebaseFirestore.instance.collection('rawStock').doc(matName),
+                {'quantity': availableStock - ingredientQuantityInStockUnit},
+              );
             } else {
-              // Units match, no conversion needed
-              if (availableStock >= ingredientQuantity) {
-                await FirebaseFirestore.instance
-                    .collection('rawStock')
-                    .doc(matName)
-                    .update({'quantity': availableStock - ingredientQuantity});
-                print(
-                    "Subtracted $ingredientQuantity $stockUnit from $matName.");
-              } else {
-                print(
-                    "Not enough stock for $matName. Needed: $ingredientQuantity $stockUnit, Available: $availableStock $stockUnit.");
-              }
+              print(
+                  "Insufficient stock for $matName. Needed: $ingredientQuantityInStockUnit, Available: $availableStock.");
             }
-          } else {
-            print("Ingredient $matName not found in rawStock.");
           }
         }
-      } else {
-        print("Product $productName not found in products.");
       }
     }
+
+    // Step 6: Commit all updates in a single batch
+    await batch.commit();
   }
 
   void _showPaymentSuccessModal() {
