@@ -3,7 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class FrequentOrdersByTagsChart extends StatefulWidget {
-  const FrequentOrdersByTagsChart({Key? key}) : super(key: key);
+  const FrequentOrdersByTagsChart({super.key});
 
   @override
   _FrequentOrdersByTagsChartState createState() =>

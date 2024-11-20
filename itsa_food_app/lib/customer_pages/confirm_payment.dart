@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ConfirmPayment extends StatefulWidget {
   final List<dynamic> cartItems;
@@ -44,6 +46,21 @@ class ConfirmPayment extends StatefulWidget {
 
 class _ConfirmPaymentState extends State<ConfirmPayment> {
   String discountDescription = '';
+  File? _receiptImage; // To store the selected receipt image
+
+  final ImagePicker _picker = ImagePicker();
+
+  // Function to pick an image for the receipt
+  Future<void> _pickReceiptImage() async {
+    // Pick an image from the gallery
+    final XFile? pickedFile =
+        await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _receiptImage = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -102,6 +119,39 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     for (var doc in cartItems.docs) {
       await doc.reference.delete();
     }
+  }
+
+  // Function to handle the confirm payment button press
+  void _onConfirmPaymentPressed() {
+    if (widget.orderType.toLowerCase() == 'delivery' && _receiptImage == null) {
+      // If the order type is delivery and no receipt is attached, show an error
+      _showErrorDialog(
+          'Please attach your payment receipt before confirming the payment.');
+    } else {
+      // Proceed with the payment confirmation logic (e.g., creating the order)
+      _createOrder();
+    }
+  }
+
+  // Function to display an error dialog
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _createOrder() async {
@@ -532,13 +582,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             SizedBox(height: 20),
 
             // Delivery and Payment Details
-            _buildSectionTitle('Delivery & Payment Details'),
-            _buildDetailsRow('Delivery Type:', widget.deliveryType),
+            _buildSectionTitle('Order & Payment Details'),
+            _buildDetailsRow('Order Type:', widget.deliveryType),
             _buildDetailsRow('Payment Method:', widget.paymentMethod),
             if (widget.voucherCode.isNotEmpty) ...[
               _buildDetailsRow('Voucher Code:', widget.voucherCode),
-              if (discountDescription.isNotEmpty)
-                _buildDetailsRow('Discount:', discountDescription),
             ],
             _buildDetailsRow(
                 'Total Amount:', '₱${widget.totalAmount.toStringAsFixed(2)}'),
@@ -559,9 +607,17 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             SizedBox(height: 30),
 
+            // If Order Type is Delivery, show payment receipt section
+            if (widget.orderType.toLowerCase() == 'delivery') ...[
+              _buildSectionTitle('Attach Payment Receipt'),
+              _buildPaymentReceiptSection(),
+            ],
+
+            SizedBox(height: 30),
+
             // Confirm Payment Button
             ElevatedButton(
-              onPressed: _createOrder,
+              onPressed: _onConfirmPaymentPressed, // Validate before confirming
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent,
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
@@ -743,7 +799,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     );
   }
 
-  // Details Row Widget
   Widget _buildDetailsRow(String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -769,6 +824,33 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           ),
         ],
       ),
+    );
+  }
+
+  // New section for attaching payment receipt
+  Widget _buildPaymentReceiptSection() {
+    return Column(
+      children: [
+        SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: _pickReceiptImage, // Handle image picking
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 25),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Text(
+            'Attach GCash Receipt',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        if (_receiptImage != null) ...[
+          SizedBox(height: 15),
+          Image.file(_receiptImage!), // Display the selected image
+        ]
+      ],
     );
   }
 }
