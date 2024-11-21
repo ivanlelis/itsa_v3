@@ -272,7 +272,7 @@ class OrderDetailsScreen extends StatelessWidget {
                                 ],
                               ),
                             );
-                    }).toList(),
+                    }),
                     // Approve Order Button
                     ElevatedButton(
                       onPressed: _approveOrder,

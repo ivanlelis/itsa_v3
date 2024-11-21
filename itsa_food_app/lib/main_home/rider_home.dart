@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async'; // For debouncing
 import 'package:geolocator/geolocator.dart' hide LocationAccuracy;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RiderDashboard extends StatefulWidget {
   final String userName;
@@ -39,7 +40,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _placeSuggestions = [];
   late Timer _debounce; // Timer for debouncing
-  String? _routeDuration;
   late LatLng _routeMidpoint;
   StreamSubscription<Position>? _positionStreamSubscription;
   List<Map<String, dynamic>> _routeSteps = [];
@@ -197,9 +197,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
       final polyline = route['overview_polyline']['points'];
       _routePoints = _decodePolyline(polyline);
 
-      // Extract total route duration
-      final duration = route['legs'][0]['duration']['text'];
-
       // Parse each step in the new route
       final steps = route['legs'][0]['steps'];
       _routeSteps = steps.map<Map<String, dynamic>>((step) {
@@ -209,10 +206,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
           'distance': step['distance']['text'],
         };
       }).toList();
-
-      setState(() {
-        _routeDuration = duration;
-      });
 
       // Calculate new route midpoint for displaying duration
       if (_routePoints.isNotEmpty) {
@@ -409,11 +402,254 @@ class _RiderDashboardState extends State<RiderDashboard> {
               // Only show the following widgets if the search overlay is not active
               if (!_showSearchOverlay)
                 _buildNavigateButton(navigateButtonBottom),
-              if (!_showSearchOverlay) _buildOrderDetailDraggable(),
+
+              // Notification Card at the bottom of the screen with GestureDetector for upward drag
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: GestureDetector(
+                  onVerticalDragUpdate: (details) {
+                    if (details.primaryDelta! < 0) {
+                      // Dragging upwards
+                      _showNotificationDialog(
+                          context); // Open notification dialog
+                    }
+                  },
+                  child: Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        _showNotificationDialog(
+                            context); // Show notifications when tapped
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Check for orders",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                            Icon(Icons.delivery_dining, color: Colors.green),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
       ),
+    );
+  }
+
+  void _showNotificationDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Ensures the content takes full height
+      backgroundColor: Colors.transparent, // Makes the background transparent
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 20),
+              Text(
+                "Orders",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              Expanded(
+                child: StreamBuilder(
+                  stream: FirebaseFirestore.instance
+                      .collection('customer')
+                      .snapshots(),
+                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+
+                    final customerDocs = snapshot.data?.docs ?? [];
+
+                    if (customerDocs.isEmpty) {
+                      return Center(child: Text("No notifications available"));
+                    }
+
+                    return ListView(
+                      children: customerDocs.map((doc) {
+                        final userName =
+                            doc['userName']; // Extract the userName
+                        final customerUid = doc.id; // Document ID is the UID
+
+                        return FutureBuilder(
+                          future: FirebaseFirestore.instance
+                              .collection('customer')
+                              .doc(customerUid)
+                              .collection(
+                                  'orders') // Fetch orders subcollection
+                              .where('status',
+                                  isEqualTo:
+                                      'approved') // Filter orders with status 'approved'
+                              .get(),
+                          builder: (context,
+                              AsyncSnapshot<QuerySnapshot> orderSnapshot) {
+                            if (orderSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
+                            }
+
+                            if (orderSnapshot.hasError) {
+                              return Center(
+                                  child: Text('Error: ${orderSnapshot.error}'));
+                            }
+
+                            final orders = orderSnapshot.data?.docs ?? [];
+
+                            return Column(
+                              children: orders.map((orderDoc) {
+                                final orderID = orderDoc.id;
+                                final total = orderDoc['total'];
+                                final productNames = List<String>.from(
+                                    orderDoc['productNames'] ?? []);
+
+                                return Container(
+                                  width: MediaQuery.of(context).size.width *
+                                      0.9, // Set the width to 90% of the screen width
+                                  child: Card(
+                                    elevation:
+                                        8, // Increased elevation for a stronger shadow
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          16), // More rounded corners
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(
+                                          20), // More padding for a spacious look
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Order ID and customer info section
+                                          Text(
+                                            "Order ID: $orderID",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            "Customer: $userName",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            "Total: ₱${total.toString()}",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.green[
+                                                  700], // Green to highlight total price
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            "Products: ${productNames.join(', ')}",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          SizedBox(height: 16),
+
+                                          // Button to start delivery
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors
+                                                  .green, // Green background color
+                                              foregroundColor: Colors
+                                                  .white, // White text color
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 14, horizontal: 24),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(
+                                                    8), // Slightly smaller radius
+                                              ),
+                                            ),
+                                            onPressed: () {
+                                              // Code to start delivery goes here
+                                              FirebaseFirestore.instance
+                                                  .collection('customer')
+                                                  .doc(customerUid)
+                                                  .collection('orders')
+                                                  .doc(orderID)
+                                                  .update(
+                                                      {'status': 'on the way'});
+
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                    content: Text(
+                                                        'Started delivery for Order ID: $orderID')),
+                                              );
+                                            },
+                                            child: Text(
+                                              "Start Delivery",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    16, // Larger text for emphasis
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -424,7 +660,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
         : htmlText;
   }
 
-  // Map View with location pins and current location marker
   Widget _buildMapView() {
     return Positioned.fill(
       child: GoogleMap(
@@ -447,6 +682,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
             ),
         },
         onLongPress: _setPinnedLocation,
+        zoomControlsEnabled: false, // Removes the zoom buttons
+        compassEnabled: false, // Removes the compass icon
       ),
     );
   }
@@ -753,152 +990,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
     }
   }
 
-  Widget _buildOrderDetailDraggable() {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.153, // Initial height when partially visible
-      minChildSize: 0.153, // Minimum height when fully collapsed
-      maxChildSize: 1, // Maximum height when fully expanded
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(24),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 2,
-                spreadRadius: 2,
-                offset: Offset(0, -3),
-              ),
-            ],
-          ),
-          child: ListView(
-            controller: scrollController,
-            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            children: [
-              // Pull-bar for aesthetics and ease of dragging
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Order Details',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      SizedBox(width: 8), // Add spacing between the texts
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4), // Adjust padding
-                        decoration: BoxDecoration(
-                          color: Colors.green, // Green background
-                          borderRadius:
-                              BorderRadius.circular(8), // Rounded corners
-                        ),
-                        child: Text(
-                          'New Order!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white, // White text
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: Colors.grey[600]),
-                    onPressed: () {
-                      // Close or dismiss the sheet
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              ),
-              Divider(thickness: 1, color: Colors.grey[300]),
-              SizedBox(height: 10),
-              // Order Information
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Colors.orangeAccent,
-                  child: Icon(Icons.receipt_long, color: Colors.white),
-                ),
-                title: Text(
-                  'Order ID: 12345',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 4),
-                    Text(
-                      'Amount: 350 PHP',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    if (_routeDuration != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6.0),
-                        child: Text(
-                          'Estimated Duration: $_routeDuration',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                trailing: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.orangeAccent, // Updated to backgroundColor
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  child: Text(
-                    'View',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onPressed: () {
-                    // Add your desired action here
-                  },
-                ),
-              ),
-              // Add any additional sections here
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildResponsiveLayout() {
     return Stack(
       children: [
@@ -906,9 +997,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
         _buildTopBar(context), // Pass context here
         _buildSearchBar(),
         _buildNavigateButton(150), // Adjust position as needed
-
-        // Order Details Draggable Card
-        _buildOrderDetailDraggable(),
       ],
     );
   }

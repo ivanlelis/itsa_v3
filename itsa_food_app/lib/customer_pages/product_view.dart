@@ -131,18 +131,7 @@ class _ProductViewState extends State<ProductView> {
         'oreo': _oreo,
         'jelly': _jelly,
       });
-      print('Item added to cart successfully!');
-      // Optional: Show a success message to the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$productName added to cart!')),
-      );
-    } catch (e) {
-      print('Error adding to cart: $e');
-      // Optional: Show an error message to the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add to cart. Please try again.')),
-      );
-    }
+    } catch (e) {}
   }
 
   @override
@@ -455,16 +444,6 @@ class _ProductViewState extends State<ProductView> {
         'bonitoFlakes': _bonitoFlakes,
         'mayonnaise': _mayonnaise,
       });
-
-      print('Item added to cart successfully!');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${widget.productName} added to cart!')),
-      );
-    } catch (e) {
-      print('Error adding to cart: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add to cart. Please try again.')),
-      );
-    }
+    } catch (e) {}
   }
 }

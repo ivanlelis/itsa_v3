@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Import for SystemNavigator.pop to exit the app
+// Import for SystemNavigator.pop to exit the app
 
 class RiderDrawer extends StatelessWidget {
   final String userName;

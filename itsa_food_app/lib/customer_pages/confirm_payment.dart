@@ -156,10 +156,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _createOrder(File? paymentReceiptImage) async {
     if (paymentReceiptImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Payment receipt is required for this order type.')),
-      );
       return;
     }
 
@@ -254,10 +250,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
       // Step 7: Show success modal
       _showPaymentSuccessModal();
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed to confirm order: $e')));
-    }
+    } catch (e) {}
   }
 
   Future<void> _updateDailySales(
