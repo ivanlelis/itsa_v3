@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/widgets/admin_appbar.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_sidebar.dart';
-import 'package:provider/provider.dart';
-import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/tags_chart.dart';
 import 'package:itsa_food_app/widgets/pending_orders.dart';
+import 'package:itsa_food_app/widgets/total_orders.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
@@ -103,13 +102,15 @@ class _AdminHomeState extends State<AdminHome> {
 
   @override
   Widget build(BuildContext context) {
-    final adminEmail = Provider.of<UserProvider>(context).adminEmail;
+    int totalOrders = 372; // Example data, replace with dynamic data
+    int deliveryOrders = 122; // Example data, replace with dynamic data
+    int pickupOrders = 100; // Example data, replace with dynamic data
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
       body: RefreshIndicator(
-        onRefresh: _onRefresh, // Call _onRefresh when pulled
+        onRefresh: _onRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16.0),
@@ -117,166 +118,145 @@ class _AdminHomeState extends State<AdminHome> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: widget.imageUrl.isNotEmpty
-                      ? NetworkImage(widget.imageUrl)
-                      : const NetworkImage(
-                          'https://example.com/placeholder.png'),
+                TotalOrdersCard(
+                  totalOrders: totalOrders,
+                  deliveryOrders: deliveryOrders,
+                  pickupOrders: pickupOrders,
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Welcome, ${widget.userName}!',
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Email: $adminEmail',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 20),
-                if (lastActiveTime != null)
-                  Text(
-                    'Last Active: $lastActiveTime',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                const SizedBox(height: 20),
-                if (mostOrderedProduct != null)
-                  Text(
-                    "What's the most ordered product: $mostOrderedProduct",
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                const SizedBox(height: 10),
                 if (productCount.isNotEmpty)
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 20, horizontal: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Product Order Count',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            height: 300,
-                            child: BarChart(
-                              BarChartData(
-                                alignment: BarChartAlignment.spaceAround,
-                                maxY: 100,
-                                barTouchData: BarTouchData(
-                                  enabled: true,
-                                  touchTooltipData: BarTouchTooltipData(
-                                    tooltipRoundedRadius: 4,
-                                    tooltipPadding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 2),
-                                    getTooltipItem:
-                                        (group, groupIndex, rod, rodIndex) {
-                                      final productName = productCount.keys
-                                          .elementAt(groupIndex);
-                                      final orderCount = rod.toY.toInt();
-                                      return BarTooltipItem(
-                                        '$productName\n',
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: '$orderCount orders',
-                                            style: const TextStyle(
-                                              color: Colors.yellow,
-                                              fontSize: 8,
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                                titlesData: FlTitlesData(
-                                  topTitles: AxisTitles(
-                                      sideTitles:
-                                          SideTitles(showTitles: false)),
-                                  rightTitles: AxisTitles(
-                                      sideTitles:
-                                          SideTitles(showTitles: false)),
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 40,
-                                      interval: 20,
-                                      getTitlesWidget: (value, _) {
-                                        return Text(
-                                          value.toInt().toString(),
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.black,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 50,
-                                      interval: 2,
-                                      getTitlesWidget: (value, _) {
-                                        final product =
-                                            productCount.keys.firstWhere(
-                                          (k) => k.hashCode == value.toInt(),
-                                          orElse: () => '',
-                                        );
-                                        return Transform.rotate(
-                                          angle: -0.45,
-                                          child: Text(
-                                            product.length > 10
-                                                ? '${product.substring(0, 10)}...'
-                                                : product,
-                                            style: const TextStyle(fontSize: 9),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                gridData: FlGridData(
-                                  show: true,
-                                  horizontalInterval: 20,
-                                  getDrawingHorizontalLine: (value) => FlLine(
-                                    color: Colors.grey[300],
-                                    strokeWidth: 1,
-                                  ),
-                                ),
-                                borderData: FlBorderData(
-                                  show: true,
-                                  border: const Border(
-                                    left: BorderSide(
-                                        width: 1, color: Colors.black54),
-                                    bottom: BorderSide(
-                                        width: 1, color: Colors.black54),
-                                  ),
-                                ),
-                                barGroups: _buildBarChartData(),
+                  Container(
+                    width: MediaQuery.of(context).size.width * 1,
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 20, horizontal: 5),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Product Order Count',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              height: 300,
+                              child: BarChart(
+                                BarChartData(
+                                  alignment: BarChartAlignment.spaceAround,
+                                  maxY: 100,
+                                  barTouchData: BarTouchData(
+                                    enabled: true,
+                                    touchTooltipData: BarTouchTooltipData(
+                                      tooltipRoundedRadius: 4,
+                                      tooltipPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 2),
+                                      getTooltipItem:
+                                          (group, groupIndex, rod, rodIndex) {
+                                        final productName = productCount.keys
+                                            .elementAt(groupIndex);
+                                        final orderCount = rod.toY.toInt();
+                                        return BarTooltipItem(
+                                          '$productName\n',
+                                          const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 10,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: '$orderCount orders',
+                                              style: const TextStyle(
+                                                color: Colors.yellow,
+                                                fontSize: 8,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  titlesData: FlTitlesData(
+                                    topTitles: AxisTitles(
+                                        sideTitles:
+                                            SideTitles(showTitles: false)),
+                                    rightTitles: AxisTitles(
+                                        sideTitles:
+                                            SideTitles(showTitles: false)),
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 40,
+                                        interval: 20,
+                                        getTitlesWidget: (value, _) {
+                                          return Text(
+                                            value.toInt().toString(),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.black,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 50,
+                                        interval: 2,
+                                        getTitlesWidget: (value, _) {
+                                          final product =
+                                              productCount.keys.firstWhere(
+                                            (k) => k.hashCode == value.toInt(),
+                                            orElse: () => '',
+                                          );
+                                          return Transform.rotate(
+                                            angle: -0.45,
+                                            child: Text(
+                                              product.length > 10
+                                                  ? '${product.substring(0, 10)}...'
+                                                  : product,
+                                              style:
+                                                  const TextStyle(fontSize: 9),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  gridData: FlGridData(
+                                    show: true,
+                                    horizontalInterval: 20,
+                                    getDrawingHorizontalLine: (value) => FlLine(
+                                      color: Colors.grey[300],
+                                      strokeWidth: 1,
+                                    ),
+                                  ),
+                                  borderData: FlBorderData(
+                                    show: true,
+                                    border: const Border(
+                                      left: BorderSide(
+                                          width: 1, color: Colors.black54),
+                                      bottom: BorderSide(
+                                          width: 1, color: Colors.black54),
+                                    ),
+                                  ),
+                                  barGroups: _buildBarChartData(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -288,38 +268,83 @@ class _AdminHomeState extends State<AdminHome> {
         ),
       ),
       drawer: AdminSidebar(onLogout: _logout),
-      bottomNavigationBar: AdminBottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
-      floatingActionButton: MaterialButton(
-        onPressed: () {
-          // Show the Pending Order Notifications modal
-          showDialog(
-            context: context,
-            builder: (context) {
-              return Dialog(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                if (details.primaryDelta! < -10) {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                    ),
+                    builder: (context) {
+                      return SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.95,
+                        child: const PendingOrderNotifications(),
+                      );
+                    },
+                  );
+                }
+              },
+              child: MaterialButton(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                    ),
+                    builder: (context) {
+                      return SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.95,
+                        child: const PendingOrderNotifications(),
+                      );
+                    },
+                  );
+                },
+                color: Colors.red,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: PendingOrderNotifications(),
-              );
-            },
-          );
-        },
-        color: Colors.red, // Button color
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12), // Rounded corners
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: const Text(
-          'Pending Orders for Approval',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.assignment_turned_in,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Pending Orders for Approval',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+          AdminBottomNavBar(
+            selectedIndex: _selectedIndex,
+            onItemTapped: _onItemTapped,
+          ),
+        ],
       ),
     );
   }

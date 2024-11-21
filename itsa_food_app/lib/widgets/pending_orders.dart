@@ -99,7 +99,7 @@ class _PendingOrderNotificationsState extends State<PendingOrderNotifications> {
         children: [
           // Pending Orders Label
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(15.0),
             child: Text(
               'Pending Orders',
               style: const TextStyle(

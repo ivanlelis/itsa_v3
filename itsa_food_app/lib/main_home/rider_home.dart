@@ -537,7 +537,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
                                 final productNames = List<String>.from(
                                     orderDoc['productNames'] ?? []);
 
-                                return Container(
+                                return SizedBox(
                                   width: MediaQuery.of(context).size.width *
                                       0.9, // Set the width to 90% of the screen width
                                   child: Card(

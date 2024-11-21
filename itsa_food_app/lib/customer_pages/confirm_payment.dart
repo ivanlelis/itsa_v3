@@ -155,10 +155,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
   }
 
   Future<void> _createOrder(File? paymentReceiptImage) async {
-    if (paymentReceiptImage == null) {
-      return;
-    }
-
     String orderID = _generateOrderID();
 
     // Use the current date and time in the Philippines
@@ -170,21 +166,27 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     String transactionsCollectionName = 'transactions_$currentDate';
 
     try {
-      // Step 1: Upload the payment receipt to Firebase Storage
-      String userName = widget.userName; // Assuming user's name is available
-      String fileName =
-          '$userName-${DateFormat('yyyyMMdd_HHmmss').format(now)}.png';
+      String paymentReceiptUrl = '';
 
-      // Upload the file
-      Reference storageRef = FirebaseStorage.instance
-          .ref()
-          .child('payment_receipts')
-          .child(fileName);
-      UploadTask uploadTask = storageRef.putFile(paymentReceiptImage);
-      TaskSnapshot snapshot = await uploadTask;
+      // If order type is "delivery", upload payment receipt and get the URL
+      if (widget.orderType.toLowerCase() == 'delivery' &&
+          paymentReceiptImage != null) {
+        // Step 1: Upload the payment receipt to Firebase Storage
+        String userName = widget.userName; // Assuming user's name is available
+        String fileName =
+            '$userName-${DateFormat('yyyyMMdd_HHmmss').format(now)}.png';
 
-      // Get the download URL
-      String paymentReceiptUrl = await snapshot.ref.getDownloadURL();
+        // Upload the file
+        Reference storageRef = FirebaseStorage.instance
+            .ref()
+            .child('payment_receipts')
+            .child(fileName);
+        UploadTask uploadTask = storageRef.putFile(paymentReceiptImage);
+        TaskSnapshot snapshot = await uploadTask;
+
+        // Get the download URL
+        paymentReceiptUrl = await snapshot.ref.getDownloadURL();
+      }
 
       // Step 2: Prepare the order data
       Map<String, dynamic> orderData = {
@@ -197,7 +199,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         'timestamp': timestamp,
         'total': widget.totalAmount,
         'voucherCode': widget.voucherCode,
-        'paymentReceipt': paymentReceiptUrl, // Add the payment receipt URL
+        // Only add the payment receipt URL if it's a "delivery" order
+        if (widget.orderType.toLowerCase() == 'Delivery')
+          'paymentReceipt': paymentReceiptUrl,
         'status':
             'pending', // Add the status field with a default value of 'pending'
       };
@@ -210,7 +214,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .doc(orderID)
           .set(orderData);
 
-      // The rest of your steps remain the same...
       // Step 4: Create the notification in Firestore
       await FirebaseFirestore.instance
           .collection('notifications')
@@ -250,7 +253,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
       // Step 7: Show success modal
       _showPaymentSuccessModal();
-    } catch (e) {}
+    } catch (e) {
+      print('Error creating order: $e');
+    }
   }
 
   Future<void> _updateDailySales(
