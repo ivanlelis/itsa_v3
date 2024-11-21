@@ -5,6 +5,7 @@ import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<dynamic> cartItems;
@@ -12,7 +13,7 @@ class ConfirmPayment extends StatefulWidget {
   final String paymentMethod;
   final String voucherCode;
   final double totalAmount;
-  final String uid; // Current customer’s ID
+  final String uid;
   final String userName;
   final String userAddress;
   final String emailAddress;
@@ -121,7 +122,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-  // Function to handle the confirm payment button press
   void _onConfirmPaymentPressed() {
     if (widget.orderType.toLowerCase() == 'delivery' && _receiptImage == null) {
       // If the order type is delivery and no receipt is attached, show an error
@@ -129,7 +129,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           'Please attach your payment receipt before confirming the payment.');
     } else {
       // Proceed with the payment confirmation logic (e.g., creating the order)
-      _createOrder();
+      _createOrder(_receiptImage); // Pass the receipt image file here
     }
   }
 
@@ -154,7 +154,15 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     );
   }
 
-  Future<void> _createOrder() async {
+  Future<void> _createOrder(File? paymentReceiptImage) async {
+    if (paymentReceiptImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Payment receipt is required for this order type.')),
+      );
+      return;
+    }
+
     String orderID = _generateOrderID();
 
     // Use the current date and time in the Philippines
@@ -165,21 +173,40 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     String currentDate = DateFormat('MM-dd-yy').format(now);
     String transactionsCollectionName = 'transactions_$currentDate';
 
-    // Order data to be saved in customer orders
-    Map<String, dynamic> orderData = {
-      'deliveryType': widget.deliveryType,
-      'orderID': orderID,
-      'orderType': widget.orderType,
-      'paymentMethod': widget.paymentMethod,
-      'productNames':
-          widget.cartItems.map((item) => item['productName']).toList(),
-      'timestamp': timestamp,
-      'total': widget.totalAmount,
-      'voucherCode': widget.voucherCode,
-    };
-
     try {
-      // Create the order in Firestore
+      // Step 1: Upload the payment receipt to Firebase Storage
+      String userName = widget.userName; // Assuming user's name is available
+      String fileName =
+          '$userName-${DateFormat('yyyyMMdd_HHmmss').format(now)}.png';
+
+      // Upload the file
+      Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('payment_receipts')
+          .child(fileName);
+      UploadTask uploadTask = storageRef.putFile(paymentReceiptImage);
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the download URL
+      String paymentReceiptUrl = await snapshot.ref.getDownloadURL();
+
+      // Step 2: Prepare the order data
+      Map<String, dynamic> orderData = {
+        'deliveryType': widget.deliveryType,
+        'orderID': orderID,
+        'orderType': widget.orderType,
+        'paymentMethod': widget.paymentMethod,
+        'productNames':
+            widget.cartItems.map((item) => item['productName']).toList(),
+        'timestamp': timestamp,
+        'total': widget.totalAmount,
+        'voucherCode': widget.voucherCode,
+        'paymentReceipt': paymentReceiptUrl, // Add the payment receipt URL
+        'status':
+            'pending', // Add the status field with a default value of 'pending'
+      };
+
+      // Step 3: Create the order in Firestore
       await FirebaseFirestore.instance
           .collection('customer')
           .doc(widget.uid)
@@ -187,55 +214,45 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .doc(orderID)
           .set(orderData);
 
-      // Create the notification in Firestore
+      // The rest of your steps remain the same...
+      // Step 4: Create the notification in Firestore
       await FirebaseFirestore.instance
           .collection('notifications')
           .doc(orderID)
           .set(orderData);
 
-      // Calculate raw material costs and profit for each product
+      // Step 5: Calculate raw material costs and save the transaction
       List<Map<String, dynamic>> rawMatCostPerProd =
           await _calculateRawMatCosts(
               widget.cartItems.cast<Map<String, dynamic>>());
 
-      // Calculate the total raw material cost, product cost, and total net profit
       double totalRawMatCost =
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['rawMatCost']);
       double totalProdCost =
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['prodCost']);
-
-      // Calculate total net profit by summing the netProfit of each product
       double totalNetProfit =
           rawMatCostPerProd.fold(0, (sum, item) => sum + item['netProfit']);
 
-      // Create the transaction document
       Map<String, dynamic> transactionData = {
         'totalRawMatCost': totalRawMatCost,
         'prodCost': totalProdCost,
-        'totalNetProfit':
-            totalNetProfit, // Add totalNetProfit to transaction data
+        'totalNetProfit': totalNetProfit,
         'matCostPerProduct': rawMatCostPerProd,
       };
 
-      // Save the transaction data in Firestore
       await FirebaseFirestore.instance
           .collection(transactionsCollectionName)
           .doc(orderID)
           .set(transactionData);
 
-      // Update the dailySales document in the same transactions collection
       await _updateDailySales(currentDate, totalProdCost);
-
-      // Update the dailyNetProfit document in the same transactions collection
       await _updateDailyNetProfit(currentDate, totalNetProfit);
 
-      // Update stock from cart items
+      // Step 6: Update stock and clear the cart
       await _updateStockFromCartItems();
-
-      // Delete the cart items after order creation
       await _deleteCart();
 
-      // Show success modal directly after completing Firestore operations
+      // Step 7: Show success modal
       _showPaymentSuccessModal();
     } catch (e) {
       ScaffoldMessenger.of(context)
@@ -243,7 +260,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-// Function to update daily sales within the same transactions collection
   Future<void> _updateDailySales(
       String currentDate, double totalProdCost) async {
     // Reference to the document within the transactions collection
@@ -272,7 +288,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-// Function to update daily net profit within the same transactions collection
   Future<void> _updateDailyNetProfit(
       String currentDate, double totalNetProfit) async {
     // Reference to the document within the transactions collection

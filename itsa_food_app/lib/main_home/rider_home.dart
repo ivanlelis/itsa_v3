@@ -395,19 +395,24 @@ class _RiderDashboardState extends State<RiderDashboard> {
         email: widget.email,
         imageUrl: widget.imageUrl,
       ),
-      body: Stack(
-        children: [
-          _buildMapView(),
-          _buildTopBar(),
-          _buildSearchBar(),
+      body: Builder(
+        builder: (BuildContext context) {
+          return Stack(
+            children: [
+              _buildMapView(),
+              _buildTopBar(context), // Pass context here
+              _buildSearchBar(),
 
-          // Show the search overlay if activated
-          if (_showSearchOverlay) _buildSearchOverlay(),
+              // Show the search overlay if activated
+              if (_showSearchOverlay) _buildSearchOverlay(),
 
-          // Only show the following widgets if the search overlay is not active
-          if (!_showSearchOverlay) _buildNavigateButton(navigateButtonBottom),
-          if (!_showSearchOverlay) _buildOrderDetailDraggable(),
-        ],
+              // Only show the following widgets if the search overlay is not active
+              if (!_showSearchOverlay)
+                _buildNavigateButton(navigateButtonBottom),
+              if (!_showSearchOverlay) _buildOrderDetailDraggable(),
+            ],
+          );
+        },
       ),
     );
   }
@@ -446,8 +451,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  // Top bar with Rider status, smaller menu button in a square container, and notification icon in a circular container
-  Widget _buildTopBar() {
+  Widget _buildTopBar(BuildContext context) {
     return Positioned(
       top: 40,
       left: 16,
@@ -474,10 +478,12 @@ class _RiderDashboardState extends State<RiderDashboard> {
               icon: const Icon(Icons.menu,
                   color: Colors.deepOrangeAccent,
                   size: 20), // Reduced icon size
-              onPressed: () => Scaffold.of(context).openDrawer(),
+              onPressed: () {
+                // Open the drawer (sidebar)
+                Scaffold.of(context).openDrawer();
+              },
             ),
           ),
-
           Stack(
             children: [
               Container(
@@ -698,9 +704,8 @@ class _RiderDashboardState extends State<RiderDashboard> {
 
   Widget _buildNavigateButton(double bottom) {
     return Positioned(
-      bottom: bottom, // Use dynamic bottom position
-      left: MediaQuery.of(context).size.width / 2 -
-          28, // Center the button horizontally
+      bottom: bottom + 15, // Adjust the position to move the button higher
+      right: 16, // Position the button at the right-most side
       child: ElevatedButton(
         onPressed: () async {
           // First, calculate the route
@@ -785,17 +790,38 @@ class _RiderDashboardState extends State<RiderDashboard> {
                 ),
               ),
               SizedBox(height: 16),
-              // Order Details Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Order Details',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Order Details',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(width: 8), // Add spacing between the texts
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4), // Adjust padding
+                        decoration: BoxDecoration(
+                          color: Colors.green, // Green background
+                          borderRadius:
+                              BorderRadius.circular(8), // Rounded corners
+                        ),
+                        child: Text(
+                          'New Order!',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white, // White text
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   IconButton(
                     icon: Icon(Icons.close, color: Colors.grey[600]),
@@ -877,9 +903,9 @@ class _RiderDashboardState extends State<RiderDashboard> {
     return Stack(
       children: [
         _buildMapView(),
-        _buildTopBar(),
+        _buildTopBar(context), // Pass context here
         _buildSearchBar(),
-        _buildNavigateButton(120), // Adjust position as needed
+        _buildNavigateButton(150), // Adjust position as needed
 
         // Order Details Draggable Card
         _buildOrderDetailDraggable(),

@@ -8,6 +8,7 @@ import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/tags_chart.dart';
+import 'package:itsa_food_app/widgets/pending_orders.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
@@ -110,7 +111,7 @@ class _AdminHomeState extends State<AdminHome> {
       body: RefreshIndicator(
         onRefresh: _onRefresh, // Call _onRefresh when pulled
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(), // Add this line
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16.0),
           child: Center(
             child: Column(
@@ -135,7 +136,6 @@ class _AdminHomeState extends State<AdminHome> {
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-                // Add the 'Last Active' text here
                 if (lastActiveTime != null)
                   Text(
                     'Last Active: $lastActiveTime',
@@ -149,7 +149,6 @@ class _AdminHomeState extends State<AdminHome> {
                         fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 const SizedBox(height: 10),
-                // Card containing the Horizontal Bar Chart
                 if (productCount.isNotEmpty)
                   Card(
                     elevation: 4,
@@ -172,7 +171,7 @@ class _AdminHomeState extends State<AdminHome> {
                           ),
                           const SizedBox(height: 20),
                           SizedBox(
-                            height: 300, // Reduced height for the chart
+                            height: 300,
                             child: BarChart(
                               BarChartData(
                                 alignment: BarChartAlignment.spaceAround,
@@ -180,11 +179,9 @@ class _AdminHomeState extends State<AdminHome> {
                                 barTouchData: BarTouchData(
                                   enabled: true,
                                   touchTooltipData: BarTouchTooltipData(
-                                    tooltipRoundedRadius:
-                                        4, // Reduced rounded radius
+                                    tooltipRoundedRadius: 4,
                                     tooltipPadding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 2), // Reduced padding
+                                        horizontal: 4, vertical: 2),
                                     getTooltipItem:
                                         (group, groupIndex, rod, rodIndex) {
                                       final productName = productCount.keys
@@ -195,14 +192,14 @@ class _AdminHomeState extends State<AdminHome> {
                                         const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 10, // Reduced font size
+                                          fontSize: 10,
                                         ),
                                         children: [
                                           TextSpan(
                                             text: '$orderCount orders',
                                             style: const TextStyle(
                                               color: Colors.yellow,
-                                              fontSize: 8, // Reduced font size
+                                              fontSize: 8,
                                             ),
                                           ),
                                         ],
@@ -237,8 +234,7 @@ class _AdminHomeState extends State<AdminHome> {
                                     sideTitles: SideTitles(
                                       showTitles: true,
                                       reservedSize: 50,
-                                      interval:
-                                          2, // Show every other product name
+                                      interval: 2,
                                       getTitlesWidget: (value, _) {
                                         final product =
                                             productCount.keys.firstWhere(
@@ -246,8 +242,7 @@ class _AdminHomeState extends State<AdminHome> {
                                           orElse: () => '',
                                         );
                                         return Transform.rotate(
-                                          angle:
-                                              -0.45, // Rotate label to reduce crowding
+                                          angle: -0.45,
                                           child: Text(
                                             product.length > 10
                                                 ? '${product.substring(0, 10)}...'
@@ -285,8 +280,7 @@ class _AdminHomeState extends State<AdminHome> {
                       ),
                     ),
                   ),
-                const SizedBox(height: 20),
-                // Add the Frequent Orders By Tags Chart here
+                const SizedBox(height: 10),
                 const FrequentOrdersByTagsChart(),
               ],
             ),
@@ -297,6 +291,35 @@ class _AdminHomeState extends State<AdminHome> {
       bottomNavigationBar: AdminBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
+      ),
+      floatingActionButton: MaterialButton(
+        onPressed: () {
+          // Show the Pending Order Notifications modal
+          showDialog(
+            context: context,
+            builder: (context) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: PendingOrderNotifications(),
+              );
+            },
+          );
+        },
+        color: Colors.red, // Button color
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12), // Rounded corners
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: const Text(
+          'Pending Orders for Approval',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

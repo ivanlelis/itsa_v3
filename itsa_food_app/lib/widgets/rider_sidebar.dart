@@ -1,7 +1,5 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart'; // Import for SystemNavigator.pop to exit the app
 
 class RiderDrawer extends StatelessWidget {
   final String userName;
@@ -18,57 +16,96 @@ class RiderDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        children: <Widget>[
-          UserAccountsDrawerHeader(
-            accountName: Text(userName),
-            accountEmail: Text(email),
-            currentAccountPicture: CircleAvatar(
-              backgroundImage: imageUrl.isNotEmpty
-                  ? NetworkImage(imageUrl)
-                  : const NetworkImage('https://example.com/placeholder.png'),
+      child: Container(
+        color: Colors.deepOrangeAccent,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            // Sidebar Header (Optional)
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.deepOrangeAccent,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.delivery_dining),
-            title: const Text('Current Deliveries'),
-            onTap: () {
-              // Navigate to current deliveries page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Delivery History'),
-            onTap: () {
-              // Navigate to delivery history page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () {
-              // Navigate to profile page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              // Navigate to settings page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Log Out'),
-            onTap: () async {
-              await FirebaseAuth.instance.signOut();
-              // Navigate back to Home page and clear all previous routes
-              Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/home', (route) => false);
-            },
-          ),
-        ],
+            // Add your menu items here
+            ListTile(
+              leading: Icon(Icons.home, color: Colors.white),
+              title: Text('Home', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                // Handle navigation
+                Navigator.of(context).pop(); // Close the drawer
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.settings, color: Colors.white),
+              title: Text('Settings', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                // Handle navigation
+                Navigator.of(context).pop(); // Close the drawer
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.help, color: Colors.white),
+              title: Text('Help', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                // Handle navigation
+                Navigator.of(context).pop(); // Close the drawer
+              },
+            ),
+            // Log out option
+            ListTile(
+              leading: Icon(Icons.exit_to_app, color: Colors.white),
+              title: Text('Log out', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                // Show the confirmation dialog before logging out
+                _showLogoutDialog(context);
+              },
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  // Show confirmation dialog for logging out
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Log Out'),
+          content: Text('Are you sure you want to log out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Close the dialog when "No" is pressed
+                Navigator.of(context).pop();
+              },
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Perform log out action here, e.g., navigate to login screen
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushReplacementNamed(
+                    context, '/home'); // Navigate to login screen
+
+                // Optionally, clear user session data (if any)
+                // Example: SharedPreferences.clear(), etc.
+              },
+              child: Text('Yes'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
