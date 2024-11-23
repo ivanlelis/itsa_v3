@@ -69,9 +69,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
     }
   }
 
-// Convert the raw date to Philippine Time and set time to midnight or 4 PM
-  DateTime _convertToPhilippineTime(String rawDate,
-      {bool setToMidnight = false, bool setToEndOfDay = false}) {
+// Convert the raw date to local time and set time to midnight
+  DateTime _convertToLocalTime(String rawDate, {bool setToMidnight = false}) {
     try {
       DateTime date;
 
@@ -84,22 +83,12 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
         date = DateTime.parse(rawDate);
       }
 
-      // Convert to Philippine time (UTC+8)
-      final dateInPhilippineTime = date.toUtc().add(Duration(hours: 8));
-
       if (setToMidnight) {
-        // Set time to midnight (00:00:00) if required
-        return DateTime(dateInPhilippineTime.year, dateInPhilippineTime.month,
-            dateInPhilippineTime.day, 0, 0, 0); // Midnight
+        // Set time to midnight (00:00:00) for both start and end dates
+        return DateTime(date.year, date.month, date.day, 16, 0, 0); // Midnight
       }
 
-      if (setToEndOfDay) {
-        // Set time to 4 PM (16:00:00) for end date
-        return DateTime(dateInPhilippineTime.year, dateInPhilippineTime.month,
-            dateInPhilippineTime.day, 0, 0, 0); // 4 PM
-      }
-
-      return dateInPhilippineTime; // Return the date in Philippine time without changing time
+      return date; // Return the date with the same time if no change required
     } catch (e) {
       throw FormatException("Invalid date format: $rawDate");
     }
@@ -125,15 +114,14 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
       }
 
       setState(() {
-        // Convert the picked date to Philippine time, with time set to midnight or 4 PM
-        DateTime philippineTime = _convertToPhilippineTime(
+        // Convert the picked date to local time, with time set to midnight
+        DateTime localTime = _convertToLocalTime(
           picked.toIso8601String(),
-          setToMidnight: isStartDate, // Set to midnight for start date
-          setToEndOfDay: !isStartDate, // Set to 4 PM for end date
+          setToMidnight: true, // Set to midnight for both start and end dates
         );
 
         // Store the selected date as ISO 8601 string (with the appropriate time set)
-        String isoDate = philippineTime.toIso8601String();
+        String isoDate = localTime.toIso8601String();
 
         // Use the ISO formatted string for the start or end date
         if (isStartDate) {
@@ -1103,12 +1091,11 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                             try {
                               // Convert start and end dates to Philippine time
                               DateTime? startDate = isFeaturedDurationChecked
-                                  ? _convertToPhilippineTime(
+                                  ? _convertToLocalTime(
                                       startDateController.text)
                                   : null;
                               DateTime? endDate = isFeaturedDurationChecked
-                                  ? _convertToPhilippineTime(
-                                      endDateController.text,
+                                  ? _convertToLocalTime(endDateController.text,
                                       setToMidnight: true)
                                   : null;
 
