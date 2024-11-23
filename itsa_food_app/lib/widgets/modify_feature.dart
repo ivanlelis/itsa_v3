@@ -29,6 +29,9 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
   String? mostOrderedProduct;
   Map<String, dynamic>? productDetails;
   String? selectedBundleOption;
+  final TextEditingController _loyaltyPointsController =
+      TextEditingController();
+  double totalRawMaterialCost = 0;
 
   @override
   void initState() {
@@ -45,18 +48,63 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
     super.dispose();
   }
 
-  String _formatDate(String date) {
-    if (date.length == 6) {
-      // Ensure the date is always in MMDDYY format and insert '--'
-      String month = date.substring(0, 2).padLeft(2, '0');
-      String day = date.substring(2, 4).padLeft(2, '0');
-      String year = date.substring(4, 6).padLeft(2, '0');
-      return "$month--$day--$year";
+  // Method to format a date string into MM/dd/yyyy format
+  String _formatDate(String dateString) {
+    try {
+      DateTime date;
+
+      // Check if the input date is in MMddyy format (6 characters)
+      if (dateString.length == 6) {
+        // Parse MMddyy format
+        date = DateFormat('MMddyy').parse(dateString);
+      } else {
+        // Otherwise, treat it as ISO format
+        date = DateTime.parse(dateString);
+      }
+
+      // Return formatted date as MM/dd/yyyy
+      return DateFormat('MM/dd/yyyy').format(date);
+    } catch (e) {
+      return 'No Date Chosen';
     }
-    return "MM--DD--YY"; // Return default if the format is incorrect
   }
 
-  // Method to select the date (just an example, you can implement it)
+// Convert the raw date to Philippine Time and set time to midnight or 4 PM
+  DateTime _convertToPhilippineTime(String rawDate,
+      {bool setToMidnight = false, bool setToEndOfDay = false}) {
+    try {
+      DateTime date;
+
+      // Check if the input date is in MMddyy format (6 characters)
+      if (rawDate.length == 6) {
+        // Parse MMddyy format
+        date = DateFormat('MMddyy').parse(rawDate);
+      } else {
+        // Otherwise, treat it as ISO format
+        date = DateTime.parse(rawDate);
+      }
+
+      // Convert to Philippine time (UTC+8)
+      final dateInPhilippineTime = date.toUtc().add(Duration(hours: 8));
+
+      if (setToMidnight) {
+        // Set time to midnight (00:00:00) if required
+        return DateTime(dateInPhilippineTime.year, dateInPhilippineTime.month,
+            dateInPhilippineTime.day, 0, 0, 0); // Midnight
+      }
+
+      if (setToEndOfDay) {
+        // Set time to 4 PM (16:00:00) for end date
+        return DateTime(dateInPhilippineTime.year, dateInPhilippineTime.month,
+            dateInPhilippineTime.day, 0, 0, 0); // 4 PM
+      }
+
+      return dateInPhilippineTime; // Return the date in Philippine time without changing time
+    } catch (e) {
+      throw FormatException("Invalid date format: $rawDate");
+    }
+  }
+
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     DateTime selectedDate = DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -66,16 +114,39 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
       lastDate: DateTime(2101),
     );
 
-    if (picked != null && picked != selectedDate) {
+    if (picked != null) {
+      // Ensure that the date is valid (no date before the year 2000)
+      if (picked.isBefore(DateTime(2000))) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Please select a valid date after the year 2000')),
+        );
+        return;
+      }
+
       setState(() {
-        String formattedDate =
-            DateFormat('MMddyy').format(picked); // Format the date to MMDDYY
+        // Convert the picked date to Philippine time, with time set to midnight or 4 PM
+        DateTime philippineTime = _convertToPhilippineTime(
+          picked.toIso8601String(),
+          setToMidnight: isStartDate, // Set to midnight for start date
+          setToEndOfDay: !isStartDate, // Set to 4 PM for end date
+        );
+
+        // Store the selected date as ISO 8601 string (with the appropriate time set)
+        String isoDate = philippineTime.toIso8601String();
+
+        // Use the ISO formatted string for the start or end date
         if (isStartDate) {
-          startDateController.text = formattedDate;
+          startDateController.text = isoDate;
         } else {
-          endDateController.text = formattedDate;
+          endDateController.text = isoDate;
         }
       });
+    } else {
+      // Handle case where no date was selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No date selected')),
+      );
     }
   }
 
@@ -502,6 +573,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                       child: Padding(
                                         padding: const EdgeInsets.all(16.0),
                                         child: TextField(
+                                          controller:
+                                              _loyaltyPointsController, // Added controller
                                           keyboardType: TextInputType.number,
                                           inputFormatters: [
                                             FilteringTextInputFormatter
@@ -526,6 +599,7 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                 : SizedBox
                                     .shrink(), // Empty widget when unchecked
                           ),
+
                           Row(
                             children: [
                               Checkbox(
@@ -583,16 +657,15 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                                 ElevatedButton(
                                                   onPressed: () {
                                                     _selectDate(context,
-                                                        true); // To select start date
+                                                        true); // Select start date
                                                   },
                                                   child: Text("Select Date"),
                                                 ),
                                               ],
                                             ),
-                                            // Displaying the start date in MM--DD--YY format
                                             Text(
-                                              _formatDate(
-                                                  startDateController.text),
+                                              _formatDate(startDateController
+                                                  .text), // Format and display the start date
                                               style: TextStyle(fontSize: 16),
                                             ),
                                             SizedBox(height: 10),
@@ -608,16 +681,15 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                                 ElevatedButton(
                                                   onPressed: () {
                                                     _selectDate(context,
-                                                        false); // To select end date
+                                                        false); // Select end date
                                                   },
                                                   child: Text("Select Date"),
                                                 ),
                                               ],
                                             ),
-                                            // Displaying the end date in MM--DD--YY format
                                             Text(
-                                              _formatDate(
-                                                  endDateController.text),
+                                              _formatDate(endDateController
+                                                  .text), // Format and display the end date
                                               style: TextStyle(fontSize: 16),
                                             ),
                                           ],
@@ -627,6 +699,7 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                   )
                                 : SizedBox.shrink(),
                           ),
+
                           const SizedBox(
                             height: 20,
                           ),
@@ -1016,8 +1089,73 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            // Save functionality
+                          onPressed: () async {
+                            final selectedCategory =
+                                productDetails?['productType'];
+
+                            double regularProfitMargin = 0;
+                            double largeProfitMargin = 0;
+
+                            final featuredCollection = FirebaseFirestore
+                                .instance
+                                .collection('featured');
+
+                            try {
+                              // Convert start and end dates to Philippine time
+                              DateTime? startDate = isFeaturedDurationChecked
+                                  ? _convertToPhilippineTime(
+                                      startDateController.text)
+                                  : null;
+                              DateTime? endDate = isFeaturedDurationChecked
+                                  ? _convertToPhilippineTime(
+                                      endDateController.text,
+                                      setToMidnight: true)
+                                  : null;
+
+                              // Prepare the dynamic data
+                              final data = {
+                                'discount':
+                                    isDiscountChecked ? discountValue : null,
+                                'exBundle': isExclusiveBundleChecked
+                                    ? selectedBundleOption
+                                    : null,
+                                'loyaltyPoints': isLoyaltyPointsChecked
+                                    ? _loyaltyPointsController.text
+                                    : null,
+                                'startDate':
+                                    startDate, // Save as actual DateTime object
+                                'endDate':
+                                    endDate, // Save as actual DateTime object
+                              };
+
+                              // Add Milk Tea-specific fields if discount is checked
+                              if (isDiscountChecked &&
+                                  selectedCategory == 'Milk Tea') {
+                                data.addAll({
+                                  'regularNewPrice': regularProfitMargin,
+                                  'largeNewPrice': largeProfitMargin,
+                                });
+                              }
+
+                              // Save the data to Firestore
+                              await featuredCollection
+                                  .doc('featured')
+                                  .set(data);
+
+                              // Show success message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Configuration saved successfully!')),
+                              );
+                            } catch (e) {
+                              // Show error message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Failed to save configuration: $e')),
+                              );
+                            }
                           },
                           child: const Text('Save'),
                           style: ElevatedButton.styleFrom(
