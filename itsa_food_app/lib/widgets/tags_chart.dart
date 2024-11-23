@@ -22,14 +22,23 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
   Future<void> fetchTagData() async {
     Map<String, int> tempTagCounts = {};
     try {
-      // Get all customers
+      // Fetch all customers concurrently
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      for (var customerDoc in customerSnapshot.docs) {
-        // Get orders subcollection for each customer
-        QuerySnapshot ordersSnapshot =
-            await customerDoc.reference.collection('orders').get();
+      // Collect all customer orders concurrently
+      List<Future<QuerySnapshot>> customerOrderFetches =
+          customerSnapshot.docs.map((customerDoc) {
+        return customerDoc.reference.collection('orders').get();
+      }).toList();
+
+      // Wait for all customer orders to load concurrently
+      List<QuerySnapshot> allOrdersSnapshots =
+          await Future.wait(customerOrderFetches);
+
+      // Process each order
+      for (var ordersSnapshot in allOrdersSnapshots) {
+        List<Future<void>> tagFetches = [];
 
         for (var orderDoc in ordersSnapshot.docs) {
           // Extract productNames from each order
@@ -37,21 +46,25 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
 
           for (var productName in productNames) {
             // Match productName with productName field in products collection
-            QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+            tagFetches.add(FirebaseFirestore.instance
                 .collection('products')
                 .where('productName', isEqualTo: productName)
-                .get();
-
-            if (productSnapshot.docs.isNotEmpty) {
-              // Fetch tags from matched product document
-              List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
-              for (var tag in tags) {
-                // Count tag occurrences
-                tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + 1;
+                .get()
+                .then((productSnapshot) {
+              if (productSnapshot.docs.isNotEmpty) {
+                // Fetch tags from matched product document
+                List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
+                for (var tag in tags) {
+                  // Count tag occurrences
+                  tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + 1;
+                }
               }
-            }
+            }));
           }
         }
+
+        // Wait for all tag data to be fetched concurrently
+        await Future.wait(tagFetches);
       }
 
       // Update state with fetched tag counts
@@ -74,11 +87,9 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                 color: Colors.orangeAccent,
                 width: 15,
                 borderRadius: BorderRadius.circular(4),
-                // Remove labels above bars by setting no text
-                rodStackItems: [],
               ),
             ],
-            showingTooltipIndicators: [], // Ensure tooltips are disabled
+            showingTooltipIndicators: [], // Disable tooltips
           ),
         )
         .toList();
@@ -129,30 +140,26 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                         ),
                       ),
                       rightTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: false), // Disable right side numbers
+                        sideTitles: SideTitles(showTitles: false),
                       ),
                       topTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: false), // Disable top side numbers
+                        sideTitles: SideTitles(showTitles: false),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 40, // Add more space for labels
+                          reservedSize: 40,
                           getTitlesWidget: (value, _) {
                             final tag = tagCounts.keys.firstWhere(
                               (key) => key.hashCode == value.toInt(),
                               orElse: () => '',
                             );
                             return Transform.rotate(
-                              angle: -45 *
-                                  3.1415927 /
-                                  180, // Rotate text by 45 degrees
+                              angle: -45 * 3.1415927 / 180,
                               child: Text(
                                 tag.length > 10
                                     ? '${tag.substring(0, 10)}...'
-                                    : tag, // Trim long tags
+                                    : tag,
                                 style: const TextStyle(fontSize: 10),
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.right,
@@ -164,8 +171,7 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                     ),
                     gridData: FlGridData(show: true),
                     borderData: FlBorderData(show: true),
-                    barTouchData:
-                        BarTouchData(enabled: false), // Disable tooltips
+                    barTouchData: BarTouchData(enabled: false),
                   ),
                 )),
           ],

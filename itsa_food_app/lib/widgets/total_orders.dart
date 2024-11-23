@@ -15,7 +15,7 @@ class TotalOrdersCard extends StatefulWidget {
   final double centerSpaceRadius;
 
   const TotalOrdersCard({
-    Key? key,
+    super.key,
     required this.totalOrders,
     required this.deliveryOrders,
     required this.pickupOrders,
@@ -23,7 +23,7 @@ class TotalOrdersCard extends StatefulWidget {
     this.chartHeight = 100,
     this.sectionRadius = 45,
     this.centerSpaceRadius = 20,
-  }) : super(key: key);
+  });
 
   @override
   _TotalOrdersCardState createState() => _TotalOrdersCardState();
@@ -219,8 +219,7 @@ class LegendIndicator extends StatelessWidget {
   final Color color;
   final String text;
 
-  const LegendIndicator({Key? key, required this.color, required this.text})
-      : super(key: key);
+  const LegendIndicator({super.key, required this.color, required this.text});
 
   @override
   Widget build(BuildContext context) {

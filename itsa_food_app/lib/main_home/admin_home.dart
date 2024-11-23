@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/tags_chart.dart';
 import 'package:itsa_food_app/widgets/pending_orders.dart';
 import 'package:itsa_food_app/widgets/total_orders.dart';
+import 'package:itsa_food_app/widgets/most_ordered.dart';
 
 class AdminHome extends StatefulWidget {
   final String userName;
@@ -31,6 +32,7 @@ class _AdminHomeState extends State<AdminHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Map<String, int> productCount = {}; // Store product order counts
   String? lastActiveTime;
+  List<Map<String, dynamic>> orders = []; // Fetch this from Firestore
 
   @override
   void initState() {
@@ -118,13 +120,16 @@ class _AdminHomeState extends State<AdminHome> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
+                // Existing Total Orders Card
                 TotalOrdersCard(
                   totalOrders: totalOrders,
                   deliveryOrders: deliveryOrders,
                   pickupOrders: pickupOrders,
                 ),
+                // New Most Ordered Card
+                const MostOrderedCard(),
                 if (productCount.isNotEmpty)
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width * 1,
                     child: Card(
                       elevation: 4,

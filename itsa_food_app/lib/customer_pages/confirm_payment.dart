@@ -123,8 +123,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
   }
 
   void _onConfirmPaymentPressed() {
-    if (widget.orderType.toLowerCase() == 'delivery' && _receiptImage == null) {
-      // If the order type is delivery and no receipt is attached, show an error
+    if ((widget.orderType.toLowerCase() == 'delivery' ||
+            widget.orderType.toLowerCase() == 'pickup') &&
+        widget.paymentMethod.toLowerCase() == 'gcash' &&
+        _receiptImage == null) {
+      // If order type is delivery or pickup, payment method is GCash, and no receipt is attached, show an error
       _showErrorDialog(
           'Please attach your payment receipt before confirming the payment.');
     } else {
@@ -161,15 +164,17 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
     Timestamp timestamp = Timestamp.fromDate(now);
 
-    // Format the date for the transactions collection
-    String currentDate = DateFormat('MM-dd-yy').format(now);
-    String transactionsCollectionName = 'transactions_$currentDate';
+    // Format the date for the transactions subcollection
+    String currentDate = DateFormat('MM_dd_yy').format(now);
+    String transactionsSubCollectionName = 'transactions_$currentDate';
 
     try {
       String paymentReceiptUrl = '';
 
-      // If order type is "delivery", upload payment receipt and get the URL
-      if (widget.orderType.toLowerCase() == 'delivery' &&
+      // Only upload the payment receipt if order type is "delivery" or "pickup" and payment method is "GCash"
+      if ((widget.orderType.toLowerCase() == 'delivery' ||
+              widget.orderType.toLowerCase() == 'pickup') &&
+          widget.paymentMethod.toLowerCase() == 'gcash' &&
           paymentReceiptImage != null) {
         // Step 1: Upload the payment receipt to Firebase Storage
         String userName = widget.userName; // Assuming user's name is available
@@ -199,11 +204,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         'timestamp': timestamp,
         'total': widget.totalAmount,
         'voucherCode': widget.voucherCode,
-        // Only add the payment receipt URL if it's a "delivery" order
-        if (widget.orderType.toLowerCase() == 'Delivery')
+        'status': 'pending',
+        if ((widget.orderType.toLowerCase() == 'delivery' ||
+                widget.orderType.toLowerCase() == 'pickup') &&
+            widget.paymentMethod.toLowerCase() == 'gcash')
           'paymentReceipt': paymentReceiptUrl,
-        'status':
-            'pending', // Add the status field with a default value of 'pending'
       };
 
       // Step 3: Create the order in Firestore
@@ -239,9 +244,12 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         'matCostPerProduct': rawMatCostPerProd,
       };
 
+      // Save the transaction data in the transactions collection and subcollection
       await FirebaseFirestore.instance
-          .collection(transactionsCollectionName)
-          .doc(orderID)
+          .collection('transactions') // Top-level collection
+          .doc('transactions') // Use a placeholder for the top-level document
+          .collection(transactionsSubCollectionName) // Subcollection
+          .doc(orderID) // Document created inside the subcollection
           .set(transactionData);
 
       await _updateDailySales(currentDate, totalProdCost);
@@ -260,9 +268,13 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _updateDailySales(
       String currentDate, double totalProdCost) async {
-    // Reference to the document within the transactions collection
+    // Reference to the document within the 'transactions' collection
+    // with the subcollection 'transactions_<currentDate>'
     DocumentReference dailySalesDoc = FirebaseFirestore.instance
-        .collection('transactions_$currentDate')
+        .collection('transactions') // Top-level collection
+        .doc('transactions') // Using the orderID as the document ID
+        .collection(
+            'transactions_$currentDate') // Subcollection with the current date
         .doc('dailySales');
 
     try {
@@ -288,9 +300,13 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _updateDailyNetProfit(
       String currentDate, double totalNetProfit) async {
-    // Reference to the document within the transactions collection
+    // Reference to the document within the 'transactions' collection
+    // with the subcollection 'transactions_<currentDate>'
     DocumentReference dailyNetProfitDoc = FirebaseFirestore.instance
-        .collection('transactions_$currentDate')
+        .collection('transactions') // Top-level collection
+        .doc('transactions') // Using the orderID as the document ID
+        .collection(
+            'transactions_$currentDate') // Subcollection with the current date
         .doc('dailyNetProfit');
 
     try {
@@ -620,8 +636,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             SizedBox(height: 30),
 
-            // If Order Type is Delivery, show payment receipt section
-            if (widget.orderType.toLowerCase() == 'delivery') ...[
+            // Show payment receipt section if order type is "delivery" or "pickup" and payment method is "GCash"
+            if ((widget.orderType.toLowerCase() == 'delivery' ||
+                    widget.orderType.toLowerCase() == 'pickup') &&
+                widget.paymentMethod.toLowerCase() == 'gcash') ...[
               _buildSectionTitle('Attach Payment Receipt'),
               _buildPaymentReceiptSection(),
             ],
