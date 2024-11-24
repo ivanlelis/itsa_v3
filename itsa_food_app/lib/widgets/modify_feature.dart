@@ -913,8 +913,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                                                   bundleMessage =
                                                                       (bundleProfit >
                                                                               0)
-                                                                          ? 'Exclusive Bundle "${selectedBundleOption}" is profitable with a profit of ₱${bundleProfit.toStringAsFixed(2)}.'
-                                                                          : 'Exclusive Bundle "${selectedBundleOption}" results in a loss of ₱${bundleProfit.abs().toStringAsFixed(2)}.';
+                                                                          ? 'Exclusive Bundle "$selectedBundleOption" is profitable with a profit of ₱${bundleProfit.toStringAsFixed(2)}.'
+                                                                          : 'Exclusive Bundle "$selectedBundleOption" results in a loss of ₱${bundleProfit.abs().toStringAsFixed(2)}.';
                                                                 } else if (selectedBundleOption ==
                                                                     '1 Free Regular Milktea') {
                                                                   double
@@ -930,8 +930,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                                                   bundleMessage =
                                                                       (bundleProfit >
                                                                               0)
-                                                                          ? 'Exclusive Bundle "${selectedBundleOption}" is profitable with a profit of ₱${bundleProfit.toStringAsFixed(2)}.'
-                                                                          : 'Exclusive Bundle "${selectedBundleOption}" results in a loss of ₱${bundleProfit.abs().toStringAsFixed(2)}.';
+                                                                          ? 'Exclusive Bundle "$selectedBundleOption" is profitable with a profit of ₱${bundleProfit.toStringAsFixed(2)}.'
+                                                                          : 'Exclusive Bundle "$selectedBundleOption" results in a loss of ₱${bundleProfit.abs().toStringAsFixed(2)}.';
                                                                 } else if (selectedBundleOption ==
                                                                     '1 Free 4 pc Takoyaki') {
                                                                   double
@@ -950,8 +950,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                                                   bundleMessage =
                                                                       (bundleProfit >
                                                                               0)
-                                                                          ? 'Exclusive Bundle "${selectedBundleOption}" is profitable with a profit of ₱${bundleProfit.toStringAsFixed(2)}.'
-                                                                          : 'Exclusive Bundle "${selectedBundleOption}" results in a loss of ₱${bundleProfit.abs().toStringAsFixed(2)}.';
+                                                                          ? 'Exclusive Bundle "$selectedBundleOption" is profitable with a profit of ₱${bundleProfit.toStringAsFixed(2)}.'
+                                                                          : 'Exclusive Bundle "$selectedBundleOption" results in a loss of ₱${bundleProfit.abs().toStringAsFixed(2)}.';
                                                                 }
                                                               }
 
@@ -1080,6 +1080,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                           onPressed: () async {
                             final selectedCategory =
                                 productDetails?['productType'];
+                            final productName = productDetails?[
+                                'productName']; // Get the productName
 
                             double regularProfitMargin = 0;
                             double largeProfitMargin = 0;
@@ -1113,6 +1115,8 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                                     startDate, // Save as actual DateTime object
                                 'endDate':
                                     endDate, // Save as actual DateTime object
+                                'productName':
+                                    productName, // Add productName to the data
                               };
 
                               // Add Milk Tea-specific fields if discount is checked
@@ -1144,21 +1148,21 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
                               );
                             }
                           },
-                          child: const Text('Save'),
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
                           ),
+                          child: const Text('Save'),
                         ),
                         const SizedBox(height: 10),
                         ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).pop(); // Closes the modal
                           },
-                          child: const Text('Cancel'),
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
                             backgroundColor: Colors.grey,
                           ),
+                          child: const Text('Cancel'),
                         ),
                       ],
                     ),

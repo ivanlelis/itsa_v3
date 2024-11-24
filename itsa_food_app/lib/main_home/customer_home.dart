@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
@@ -8,6 +9,7 @@ import 'package:itsa_food_app/customer_pages/menu.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:itsa_food_app/widgets/featured_products.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
@@ -38,34 +40,33 @@ class CustomerMainHome extends StatefulWidget {
 class _CustomerMainHomeState extends State<CustomerMainHome> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late Future<DocumentSnapshot> _featuredProduct; // Non-nullable and cached
 
   @override
   void initState() {
     super.initState();
     _updateLastActiveTime();
+    _featuredProduct = FirebaseFirestore.instance
+        .collection('featured')
+        .doc('featured')
+        .get(); // Initialize once
   }
 
   Future<void> _updateLastActiveTime() async {
     final prefs = await SharedPreferences.getInstance();
     final currentTime = DateTime.now().millisecondsSinceEpoch;
-    prefs.setInt('lastLoginTime',
-        currentTime); // Store current time in SharedPreferences
+    prefs.setInt('lastLoginTime', currentTime);
     print("Last active time updated: $currentTime");
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _fetchDataAndUpdateUI();
   }
 
   Future<void> _fetchDataAndUpdateUI() async {
     await Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
-    setState(() {}); // Update the UI after fetching data
+    // Avoid excessive setState calls
   }
 
   Future<void> _refreshData() async {
-    await _fetchDataAndUpdateUI();
+    await Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
+    setState(() {}); // Only update UI for RefreshIndicator
   }
 
   void _onItemTapped(int index) {
@@ -75,7 +76,6 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    // Navigate based on the selected index
     if (index == 1) {
       Navigator.push(
         context,
@@ -160,39 +160,19 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: user != null
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Logged in as: ${user.userName}',
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Email: ${user.emailAddress}',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Address: ${user.userAddress}',
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
-                        ),
-                        Text(
-                          'Latitude: ${user.latitude.toStringAsFixed(6)}',
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
-                        ),
-                        Text(
-                          'Longitude: ${user.longitude.toStringAsFixed(6)}',
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
-                        ),
-                      ],
+                  ? FeaturedProductWidget(
+                      featuredProduct: _featuredProduct,
+                      userName: widget.userName, // Pass the parameters
+                      emailAddress: widget.emailAddress,
+                      email: widget.email,
+                      imageUrl: widget.imageUrl,
+                      uid: widget.uid,
+                      userAddress: widget.userAddress,
+                      latitude: widget.latitude,
+                      longitude: widget.longitude,
                     )
-                  : Text(
-                      'No user is logged in',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                  : Text('No user is logged in',
+                      style: TextStyle(fontSize: 16)),
             ),
           ),
         ),
