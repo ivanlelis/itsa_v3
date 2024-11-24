@@ -1,137 +1,126 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_print, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
-import 'package:itsa_food_app/customer_pages/main_cart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/customer_pages/main_cart.dart';
 
-class ProductView extends StatefulWidget {
-  final String productName;
+class OrderFeatured extends StatefulWidget {
+  final String userName;
+  final String emailAddress;
+  final String email;
   final String imageUrl;
-  final String? takoyakiPrices;
-  final String? takoyakiPrices8;
-  final String? takoyakiPrices12;
-  final String? milkTeaRegular;
-  final String? milkTeaLarge;
-  final String? mealsPrice;
-  final String userName; // Non-nullable
-  final String emailAddress; // Non-nullable
-  final String productType; // Non-nullable
   final String uid;
   final String userAddress;
-  final String email;
   final double latitude;
   final double longitude;
+  final String productName;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String exBundle;
 
-  const ProductView({
+  const OrderFeatured({
     super.key,
-    required this.productName,
-    required this.imageUrl,
-    this.takoyakiPrices,
-    this.takoyakiPrices8,
-    this.takoyakiPrices12,
-    this.milkTeaRegular,
-    this.milkTeaLarge,
-    this.mealsPrice,
     required this.userName,
     required this.emailAddress,
-    required this.productType,
+    required this.email,
+    required this.imageUrl,
     required this.uid,
     required this.userAddress,
-    required this.email,
     required this.latitude,
     required this.longitude,
+    required this.productName,
+    required this.startDate,
+    required this.endDate,
+    required this.exBundle,
   });
 
   @override
-  _ProductViewState createState() => _ProductViewState();
+  _OrderFeaturedState createState() => _OrderFeaturedState();
 }
 
-class _ProductViewState extends State<ProductView> {
-  int _selectedQuantityIndex = 0;
+class _OrderFeaturedState extends State<OrderFeatured> {
   int _quantity = 1;
   double _totalPrice = 0.0;
-  bool _takoyakiSauce = false;
-  bool _bonitoFlakes = false;
-  bool _mayonnaise = false;
-  bool _pearls = false;
-  bool _creampuff = false;
-  bool _nata = false;
-  bool _oreo = false;
-  bool _jelly = false;
+  int _selectedQuantityIndex = 0;
+  String _productType = "";
 
   List<String> quantityOptions = [];
-  List<String> prices = [];
+  List<double> prices = [];
+
+  // Track selected add-ons for Milk Tea
+  late Map<String, bool> selectedAddOns;
+
+  // Define milk tea add-ons globally in the class
+  final List<Map<String, dynamic>> milkTeaAddOns = [
+    {'name': 'Black Pearls', 'price': 15.0},
+    {'name': 'Cream Puff', 'price': 20.0},
+    {'name': 'Nata', 'price': 15.0},
+    {'name': 'Oreo Crushed', 'price': 15.0},
+    {'name': 'Coffee Jelly', 'price': 15.0},
+  ];
 
   @override
   void initState() {
     super.initState();
-    if (widget.takoyakiPrices != null) {
-      quantityOptions = ['4 pcs', '8 pcs', '12 pcs'];
-      prices = [
-        widget.takoyakiPrices ?? '0',
-        widget.takoyakiPrices8 ?? '0',
-        widget.takoyakiPrices12 ?? '0',
-      ];
-    } else if (widget.mealsPrice != null) {
-      quantityOptions = ['Price'];
-      prices = [widget.mealsPrice ?? '0'];
-    } else if (widget.milkTeaRegular != null) {
-      quantityOptions = ['Regular', 'Large'];
-      prices = [
-        widget.milkTeaRegular ?? '0',
-        widget.milkTeaLarge ?? '0',
-      ];
+    fetchProductType();
+    // Initialize selectedAddOns here
+    selectedAddOns = {
+      for (var addOn in milkTeaAddOns) addOn['name'] as String: false
+    };
+  }
+
+  Future<void> fetchProductType() async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .where('productName', isEqualTo: widget.productName)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          _productType = snapshot.docs.first['productType'] ?? "";
+
+          if (_productType == "Milk Tea") {
+            quantityOptions = ['Regular', 'Large'];
+            prices = [55.0, 75.0];
+          } else if (_productType == "Takoyaki") {
+            quantityOptions = ['4 pcs', '8 pcs', '12 pcs'];
+            prices = [45.0, 85.0, 120.0];
+          } else if (_productType == "Meals") {
+            quantityOptions = ['Price'];
+            prices = [99.0];
+          }
+
+          _totalPrice = prices[_selectedQuantityIndex];
+        });
+      }
+    } catch (e) {
+      print('Error fetching product type: $e');
     }
-    assert(quantityOptions.length == prices.length);
-    _totalPrice = double.parse(prices[_selectedQuantityIndex]);
   }
 
   void _updateTotalPrice() {
-    double basePrice = double.parse(prices[_selectedQuantityIndex]);
-    double addOnsPrice = (_takoyakiSauce ? 15 : 0) +
-        (_bonitoFlakes ? 15 : 0) +
-        (_mayonnaise ? 15 : 0) +
-        (_pearls ? 15 : 0) +
-        (_creampuff ? 20 : 0) +
-        (_nata ? 15 : 0) +
-        (_oreo ? 15 : 0) +
-        (_jelly ? 15 : 0);
+    double addOnTotal = milkTeaAddOns.fold(0.0, (sum, addOn) {
+      if (selectedAddOns[addOn['name']] ?? false) {
+        return sum + addOn['price'];
+      }
+      return sum;
+    });
+
     setState(() {
-      _totalPrice = (basePrice + addOnsPrice) * _quantity;
+      _totalPrice = prices[_selectedQuantityIndex] * _quantity + addOnTotal;
     });
   }
 
-  // Add to Cart function
-  Future<void> addToCart({
+  void addToCart({
     required String userName,
     required String productName,
     required String productType,
     required String sizeQuantity,
     required int quantity,
     required double total,
-  }) async {
-    try {
-      CollectionReference cart = FirebaseFirestore.instance
-          .collection('customer')
-          .doc(widget.uid)
-          .collection('cart');
-
-      await cart.doc(productName).set({
-        'productName': productName,
-        'productType': productType,
-        'sizeQuantity': sizeQuantity,
-        'quantity': quantity,
-        'total': total,
-        'takoyakiSauce': _takoyakiSauce,
-        'bonitoFlakes': _bonitoFlakes,
-        'mayonnaise': _mayonnaise,
-        'pearls': _pearls,
-        'creampuff': _creampuff,
-        'nata': _nata,
-        'oreo': _oreo,
-        'jelly': _jelly,
-      });
-    } catch (e) {}
+  }) {
+    print(
+        'Adding to cart: $productName, $sizeQuantity, Quantity: $quantity, Total: ₱$total');
   }
 
   @override
@@ -252,14 +241,11 @@ class _ProductViewState extends State<ProductView> {
                     style: const TextStyle(
                         fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    '₱${prices[_selectedQuantityIndex]}',
-                    style: const TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
+
                   const SizedBox(height: 16.0),
                   Text('Choose Quantity/Size:',
                       style: const TextStyle(fontSize: 16)),
+                  // Quantity/Size options
                   ...List.generate(quantityOptions.length, (index) {
                     return RadioListTile<int>(
                       value: index,
@@ -274,6 +260,7 @@ class _ProductViewState extends State<ProductView> {
                       },
                     );
                   }),
+
                   const SizedBox(height: 16.0),
                   Row(
                     children: [
@@ -300,95 +287,26 @@ class _ProductViewState extends State<ProductView> {
                       ),
                     ],
                   ),
-                  if (widget.takoyakiPrices != null) ...[
-                    const SizedBox(height: 16.0),
-                    Text('Add-ons:', style: const TextStyle(fontSize: 16)),
-                    CheckboxListTile(
-                      title:
-                          const Text('Takoyaki Sauce (Original/Spicy) (₱15)'),
-                      value: _takoyakiSauce,
-                      onChanged: (value) {
-                        setState(() {
-                          _takoyakiSauce = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Bonito Flakes (₱15)'),
-                      value: _bonitoFlakes,
-                      onChanged: (value) {
-                        setState(() {
-                          _bonitoFlakes = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Mayonnaise (₱15)'),
-                      value: _mayonnaise,
-                      onChanged: (value) {
-                        setState(() {
-                          _mayonnaise = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
+
+                  const SizedBox(height: 16.0),
+                  if (_productType == 'Milk Tea') ...[
+                    Text('Add-ons:', style: TextStyle(fontSize: 16)),
+                    ...milkTeaAddOns.map((addOn) {
+                      final addOnName = addOn['name'] as String;
+                      final addOnPrice = addOn['price'] as double;
+                      return CheckboxListTile(
+                        title: Text('$addOnName (₱$addOnPrice)'),
+                        value: selectedAddOns[addOnName] ?? false,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedAddOns[addOnName] = value!;
+                            _updateTotalPrice();
+                          });
+                        },
+                      );
+                    }),
                   ],
-                  if (widget.milkTeaRegular != null) ...[
-                    const SizedBox(height: 16.0),
-                    Text('Add-ons:', style: const TextStyle(fontSize: 16)),
-                    CheckboxListTile(
-                      title: const Text('Black Pearls (₱15)'),
-                      value: _pearls,
-                      onChanged: (value) {
-                        setState(() {
-                          _pearls = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Cream Puff (₱20)'),
-                      value: _creampuff,
-                      onChanged: (value) {
-                        setState(() {
-                          _creampuff = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Nata (₱15)'),
-                      value: _nata,
-                      onChanged: (value) {
-                        setState(() {
-                          _nata = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Oreo Crushed (₱15)'),
-                      value: _oreo,
-                      onChanged: (value) {
-                        setState(() {
-                          _oreo = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Coffee Jelly (₱15)'),
-                      value: _jelly,
-                      onChanged: (value) {
-                        setState(() {
-                          _jelly = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                  ],
+
                   const SizedBox(height: 16.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -396,13 +314,14 @@ class _ProductViewState extends State<ProductView> {
                       Text(
                         '₱${_totalPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          _addToCart(); // Call the function to add to cart
-                        },
-                        child: const Text('Add to Cart'),
+                        onPressed:
+                            _addToCart, // Calls the _addToCart method directly
+                        child: Text('Add to Cart'),
                       ),
                     ],
                   ),
@@ -415,12 +334,13 @@ class _ProductViewState extends State<ProductView> {
     );
   }
 
+  // Your _addToCart method definition remains the same:
   Future<void> _addToCart() async {
     String sizeQuantity;
-    if (widget.productType == 'milktea') {
+    if (_productType == 'Milk Tea') {
       sizeQuantity =
           quantityOptions[_selectedQuantityIndex]; // e.g., small, medium, large
-    } else if (widget.productType == 'takoyaki') {
+    } else if (_productType == 'Takoyaki') {
       sizeQuantity =
           quantityOptions[_selectedQuantityIndex]; // e.g., 4pc, 8pc, 12pc
     } else {
@@ -436,14 +356,13 @@ class _ProductViewState extends State<ProductView> {
       // Add a new document with unique ID to allow multiple configurations
       await cart.add({
         'productName': widget.productName,
-        'productType': widget.productType,
+        'productType': _productType,
         'sizeQuantity': sizeQuantity,
         'quantity': _quantity,
         'total': _totalPrice,
-        'takoyakiSauce': _takoyakiSauce,
-        'bonitoFlakes': _bonitoFlakes,
-        'mayonnaise': _mayonnaise,
       });
-    } catch (e) {}
+    } catch (e) {
+      print("Error adding to cart: $e"); // You may want to handle the error
+    }
   }
 }

@@ -10,6 +10,7 @@ import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/featured_products.dart';
+import 'package:itsa_food_app/widgets/game_card.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
@@ -40,7 +41,7 @@ class CustomerMainHome extends StatefulWidget {
 class _CustomerMainHomeState extends State<CustomerMainHome> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<DocumentSnapshot> _featuredProduct; // Non-nullable and cached
+  late Future<DocumentSnapshot> _featuredProduct;
 
   @override
   void initState() {
@@ -50,6 +51,11 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         .collection('featured')
         .doc('featured')
         .get(); // Initialize once
+    _fetchDataAndUpdateUI(); // Move this out of didChangeDependencies
+  }
+
+  Future<void> _fetchDataAndUpdateUI() async {
+    await Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
   }
 
   Future<void> _updateLastActiveTime() async {
@@ -59,14 +65,13 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
     print("Last active time updated: $currentTime");
   }
 
-  Future<void> _fetchDataAndUpdateUI() async {
-    await Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
-    // Avoid excessive setState calls
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<UserProvider>(context, listen: false).fetchCurrentUser();
-    setState(() {}); // Only update UI for RefreshIndicator
+    await _fetchDataAndUpdateUI();
   }
 
   void _onItemTapped(int index) {
@@ -159,20 +164,40 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: user != null
-                  ? FeaturedProductWidget(
-                      featuredProduct: _featuredProduct,
-                      userName: widget.userName, // Pass the parameters
-                      emailAddress: widget.emailAddress,
-                      email: widget.email,
-                      imageUrl: widget.imageUrl,
-                      uid: widget.uid,
-                      userAddress: widget.userAddress,
-                      latitude: widget.latitude,
-                      longitude: widget.longitude,
-                    )
-                  : Text('No user is logged in',
-                      style: TextStyle(fontSize: 16)),
+              child: Column(
+                children: [
+                  SizedBox(height: 10),
+                  GameCard(),
+                  SizedBox(height: 20),
+                  FutureBuilder<DocumentSnapshot>(
+                    future: _featuredProduct,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator(); // Show a loading spinner
+                      }
+                      if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      }
+                      if (!snapshot.hasData) {
+                        return Text('No featured product data');
+                      }
+
+                      // Pass the data to FeaturedProductWidget
+                      return FeaturedProductWidget(
+                        featuredProduct: _featuredProduct,
+                        userName: user?.userName ?? '',
+                        emailAddress: user?.emailAddress ?? '',
+                        email: user?.email ?? '',
+                        imageUrl: user?.imageUrl ?? '',
+                        uid: user?.uid ?? '',
+                        userAddress: user?.userAddress ?? '',
+                        latitude: user?.latitude ?? 0.0,
+                        longitude: user?.longitude ?? 0.0,
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

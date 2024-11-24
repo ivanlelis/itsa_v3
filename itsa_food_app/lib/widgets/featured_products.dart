@@ -1,10 +1,8 @@
-// featured_product_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
-
+import 'package:itsa_food_app/customer_pages/order_featured.dart';
 class FeaturedProductWidget extends StatelessWidget {
   final Future<DocumentSnapshot> featuredProduct;
   final String userName;
@@ -16,7 +14,8 @@ class FeaturedProductWidget extends StatelessWidget {
   final double latitude;
   final double longitude;
 
-  FeaturedProductWidget({
+  const FeaturedProductWidget({
+    super.key,
     required this.featuredProduct,
     required this.userName,
     required this.emailAddress,
@@ -41,7 +40,7 @@ class FeaturedProductWidget extends StatelessWidget {
             Text(
               'Featured Product',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
@@ -69,7 +68,7 @@ class FeaturedProductWidget extends StatelessWidget {
               child: Text(
                 'View full menu',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: Colors.orangeAccent,
                 ),
@@ -147,7 +146,8 @@ class FeaturedProductWidget extends StatelessWidget {
                           ),
                           child: Image.network(
                             imageUrl,
-                            height: 140, // Reduced height to minimize space
+                            height:
+                                200, // Increased height to make the image larger
                             width: double.infinity,
                             fit: BoxFit.cover,
                           ),
@@ -243,7 +243,26 @@ class FeaturedProductWidget extends StatelessWidget {
                               alignment: Alignment.centerRight,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // Add "Order Now" button functionality here
+                                  // Navigate to OrderFeatured and pass the required parameters
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrderFeatured(
+                                        userName: userName,
+                                        emailAddress: emailAddress,
+                                        email: email,
+                                        imageUrl: imageUrl,
+                                        uid: uid,
+                                        userAddress: userAddress,
+                                        latitude: latitude,
+                                        longitude: longitude,
+                                        productName: productName,
+                                        startDate: startDate,
+                                        endDate: endDate,
+                                        exBundle: exBundle,
+                                      ),
+                                    ),
+                                  );
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.orangeAccent,
@@ -264,6 +283,7 @@ class FeaturedProductWidget extends StatelessWidget {
                                 ),
                               ),
                             ),
+
                           ],
                         ),
                       ),
