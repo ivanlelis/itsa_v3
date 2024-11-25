@@ -21,6 +21,7 @@ class PickupTab extends StatefulWidget {
   final String imageUrl;
   final String orderType;
   final String email;
+  final String? selectedItemName;
 
   const PickupTab({
     super.key,
@@ -38,6 +39,7 @@ class PickupTab extends StatefulWidget {
     required this.imageUrl,
     required this.orderType,
     required this.email,
+    this.selectedItemName,
   });
 
   @override
@@ -232,7 +234,8 @@ class _PickupTabState extends State<PickupTab> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      voucherDescription ?? 'No description available',
+                                      voucherDescription ??
+                                          'No description available',
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.teal[700],
@@ -248,7 +251,10 @@ class _PickupTabState extends State<PickupTab> {
                     ],
                   ],
                   const SizedBox(height: 16),
-                  CartProductsSection(cartItems: widget.cartItems),
+                  CartProductsSection(
+                    cartItems: widget.cartItems,
+                    selectedItemName: widget.selectedItemName,
+                  ),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -296,6 +302,7 @@ class _PickupTabState extends State<PickupTab> {
                             emailAddress: widget.emailAddress,
                             email: widget.email,
                             imageUrl: widget.imageUrl,
+                            selectedItemName: widget.selectedItemName,
                           ),
                         ),
                       );

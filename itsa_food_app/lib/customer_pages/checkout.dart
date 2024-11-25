@@ -19,6 +19,7 @@ class Checkout extends StatefulWidget {
   final double longitude;
   final String userAddress;
   final List<Map<String, dynamic>> cartItems;
+  final String selectedItemName;
 
   const Checkout({
     super.key,
@@ -32,6 +33,7 @@ class Checkout extends StatefulWidget {
     required this.longitude,
     required this.userAddress,
     required this.cartItems,
+    required this.selectedItemName,
   });
 
   @override
@@ -385,7 +387,11 @@ class _CheckoutState extends State<Checkout>
                           ),
                         ),
                       const SizedBox(height: 16),
-                      CartProductsSection(cartItems: widget.cartItems),
+                      CartProductsSection(
+                        cartItems: widget.cartItems,
+                        selectedItemName:
+                            widget.selectedItemName, // Pass selectedItemName
+                      ),
                     ],
                   ),
                 ),
@@ -417,6 +423,7 @@ class _CheckoutState extends State<Checkout>
                     });
                   },
                   cartItems: widget.cartItems,
+                  selectedItemName: widget.selectedItemName,
                   originalTotalAmount: originalTotalAmount,
                 ),
               ],
@@ -462,6 +469,7 @@ class _CheckoutState extends State<Checkout>
                             orderType: orderType ?? "Delivery",
                             email: widget.email,
                             imageUrl: widget.imageUrl,
+                            selectedItemName: widget.selectedItemName,
                           ),
                         ),
                       );

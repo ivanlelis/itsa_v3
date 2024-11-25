@@ -162,9 +162,13 @@ class FeaturedProductWidget extends StatelessWidget {
                       var productData =
                           productDoc.data() as Map<String, dynamic>;
                       var imageUrl = productData['imageUrl'] ?? '';
+                      var priceField = productData['price'] ??
+                          productData['4pc'] ??
+                          productData['regular'] ??
+                          '';
 
                       return Card(
-                        elevation: 5,
+                        elevation: 4,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -190,20 +194,45 @@ class FeaturedProductWidget extends StatelessWidget {
                               ),
                             Padding(
                               padding:
-                                  const EdgeInsets.all(8.0), // Reduced padding
+                                  const EdgeInsets.all(15.0), // Reduced padding
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(height: 4), // Reduced space
                                   // Product Name with stylized font
-                                  Text(
-                                    productName,
-                                    style: TextStyle(
-                                      fontSize: 20, // Reduced font size
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                      letterSpacing: 0.5,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        productName,
+                                        style: TextStyle(
+                                          fontSize: 20, // Reduced font size
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                          width:
+                                              8), // Space between name and price field
+                                      if (priceField.isNotEmpty)
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          child: Text(
+                                            'Starts with ₱$priceField',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   Divider(color: Colors.grey[300]),
                                   SizedBox(height: 4), // Reduced space

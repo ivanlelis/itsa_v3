@@ -39,11 +39,15 @@ class OrderFeatured extends StatefulWidget {
 class _OrderFeaturedState extends State<OrderFeatured> {
   int _quantity = 1;
   double _totalPrice = 0.0;
-  int _selectedQuantityIndex = 0;
+  String _selectedQuantityIndex = '';
   String _productType = "";
+  double _addOnTotal = 0.0;
 
   List<String> quantityOptions = [];
   List<double> prices = [];
+  List<Map<String, String>> productDetails = [];
+  int? selectedCardIndex;
+  ValueNotifier<int?> selectedCardIndexNotifier = ValueNotifier<int?>(null);
 
   // Track selected add-ons for Milk Tea
   late Map<String, bool> selectedAddOns;
@@ -65,6 +69,28 @@ class _OrderFeaturedState extends State<OrderFeatured> {
     selectedAddOns = {
       for (var addOn in milkTeaAddOns) addOn['name'] as String: false
     };
+
+    if (widget.exBundle == "1 Free Regular Milktea") {
+      fetchProductDetails(); // Fetch product names if exBundle condition is met
+    }
+  }
+
+  Future<void> fetchProductDetails() async {
+    try {
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('products').get();
+
+      setState(() {
+        productDetails = snapshot.docs.map((doc) {
+          return {
+            'productName': doc['productName'] as String,
+            'imageUrl': doc['imageUrl'] as String,
+          };
+        }).toList();
+      });
+    } catch (e) {
+      print('Error fetching product details: $e');
+    }
   }
 
   Future<void> fetchProductType() async {
@@ -79,6 +105,7 @@ class _OrderFeaturedState extends State<OrderFeatured> {
         setState(() {
           _productType = snapshot.docs.first['productType'] ?? "";
 
+          // Set quantity options and prices based on product type
           if (_productType == "Milk Tea") {
             quantityOptions = ['Regular', 'Large'];
             prices = [55.0, 75.0];
@@ -90,7 +117,8 @@ class _OrderFeaturedState extends State<OrderFeatured> {
             prices = [99.0];
           }
 
-          _totalPrice = prices[_selectedQuantityIndex];
+          // Set total price based on selected quantity
+          _updateTotalPrice();
         });
       }
     } catch (e) {
@@ -99,16 +127,17 @@ class _OrderFeaturedState extends State<OrderFeatured> {
   }
 
   void _updateTotalPrice() {
-    double addOnTotal = milkTeaAddOns.fold(0.0, (sum, addOn) {
-      if (selectedAddOns[addOn['name']] ?? false) {
-        return sum + addOn['price'];
-      }
-      return sum;
-    });
+    // Find the index of the selected quantity and calculate the total price
+    int selectedIndex = quantityOptions.indexOf(_selectedQuantityIndex);
+    if (selectedIndex != -1) {
+      _totalPrice = prices[selectedIndex] * _quantity + _addOnTotal;
+    }
+  }
 
-    setState(() {
-      _totalPrice = prices[_selectedQuantityIndex] * _quantity + addOnTotal;
-    });
+  @override
+  void dispose() {
+    selectedCardIndexNotifier.dispose(); // Don't forget to dispose
+    super.dispose();
   }
 
   void addToCart({
@@ -241,26 +270,26 @@ class _OrderFeaturedState extends State<OrderFeatured> {
                     style: const TextStyle(
                         fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 16.0),
                   Text('Choose Quantity/Size:',
                       style: const TextStyle(fontSize: 16)),
-                  // Quantity/Size options
                   ...List.generate(quantityOptions.length, (index) {
-                    return RadioListTile<int>(
-                      value: index,
+                    return RadioListTile<String>(
+                      // Change the type to String
+                      value: quantityOptions[
+                          index], // Store the actual quantity/size value
                       groupValue: _selectedQuantityIndex,
                       title:
                           Text('${quantityOptions[index]} - ₱${prices[index]}'),
                       onChanged: (value) {
                         setState(() {
-                          _selectedQuantityIndex = value!;
+                          _selectedQuantityIndex =
+                              value!; // Now holding the actual value
                           _updateTotalPrice();
                         });
                       },
                     );
                   }),
-
                   const SizedBox(height: 16.0),
                   Row(
                     children: [
@@ -287,7 +316,6 @@ class _OrderFeaturedState extends State<OrderFeatured> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 16.0),
                   if (_productType == 'Milk Tea') ...[
                     Text('Add-ons:', style: TextStyle(fontSize: 16)),
@@ -306,7 +334,173 @@ class _OrderFeaturedState extends State<OrderFeatured> {
                       );
                     }),
                   ],
+                  if (widget.exBundle == "1 Free Regular Milktea")
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Center(
+                            child: Text(
+                              "Select 1 Free Regular-sized Milktea",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                        ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double cardWidth = 150; // Width of each card
+                            double spacing =
+                                8.0; // Horizontal spacing between cards
+                            int cardsPerRow =
+                                (constraints.maxWidth / (cardWidth + spacing))
+                                    .floor();
 
+                            return StatefulBuilder(
+                              builder: (context, setState) {
+                                return Wrap(
+                                  spacing:
+                                      spacing, // Horizontal spacing between cards
+                                  runSpacing:
+                                      spacing, // Vertical spacing between cards
+                                  alignment: WrapAlignment.start,
+                                  children: List.generate(productDetails.length,
+                                      (index) {
+                                    final productDetail = productDetails[index];
+                                    final isSelected =
+                                        selectedCardIndex == index;
+
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          if (selectedCardIndex == index) {
+                                            // Unselect the card if it's already selected
+                                            selectedCardIndex = null;
+                                          } else {
+                                            // Select the card
+                                            selectedCardIndex = index;
+                                          }
+                                        });
+                                      },
+                                      child: AnimatedContainer(
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        curve: Curves.easeInOut,
+                                        width: (constraints.maxWidth -
+                                                (cardsPerRow - 1) * spacing) /
+                                            cardsPerRow,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          color: isSelected
+                                              ? Colors.green.withOpacity(0.1)
+                                              : Colors.white,
+                                          boxShadow: isSelected
+                                              ? []
+                                              : [
+                                                  BoxShadow(
+                                                    color: Colors.grey
+                                                        .withOpacity(0.3),
+                                                    blurRadius: 4,
+                                                    offset: const Offset(2, 2),
+                                                  ),
+                                                ],
+                                        ),
+                                        transform: isSelected
+                                            ? (Matrix4.identity()
+                                              ..scale(
+                                                  0.95)) // Use cascade operator
+                                            : Matrix4.identity(),
+                                        child: Stack(
+                                          children: [
+                                            Card(
+                                              elevation: isSelected ? 0 : 2,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  ClipRRect(
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(12),
+                                                      topRight:
+                                                          Radius.circular(12),
+                                                    ),
+                                                    child: Image.network(
+                                                      productDetail[
+                                                          'imageUrl']!,
+                                                      height: 140,
+                                                      width: double.infinity,
+                                                      fit: BoxFit.cover,
+                                                      color: isSelected
+                                                          ? Colors.black
+                                                              .withOpacity(0.3)
+                                                          : null,
+                                                      colorBlendMode: isSelected
+                                                          ? BlendMode.darken
+                                                          : null,
+                                                    ),
+                                                  ),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(
+                                                      productDetail[
+                                                          'productName']!,
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            if (isSelected)
+                                              Positioned(
+                                                top: 8,
+                                                right: 8,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: Colors.green,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.all(4),
+                                                  child: const Icon(
+                                                    Icons.check,
+                                                    size: 16,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 16.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -319,8 +513,9 @@ class _OrderFeaturedState extends State<OrderFeatured> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed:
-                            _addToCart, // Calls the _addToCart method directly
+                        onPressed: () {
+                          _addToCart(); // Pass the selectedCardIndex when calling _addToCart
+                        },
                         child: Text('Add to Cart'),
                       ),
                     ],
@@ -334,17 +529,12 @@ class _OrderFeaturedState extends State<OrderFeatured> {
     );
   }
 
-  // Your _addToCart method definition remains the same:
   Future<void> _addToCart() async {
-    String sizeQuantity;
-    if (_productType == 'Milk Tea') {
-      sizeQuantity =
-          quantityOptions[_selectedQuantityIndex]; // e.g., small, medium, large
-    } else if (_productType == 'Takoyaki') {
-      sizeQuantity =
-          quantityOptions[_selectedQuantityIndex]; // e.g., 4pc, 8pc, 12pc
-    } else {
-      sizeQuantity = ''; // Meals don't have size/quantity specified
+    String? selectedItemName;
+
+    // Assign the selected product name based on the selectedCardIndex
+    if (selectedCardIndex != null) {
+      selectedItemName = productDetails[selectedCardIndex!]['productName'];
     }
 
     try {
@@ -353,16 +543,52 @@ class _OrderFeaturedState extends State<OrderFeatured> {
           .doc(widget.uid)
           .collection('cart');
 
-      // Add a new document with unique ID to allow multiple configurations
-      await cart.add({
-        'productName': widget.productName,
-        'productType': _productType,
-        'sizeQuantity': sizeQuantity,
-        'quantity': _quantity,
-        'total': _totalPrice,
-      });
+      // Get all documents inside the cart collection
+      QuerySnapshot existingItems = await cart.get();
+
+      bool isItemFoundWithSelectedItemName = false;
+
+      // Loop through the documents in the cart collection
+      for (var doc in existingItems.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+
+        // Check if the document has a 'selectedItemName' field
+        if (data.containsKey('selectedItemName')) {
+          // If the selectedItemName in Firestore is different from the one to be added
+          if (data['selectedItemName'] != selectedItemName) {
+            // Update the existing document with the new selectedItemName
+            await doc.reference.update({
+              'selectedItemName': selectedItemName,
+            });
+          }
+          isItemFoundWithSelectedItemName = true;
+          break; // Exit the loop if we find any matching `selectedItemName`
+        }
+      }
+
+      // If no matching selectedItemName was found, create a new document without selectedItemName
+      if (!isItemFoundWithSelectedItemName) {
+        await cart.add({
+          'productName': widget.productName,
+          'productType': _productType,
+          'sizeQuantity': _selectedQuantityIndex,
+          'quantity': _quantity,
+          'total': _totalPrice,
+          // Add selectedItemName only if no matching item exists
+          if (selectedItemName != null) 'selectedItemName': selectedItemName,
+        });
+      } else {
+        // If a matching selectedItemName was found, create a new document without selectedItemName
+        await cart.add({
+          'productName': widget.productName,
+          'productType': _productType,
+          'sizeQuantity': _selectedQuantityIndex,
+          'quantity': _quantity,
+          'total': _totalPrice,
+        });
+      }
     } catch (e) {
-      print("Error adding to cart: $e"); // You may want to handle the error
+      print('Failed to add to cart: $e');
     }
   }
 }

@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/featured_products.dart';
 import 'package:itsa_food_app/widgets/game_card.dart';
+import 'package:itsa_food_app/widgets/trend_product.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
@@ -196,6 +197,18 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                       );
                     },
                   ),
+                  SizedBox(height: 15),
+                  TrendProduct(
+                    userName: user?.userName ?? '',
+                    emailAddress: user?.emailAddress ?? '',
+                    email: user?.email ?? '',
+                    imageUrl: user?.imageUrl ?? '',
+                    uid: user?.uid ?? '',
+                    userAddress: user?.userAddress ?? '',
+                    latitude: user?.latitude ?? 0.0,
+                    longitude: user?.longitude ?? 0.0,
+                  ),
+                  SizedBox(height: 30),
                 ],
               ),
             ),

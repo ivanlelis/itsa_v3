@@ -43,7 +43,7 @@ class _GameCardState extends State<GameCard>
             scale: _isTapped ? 0.97 : 1.0,
             duration: Duration(milliseconds: 200),
             child: Card(
-              elevation: 10,
+              elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),

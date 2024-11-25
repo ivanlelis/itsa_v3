@@ -22,6 +22,7 @@ class ConfirmPayment extends StatefulWidget {
   final String orderType;
   final String email;
   final String imageUrl;
+  final String? selectedItemName;
 
   const ConfirmPayment({
     super.key,
@@ -39,6 +40,7 @@ class ConfirmPayment extends StatefulWidget {
     required this.orderType,
     required this.email,
     required this.imageUrl,
+    this.selectedItemName,
   });
 
   @override
@@ -47,6 +49,7 @@ class ConfirmPayment extends StatefulWidget {
 
 class _ConfirmPaymentState extends State<ConfirmPayment> {
   String discountDescription = '';
+  String? selectedItemName;
   File? _receiptImage; // To store the selected receipt image
 
   final ImagePicker _picker = ImagePicker();
@@ -131,8 +134,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       _showErrorDialog(
           'Please attach your payment receipt before confirming the payment.');
     } else {
-      // Proceed with the payment confirmation logic (e.g., creating the order)
-      _createOrder(_receiptImage); // Pass the receipt image file here
+      // No need to pass selectedItemName anymore, use the class-level variable directly
+      _createOrder(_receiptImage);
     }
   }
 
@@ -159,6 +162,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _createOrder(File? paymentReceiptImage) async {
     String orderID = _generateOrderID();
+    String documentName = widget.selectedItemName == null
+        ? orderID
+        : "exBundle-${orderID}"; // Access widget.selectedItemName
 
     // Use the current date and time in the Philippines
     DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
@@ -209,6 +215,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 widget.orderType.toLowerCase() == 'pickup') &&
             widget.paymentMethod.toLowerCase() == 'gcash')
           'paymentReceipt': paymentReceiptUrl,
+        if (widget.selectedItemName != null)
+          'exBundle': widget.selectedItemName, // Use widget.selectedItemName
       };
 
       // Step 3: Create the order in Firestore
@@ -216,13 +224,13 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .collection('customer')
           .doc(widget.uid)
           .collection('orders')
-          .doc(orderID)
+          .doc(documentName) // Use dynamic document name
           .set(orderData);
 
       // Step 4: Create the notification in Firestore
       await FirebaseFirestore.instance
           .collection('notifications')
-          .doc(orderID)
+          .doc(documentName) // Use dynamic document name
           .set(orderData);
 
       // Step 5: Calculate raw material costs and save the transaction
@@ -432,13 +440,93 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     return costs;
   }
 
-  Future<void> _updateStockFromCartItems() async {
+  Future<Map<String, dynamic>> freeRawMatCost(String selectedItemName) async {
+    // Fetch product details from Firestore for the selected item
+    QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+        .collection('products')
+        .where('productName', isEqualTo: selectedItemName)
+        .limit(1)
+        .get();
+
+    if (productSnapshot.docs.isNotEmpty) {
+      DocumentSnapshot productDoc = productSnapshot.docs.first;
+
+      List ingredients = productDoc['ingredients'];
+      double rawMatCost = 0.0;
+
+      List<Map<String, dynamic>> productIngredients = [];
+
+      for (var ingredient in ingredients) {
+        String ingredientName = ingredient['name'];
+        String quantityString = ingredient['quantity'];
+        double quantity = double.tryParse(quantityString.split(' ')[0]) ?? 0;
+
+        // Extract unit from the quantity (e.g., "ml", "grams", "liters")
+        String unit = quantityString.split(' ')[1];
+
+        // Log ingredient and quantity
+        print('Ingredient: ${ingredient['name']}, Quantity: $quantity $unit');
+
+        // Fetch raw material details
+        DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
+            .collection('rawStock')
+            .doc(ingredientName)
+            .get();
+
+        if (rawMaterialDoc.exists) {
+          double costPerMl = rawMaterialDoc['costPerMl'] ?? 0.0;
+          double costPerGram = rawMaterialDoc['costPerGram'] ?? 0.0;
+          double costPerLiter = rawMaterialDoc['costPerLiter'] ?? 0.0;
+          double pricePerUnit = rawMaterialDoc['pricePerUnit'] ?? 0.0;
+          double conversionRate = rawMaterialDoc['conversionRate'] ?? 1.0;
+
+          double cost = 0.0;
+
+          // Calculate cost based on unit
+          if (unit == 'ml') {
+            cost = quantity * costPerMl;
+          } else if (unit == 'grams') {
+            cost = quantity * costPerGram;
+          } else if (unit == 'liters') {
+            cost = quantity * costPerLiter;
+          } else {
+            // Fallback to the existing logic for other units
+            cost = (quantity / conversionRate) * pricePerUnit;
+          }
+
+          rawMatCost += cost;
+
+          productIngredients.add({
+            'name': ingredientName,
+            'quantity': ingredient['quantity'], // Keep the full quantity string
+            'cost': cost,
+          });
+        }
+      }
+
+      return {
+        'freeItem': selectedItemName,
+        'freeRawMatCost': rawMatCost,
+        'productIngredients': productIngredients,
+      };
+    } else {
+      throw Exception(
+          'Product with name $selectedItemName not found in Firestore');
+    }
+  }
+
+  Future<void> _updateStockFromCartItems({String? selectedItemName}) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
     // Step 1: Fetch all product names from cart items
     List<String> productNames = _getProductNames();
 
-    // Step 2: Fetch all product details in parallel
+    // Step 2: Include selectedItemName if provided
+    if (selectedItemName != null) {
+      productNames.add(selectedItemName);
+    }
+
+    // Step 3: Fetch all product details in parallel
     List<QuerySnapshot> productSnapshots = await Future.wait(
       productNames.map(
         (productName) => FirebaseFirestore.instance
@@ -449,7 +537,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       ),
     );
 
-    // Step 3: Collect all raw material stock IDs needed
+    // Step 4: Collect all raw material stock IDs needed
     Set<String> rawStockIds = {};
     for (var productSnapshot in productSnapshots) {
       if (productSnapshot.docs.isNotEmpty) {
@@ -461,7 +549,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       }
     }
 
-    // Step 4: Fetch all required raw material documents in one query
+    // Step 5: Fetch all required raw material documents in one query
     List<DocumentSnapshot> rawMaterialDocs = await Future.wait(
       rawStockIds.map(
         (matName) => FirebaseFirestore.instance
@@ -476,7 +564,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       for (var doc in rawMaterialDocs) doc.id: doc,
     };
 
-    // Step 5: Process and prepare stock updates
+    // Step 6: Process and prepare stock updates
     for (var productSnapshot in productSnapshots) {
       if (productSnapshot.docs.isNotEmpty) {
         var productDoc = productSnapshot.docs.first;
@@ -517,7 +605,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       }
     }
 
-    // Step 6: Commit all updates in a single batch
+    // Step 7: Commit all updates in a single batch
     await batch.commit();
   }
 
@@ -606,7 +694,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Cart Items
             _buildSectionTitle('Cart Items'),
-            _buildCartItems(),
+            _buildCartItems(
+                widget.selectedItemName ?? ''), // Pass selectedItemName here
 
             SizedBox(height: 20),
 
@@ -627,6 +716,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             _buildDetailsRow('Name:', widget.userName),
             _buildDetailsRow('Address:', widget.userAddress),
             _buildDetailsRow('Email:', widget.emailAddress),
+            _buildDetailsRow(
+                'Selected Item:', widget.selectedItemName ?? 'none'),
 
             SizedBox(height: 20),
 
@@ -648,7 +739,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Confirm Payment Button
             ElevatedButton(
-              onPressed: _onConfirmPaymentPressed, // Validate before confirming
+              onPressed: () {
+                // No need to pass selectedItemName anymore
+                _onConfirmPaymentPressed();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent,
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
@@ -682,15 +776,18 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     );
   }
 
-  Widget _buildCartItems() {
+  Widget _buildCartItems(String? selectedItemName) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.orange[50],
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey[300]!, blurRadius: 8, offset: Offset(0, 2)),
+            color: Colors.grey[300]!,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -719,12 +816,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             child: FutureBuilder<QuerySnapshot>(
               future: FirebaseFirestore.instance
                   .collection('products')
-                  .where('productName',
-                      isEqualTo: productName) // Query by productName
+                  .where('productName', isEqualTo: productName)
                   .get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator(); // While waiting for data
+                  return const CircularProgressIndicator();
                 }
 
                 if (snapshot.hasError) {
@@ -732,18 +828,15 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Text('Product not found');
+                  return const Text('Product not found');
                 }
 
-                // Now that we have the correct document, fetch its productID
                 DocumentSnapshot productDoc = snapshot.data!.docs.first;
                 Map<String, dynamic> productData =
                     productDoc.data() as Map<String, dynamic>;
 
-                // Fetch ingredients
                 ingredients = productData['ingredients'] ?? [];
 
-                // Pass the ingredients to _calculateRawMatCosts
                 _calculateRawMatCosts([
                   {
                     'productName': productName,
@@ -753,73 +846,115 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                   }
                 ]);
 
-                return ExpansionTile(
-                  tilePadding: EdgeInsets.symmetric(horizontal: 8),
-                  title: Text(
-                    item['productName'],
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (variant != 'N/A')
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Variant: $variant',
-                              style: TextStyle(fontSize: 16)),
+                    ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                      title: Text(
+                        item['productName'],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    if (size != 'N/A')
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Size: $size',
-                              style: TextStyle(fontSize: 16)),
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Qty: $quantity',
-                            style: TextStyle(fontSize: 16)),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Total: ₱${total.toStringAsFixed(2)}',
-                            style: TextStyle(fontSize: 16)),
-                      ),
-                    ),
-                    if (ingredients.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Ingredients:',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
-                              ...ingredients.map<Widget>((ingredient) {
-                                final ingredientName =
-                                    ingredient['name'] ?? 'Unknown';
-                                final ingredientQuantity =
-                                    ingredient['quantity'] ?? 'N/A';
-                                return Text(
-                                  '- $ingredientName: $ingredientQuantity',
-                                  style: TextStyle(fontSize: 14),
-                                );
-                              }),
-                            ],
+                      children: [
+                        // Display Selected Item inside the ExpansionTile
+                        if (selectedItemName != null &&
+                            selectedItemName.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 4.0),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Exclusive Bundle: Free $selectedItemName Regular Milktea',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (variant != 'N/A')
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Variant: $variant',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        if (size != 'N/A')
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Size: $size',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Qty: $quantity',
+                              style: const TextStyle(fontSize: 16),
+                            ),
                           ),
                         ),
-                      ),
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Total: ₱${total.toStringAsFixed(2)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ),
+                        if (ingredients.isNotEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Ingredients:',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  ...ingredients.map<Widget>((ingredient) {
+                                    final ingredientName =
+                                        ingredient['name'] ?? 'Unknown';
+                                    final ingredientQuantity =
+                                        ingredient['quantity'] ?? 'N/A';
+                                    return Text(
+                                      '- $ingredientName: $ingredientQuantity',
+                                      style: const TextStyle(fontSize: 14),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 );
               },
