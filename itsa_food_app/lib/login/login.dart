@@ -286,12 +286,6 @@ class _LoginPageState extends State<LoginPage> {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text(
-                            "Login",
-                            style: TextStyle(fontSize: 18),
-                          ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF291C0E),
                       foregroundColor: Colors.white,
@@ -299,6 +293,12 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator()
+                        : const Text(
+                            "Login",
+                            style: TextStyle(fontSize: 18),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -315,17 +315,17 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       );
                     },
-                    child: const Text(
-                      "Don't have an account? Sign up",
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6E473B), // New color
                       foregroundColor: Colors.white, // White text
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      "Don't have an account? Sign up",
+                      style: TextStyle(
+                        fontSize: 16,
                       ),
                     ),
                   ),
