@@ -6,9 +6,7 @@ import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/login/login.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.title});
-
-  final String title;
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     try {
       if (firebaseService.isInitialized) {
         setState(() {
-          _connectionStatus = "Firebase connected successfully!";
+          _connectionStatus = "Online";
         });
       } else {
         setState(() {
@@ -49,14 +47,13 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'Firebase Connection Status:',
+              'Sample Landing',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 20),

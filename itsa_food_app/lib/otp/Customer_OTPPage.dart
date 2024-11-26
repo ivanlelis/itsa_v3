@@ -1,11 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/main_home/customer_home.dart';
 
 class CustomerOTPPage extends StatefulWidget {
+  final String userName;
+  final String emailAddress;
   final String email;
-  const CustomerOTPPage({super.key, required this.email});
+  final String imageUrl;
+  final String uid;
+  final String userAddress;
+  final double latitude;
+  final double longitude;
+  final String otp;
+
+  const CustomerOTPPage({
+    super.key,
+    required this.userName,
+    required this.emailAddress,
+    required this.email,
+    required this.imageUrl,
+    required this.uid,
+    required this.userAddress,
+    required this.latitude,
+    required this.longitude,
+    required this.otp,
+  });
 
   @override
   State<CustomerOTPPage> createState() => _CustomerOTPPageState();
@@ -13,101 +32,11 @@ class CustomerOTPPage extends StatefulWidget {
 
 class _CustomerOTPPageState extends State<CustomerOTPPage> {
   final _otpController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _errorMessage;
   bool _isLoading = false;
-  String? _verificationId;
-  String? mobileNumber;
 
   bool get _hasError => _errorMessage != null;
 
-  // Send OTP to the user's phone number
-  void _sendOTP() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // Query Firestore to find the document with the matching email
-      var customerSnapshot = await FirebaseFirestore.instance
-          .collection('customer')
-          .where('emailAddress', isEqualTo: widget.email)
-          .get();
-
-      if (customerSnapshot.docs.isNotEmpty) {
-        // Retrieve the mobile number from the matching document
-        mobileNumber = customerSnapshot.docs.first['mobileNumber'];
-
-        if (mobileNumber == null) {
-          setState(() {
-            _errorMessage = "No mobile number found for this email.";
-            _isLoading = false;
-          });
-          return;
-        }
-
-        // Debug: print the mobile number value for troubleshooting
-        print("Mobile Number from Firestore: $mobileNumber");
-
-        // Ensure no extra spaces in the mobile number string
-        mobileNumber = mobileNumber!.trim();
-
-        // Debug: check if the phone number has the correct format
-        if (mobileNumber!.length == 13 && mobileNumber!.startsWith("+63")) {
-          print("Phone number is in correct E.164 format: $mobileNumber");
-
-          // Directly use the mobile number without modification
-          await _auth.verifyPhoneNumber(
-            phoneNumber: mobileNumber!,
-            timeout: const Duration(seconds: 60),
-            verificationCompleted: (PhoneAuthCredential credential) async {
-              await _auth.signInWithCredential(credential);
-              Fluttertoast.showToast(msg: "Phone number verified!");
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-            verificationFailed: (FirebaseAuthException e) {
-              setState(() {
-                _errorMessage = e.message;
-                _isLoading = false;
-              });
-            },
-            codeSent: (String verificationId, int? resendToken) {
-              setState(() {
-                _verificationId = verificationId;
-                _isLoading = false;
-              });
-              Fluttertoast.showToast(msg: "OTP Sent!");
-            },
-            codeAutoRetrievalTimeout: (String verificationId) {
-              setState(() {
-                _verificationId = verificationId;
-                _isLoading = false;
-              });
-            },
-          );
-        } else {
-          setState(() {
-            _errorMessage =
-                "The phone number is in an incorrect format. Please check the number.";
-            _isLoading = false;
-          });
-        }
-      } else {
-        setState(() {
-          _errorMessage = "No customer found with this email address.";
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "An unexpected error occurred: $e";
-        _isLoading = false;
-      });
-    }
-  }
-
-  // Verify OTP entered by the user
   void _verifyOTP() async {
     setState(() {
       _isLoading = true;
@@ -116,7 +45,6 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
 
     String otp = _otpController.text.trim();
 
-    // Validate OTP
     if (otp.isEmpty) {
       setState(() {
         _errorMessage = "Please enter the OTP.";
@@ -126,26 +54,37 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
     }
 
     try {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: otp,
-      );
-
-      await _auth.signInWithCredential(credential);
-      Fluttertoast.showToast(msg: "Phone number verified!");
-      Navigator.pushReplacementNamed(context, '/home');
+      // Check if the entered OTP matches the one sent
+      if (otp == widget.otp) {
+        // OTP is correct, proceed to the main customer page
+        Fluttertoast.showToast(msg: "OTP verified!");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CustomerMainHome(
+              userName: widget.userName,
+              emailAddress: widget.emailAddress,
+              email: widget.email,
+              imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
+            ),
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = "Invalid OTP. Please try again.";
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
-        _errorMessage = "Invalid OTP. Please try again.";
+        _errorMessage = "An unexpected error occurred: $e";
         _isLoading = false;
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _sendOTP(); // Automatically send OTP when the page loads
   }
 
   @override
@@ -175,11 +114,8 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.asset(
-                            'assets/images/logo.png',
-                            width: 250,
-                            height: 250,
-                          ),
+                          Image.asset('assets/images/logo.png',
+                              width: 250, height: 250),
                           const SizedBox(height: 20),
                           // OTP Field
                           TextField(
@@ -220,10 +156,8 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: Colors.redAccent,
-                                  ),
+                                  const Icon(Icons.error_outline,
+                                      color: Colors.redAccent),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -268,10 +202,8 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator()
-                        : const Text(
-                            "Verify OTP",
-                            style: TextStyle(fontSize: 18),
-                          ),
+                        : const Text("Verify OTP",
+                            style: TextStyle(fontSize: 18)),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -290,12 +222,8 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text(
-                      "Back to Login",
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
+                    child: const Text("Back to Login",
+                        style: TextStyle(fontSize: 16)),
                   ),
                 ),
               ],

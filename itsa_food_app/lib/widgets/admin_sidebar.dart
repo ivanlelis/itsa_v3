@@ -137,9 +137,7 @@ class AdminSidebar extends StatelessWidget {
       await FirebaseAuth.instance.signOut(); // Sign out from Firebase
       // Navigate to Home page without a back button
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-            builder: (context) =>
-                const HomePage(title: 'Firebase Connection Status')),
+        MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false, // This removes all previous routes
       );
     } catch (e) {

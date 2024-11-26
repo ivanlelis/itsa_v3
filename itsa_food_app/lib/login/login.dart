@@ -1,7 +1,5 @@
-// Your existing imports
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/pre_sign_up/segmentation.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/main_home/admin_home.dart';
@@ -10,6 +8,9 @@ import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:itsa_food_app/main_home/superad_home.dart';
 import 'package:itsa_food_app/otp/Customer_OTPPage.dart';
 import 'package:itsa_food_app/otp/Rider_OTPPage.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server/gmail.dart';
+import 'dart:math';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,6 +30,12 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   bool get _hasError => _errorMessage != null;
+
+  // SMTP details
+  final String smtpUsername =
+      'themostnefarious@gmail.com'; // Replace with your email
+  final String smtpPassword =
+      'gtjf grii bxkl cpjr'; // Use App Password (not your Gmail password)
 
   void _login() async {
     setState(() {
@@ -54,88 +61,96 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (userCredential.user != null && userCredential.user!.emailVerified) {
-        // Check if the email belongs to a customer
-        QuerySnapshot customerSnapshot = await FirebaseFirestore.instance
-            .collection('customer')
-            .where('emailAddress', isEqualTo: email)
-            .get();
+        // Fetch user info from FirebaseService
+        Map<String, dynamic>? userInfo =
+            await firebaseService.getCurrentUserInfo();
 
-        if (customerSnapshot.docs.isNotEmpty) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CustomerOTPPage(
-                email: email,
-              ),
-            ),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
+        if (userInfo != null) {
+          // Generate OTP and send email
+          String otp = _generateOTP();
+          await _sendOTPEmail(email, otp);
 
-        // Check if the email belongs to a rider
-        QuerySnapshot riderSnapshot = await FirebaseFirestore.instance
-            .collection('rider')
-            .where('emailAddress', isEqualTo: email)
-            .get();
-
-        if (riderSnapshot.docs.isNotEmpty) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RiderOTPPage(
-                email: email,
-                mobileNumber: riderSnapshot.docs.first['mobileNumber'],
-              ),
-            ),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-
-        // Proceed with admin or super admin process if no match is found in customer/rider collections
-        Map<String, dynamic>? adminInfo =
-            await firebaseService.getAdminInfo(email);
-        if (adminInfo != null && adminInfo.isNotEmpty) {
-          String adminEmail = adminInfo['email'] ?? "No Email Provided";
-          Provider.of<UserProvider>(context, listen: false)
-              .setAdminEmail(adminEmail);
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminHome(
-                userName: "Admin",
-                email: adminEmail,
-                imageUrl: "",
-              ),
-            ),
-          );
-        } else {
-          Map<String, dynamic>? superadInfo =
-              await firebaseService.getSuperAdInfo(email);
-          if (superadInfo != null && superadInfo.isNotEmpty) {
-            String superadEmail = superadInfo['email'] ?? "No Email Provided";
+          if (userInfo.containsKey('userName') &&
+              userInfo['emailAddress'] == email) {
+            // User is a customer
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => SuperAdminHome(
-                  userName: "Super Admin",
-                  email: superadEmail,
-                  imageUrl: "",
+                builder: (context) => CustomerOTPPage(
+                  userName: userInfo['userName'] ?? "Guest User",
+                  emailAddress: userInfo['emailAddress'] ?? "No Email Provided",
+                  imageUrl: userInfo['imageUrl'] ?? "",
+                  uid: userInfo['uid'] ?? "",
+                  email: userInfo['email'] ?? "",
+                  userAddress: userInfo['userAddress'] ?? "",
+                  latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
+                  longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
+                  otp: otp,
+                ),
+              ),
+            );
+          } else if (userInfo.containsKey('mobileNumber')) {
+            // User is a rider
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RiderOTPPage(
+                  email: email,
+                  otp: otp,
+                  mobileNumber: userInfo['mobileNumber'],
                 ),
               ),
             );
           } else {
+            // User might be an admin or super admin, check for their info
+            Map<String, dynamic>? adminInfo =
+                await firebaseService.getAdminInfo(email);
+            if (adminInfo != null && adminInfo.isNotEmpty) {
+              String adminEmail = adminInfo['email'] ?? "No Email Provided";
+              Provider.of<UserProvider>(context, listen: false)
+                  .setAdminEmail(adminEmail);
+
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AdminHome(
+                    userName: "Admin",
+                    email: adminEmail,
+                    imageUrl: "",
+                  ),
+                ),
+              );
+              return;
+            }
+
+            Map<String, dynamic>? superadInfo =
+                await firebaseService.getSuperAdInfo(email);
+            if (superadInfo != null && superadInfo.isNotEmpty) {
+              String superadEmail = superadInfo['email'] ?? "No Email Provided";
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SuperAdminHome(
+                    userName: "Super Admin",
+                    email: superadEmail,
+                    imageUrl: "",
+                  ),
+                ),
+              );
+              return;
+            }
+
             setState(() {
               _errorMessage = "User information not found.";
               _isLoading = false;
             });
+            return;
           }
+        } else {
+          setState(() {
+            _errorMessage = "User information not found.";
+            _isLoading = false;
+          });
         }
       } else {
         setState(() {
@@ -153,6 +168,33 @@ class _LoginPageState extends State<LoginPage> {
         _errorMessage = "An unexpected error occurred.";
         _isLoading = false;
       });
+    }
+  }
+
+  String _generateOTP() {
+    Random random = Random();
+    int otp = 100000 +
+        random.nextInt(
+            900000); // Generates a random number between 100000 and 999999
+    return otp.toString();
+  }
+
+  Future<void> _sendOTPEmail(String toEmail, String otp) async {
+    final smtpServer = gmail(smtpUsername,
+        smtpPassword); // Use the gmail() function for SMTP configuration
+
+    // Create the email message
+    final message = Message()
+      ..from = Address(smtpUsername, 'ITSA Superapp') // Sender's email address
+      ..recipients.add(toEmail) // Recipient's email address
+      ..subject = 'Your OTP Code' // Subject of the email
+      ..text = 'Your OTP code is: $otp'; // Body of the email
+
+    try {
+      // Send the email
+      await send(message, smtpServer);
+    } catch (e) {
+      print('Error sending OTP email: $e');
     }
   }
 
@@ -246,16 +288,13 @@ class _LoginPageState extends State<LoginPage> {
                                     Icons.error_outline,
                                     color: Colors.redAccent,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _errorMessage!,
-                                      style: const TextStyle(
-                                        color: Colors.black87,
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                        color: Colors.redAccent,
                                         fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                        fontWeight: FontWeight.w500),
                                   ),
                                 ],
                               ),

@@ -48,8 +48,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/home', // Set the initial route
       routes: {
-        '/home': (context) =>
-            const HomePage(title: 'Firebase Connection Status'),
+        '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
         '/address': (context) {
           final args = ModalRoute.of(context)?.settings.arguments
@@ -117,8 +116,7 @@ class MyApp extends StatelessWidget {
       },
       onUnknownRoute: (settings) {
         return MaterialPageRoute(
-          builder: (context) =>
-              const HomePage(title: 'Firebase Connection Status'),
+          builder: (context) => const HomePage(),
         );
       },
     );
@@ -163,8 +161,7 @@ class _LoginCheckerState extends State<LoginChecker> {
         // User is logged in and within 30 minutes, navigate to home screen
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => const HomePage(title: 'Home')),
+          MaterialPageRoute(builder: (context) => const HomePage()),
         );
       }
     } else {

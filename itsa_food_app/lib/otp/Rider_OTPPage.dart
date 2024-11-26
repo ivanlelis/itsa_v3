@@ -5,8 +5,12 @@ import 'package:fluttertoast/fluttertoast.dart';
 class RiderOTPPage extends StatefulWidget {
   final String mobileNumber;
   final String email;
+  final String otp;
   const RiderOTPPage(
-      {super.key, required this.mobileNumber, required this.email});
+      {super.key,
+      required this.mobileNumber,
+      required this.email,
+      required this.otp});
 
   @override
   State<RiderOTPPage> createState() => _RiderOTPPageState();
