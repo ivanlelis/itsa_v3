@@ -41,7 +41,7 @@ class _OrderFeaturedState extends State<OrderFeatured> {
   double _totalPrice = 0.0;
   String _selectedQuantityIndex = '';
   String _productType = "";
-  double _addOnTotal = 0.0;
+  final double _addOnTotal = 0.0;
 
   List<String> quantityOptions = [];
   List<double> prices = [];

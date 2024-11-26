@@ -27,7 +27,7 @@ class CartProductsSection extends StatelessWidget {
               trailing: Text('₱${item['total'].toStringAsFixed(2)}'),
             ),
           );
-        }).toList(),
+        }),
         SizedBox(
           height: 5,
         ),

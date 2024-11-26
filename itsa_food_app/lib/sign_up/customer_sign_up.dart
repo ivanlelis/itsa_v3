@@ -1,7 +1,6 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
+import 'package:itsa_food_app/login/login.dart';
 
 class CustomerSignUp extends StatefulWidget {
   const CustomerSignUp({super.key});
@@ -18,7 +17,15 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
   final TextEditingController _mobileNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String _message = ''; // Variable to hold the message to display
+  String? _message; // Error message or notification
+
+  final Map<String, bool> _errors = {
+    "firstName": false,
+    "lastName": false,
+    "email": false,
+    "mobileNumber": false,
+    "password": false,
+  };
 
   Future<void> _signUp() async {
     String firstName = _firstNameController.text.trim();
@@ -27,6 +34,26 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     String mobileNumber = _mobileNumberController.text.trim();
     String password = _passwordController.text.trim();
 
+    setState(() {
+      // Validate fields
+      _errors["firstName"] = firstName.isEmpty;
+      _errors["lastName"] = lastName.isEmpty;
+      _errors["email"] = email.isEmpty;
+      _errors["mobileNumber"] = mobileNumber.isEmpty;
+      _errors["password"] = password.isEmpty;
+
+      // Clear the previous message
+      _message = null;
+    });
+
+    // If any field is empty, show an error and stop
+    if (_errors.values.any((error) => error)) {
+      setState(() {
+        _message = "All fields are required.";
+      });
+      return;
+    }
+
     try {
       await _firebaseService.signUpWithEmail(
         firstName,
@@ -34,15 +61,14 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
         email,
         mobileNumber,
         password,
-        userType: 'customer', // Add userType argument here
+        userType: 'customer',
       );
       setState(() {
-        _message =
-            "A verification link has been sent to your email."; // Update message
+        _message = "A verification link has been sent to your email.";
       });
     } catch (e) {
       setState(() {
-        _message = e.toString(); // Display the error message
+        _message = e.toString();
       });
     }
   }
@@ -50,52 +76,190 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _firstNameController,
-              decoration: const InputDecoration(labelText: 'First Name'),
-            ),
-            TextField(
-              controller: _lastNameController,
-              decoration: const InputDecoration(labelText: 'Last Name'),
-            ),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email Address'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextField(
-              controller: _mobileNumberController,
-              decoration: const InputDecoration(labelText: 'Mobile Number'),
-              keyboardType: TextInputType.phone,
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _signUp,
-              child: const Text('Sign Up'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _message,
-              style: TextStyle(
-                color: _message.contains("verification")
-                    ? Colors.green
-                    : Colors.red,
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/boba_tea_new_bg.png'),
+                fit: BoxFit.cover,
               ),
             ),
-          ],
+          ),
+          // Content
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Logo
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 250,
+                    width: 250,
+                  ),
+                  const SizedBox(height: 20),
+                  // Input Fields
+                  _buildTextField(
+                    controller: _firstNameController,
+                    hintText: 'First Name',
+                    hasError: _errors["firstName"]!,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    controller: _lastNameController,
+                    hintText: 'Last Name',
+                    hasError: _errors["lastName"]!,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    controller: _emailController,
+                    hintText: 'Email Address',
+                    keyboardType: TextInputType.emailAddress,
+                    hasError: _errors["email"]!,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    controller: _mobileNumberController,
+                    hintText: 'Mobile Number',
+                    keyboardType: TextInputType.phone,
+                    hasError: _errors["mobileNumber"]!,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    controller: _passwordController,
+                    hintText: 'Password',
+                    obscureText: true,
+                    hasError: _errors["password"]!,
+                  ),
+                  const SizedBox(height: 10),
+                  // Error Message Styling (below the last field)
+                  if (_message != null)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 2,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: _message!.contains("verification")
+                              ? Colors
+                                  .green // Green border for success messages
+                              : Colors.redAccent, // Red border for errors
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _message!.contains("verification")
+                                ? Icons
+                                    .check_circle_outline // Green checkmark for success
+                                : Icons
+                                    .error_outline, // Red exclamation for errors
+                            color: _message!.contains("verification")
+                                ? Colors.green // Green icon for success
+                                : Colors.redAccent, // Red icon for errors
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _message!,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 20),
+                  // Sign Up Button
+                  SizedBox(
+                    width: double.infinity, // Full width
+                    child: ElevatedButton(
+                      onPressed: _signUp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5A3E36),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Go Back to Login Button
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Go back to Login",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color.fromARGB(255, 255, 255, 255),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    required bool hasError, // Indicates whether this field has an error
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: hintText,
+        filled: true,
+        fillColor: Colors.white.withOpacity(1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: hasError
+              ? const BorderSide(color: Colors.red, width: 2) // Red outline
+              : BorderSide.none,
         ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
     );
   }
