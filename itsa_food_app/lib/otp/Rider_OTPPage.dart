@@ -1,153 +1,64 @@
-// Your existing imports
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:itsa_food_app/pre_sign_up/segmentation.dart';
-import 'package:itsa_food_app/services/firebase_service.dart';
-import 'package:itsa_food_app/main_home/admin_home.dart';
-import 'package:provider/provider.dart';
-import 'package:itsa_food_app/user_provider/user_provider.dart';
-import 'package:itsa_food_app/main_home/superad_home.dart';
-import 'package:itsa_food_app/otp/Customer_OTPPage.dart';
-import 'package:itsa_food_app/otp/Rider_OTPPage.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RiderOTPPage extends StatefulWidget {
+  final String mobileNumber;
+  final String email;
+  const RiderOTPPage(
+      {super.key, required this.mobileNumber, required this.email});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RiderOTPPage> createState() => _RiderOTPPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RiderOTPPageState extends State<RiderOTPPage> {
+  final _otpController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseService firebaseService = FirebaseService();
-
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
   String? _errorMessage;
   bool _isLoading = false;
+  String? _verificationId;
 
   bool get _hasError => _errorMessage != null;
 
-  void _login() async {
+  // Send OTP to the user's phone number
+  void _sendOTP() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _errorMessage = "Please fill in all fields.";
-        _isLoading = false;
-      });
-      return;
-    }
-
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+      await _auth.verifyPhoneNumber(
+        phoneNumber: widget.mobileNumber,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // If auto-retrieval or instant validation happens, sign in automatically
+          await _auth.signInWithCredential(credential);
+          Fluttertoast.showToast(msg: "Phone number verified!");
+          Navigator.pushReplacementNamed(context, '/home'); // Adjust as needed
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() {
+            _errorMessage = e.message;
+            _isLoading = false;
+          });
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          // Store the verification ID for later verification
+          setState(() {
+            _verificationId = verificationId;
+            _isLoading = false;
+          });
+          Fluttertoast.showToast(msg: "OTP Sent!");
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          setState(() {
+            _verificationId = verificationId;
+            _isLoading = false;
+          });
+        },
       );
-
-      if (userCredential.user != null && userCredential.user!.emailVerified) {
-        // Check if the email belongs to a customer
-        QuerySnapshot customerSnapshot = await FirebaseFirestore.instance
-            .collection('customer')
-            .where('emailAddress', isEqualTo: email)
-            .get();
-
-        if (customerSnapshot.docs.isNotEmpty) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CustomerOTPPage(
-                email: email,
-              ),
-            ),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-
-        // Check if the email belongs to a rider
-        QuerySnapshot riderSnapshot = await FirebaseFirestore.instance
-            .collection('rider')
-            .where('emailAddress', isEqualTo: email)
-            .get();
-
-        if (riderSnapshot.docs.isNotEmpty) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RiderOTPPage(
-                email: email,
-                mobileNumber: riderSnapshot.docs.first['mobileNumber'],
-              ),
-            ),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-
-        // Proceed with admin or super admin process if no match is found in customer/rider collections
-        Map<String, dynamic>? adminInfo =
-            await firebaseService.getAdminInfo(email);
-        if (adminInfo != null && adminInfo.isNotEmpty) {
-          String adminEmail = adminInfo['email'] ?? "No Email Provided";
-          Provider.of<UserProvider>(context, listen: false)
-              .setAdminEmail(adminEmail);
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminHome(
-                userName: "Admin",
-                email: adminEmail,
-                imageUrl: "",
-              ),
-            ),
-          );
-        } else {
-          Map<String, dynamic>? superadInfo =
-              await firebaseService.getSuperAdInfo(email);
-          if (superadInfo != null && superadInfo.isNotEmpty) {
-            String superadEmail = superadInfo['email'] ?? "No Email Provided";
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SuperAdminHome(
-                  userName: "Super Admin",
-                  email: superadEmail,
-                  imageUrl: "",
-                ),
-              ),
-            );
-          } else {
-            setState(() {
-              _errorMessage = "User information not found.";
-              _isLoading = false;
-            });
-          }
-        }
-      } else {
-        setState(() {
-          _errorMessage = "Please verify your email before logging in.";
-          _isLoading = false;
-        });
-      }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-        _isLoading = false;
-      });
     } catch (e) {
       setState(() {
         _errorMessage = "An unexpected error occurred.";
@@ -156,11 +67,55 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // Verify OTP entered by the user
+  void _verifyOTP() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    String otp = _otpController.text.trim();
+
+    // Validate OTP
+    if (otp.isEmpty) {
+      setState(() {
+        _errorMessage = "Please enter the OTP.";
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      // Create a PhoneAuthCredential with the verification ID and OTP
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+
+      // Sign in with the phone number credential
+      await _auth.signInWithCredential(credential);
+      Fluttertoast.showToast(msg: "Phone number verified!");
+      Navigator.pushReplacementNamed(context, '/home'); // Adjust as needed
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Invalid OTP. Please try again.";
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _sendOTP(); // Automatically send OTP when the page loads
+  }
+
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset:
+          false, // Prevent resizing when the keyboard appears
       body: Stack(
         children: [
           Positioned.fill(
@@ -188,10 +143,11 @@ class _LoginPageState extends State<LoginPage> {
                             height: 250,
                           ),
                           const SizedBox(height: 20),
+                          // OTP Field
                           TextField(
-                            controller: _emailController,
+                            controller: _otpController,
                             decoration: InputDecoration(
-                              hintText: "Email",
+                              hintText: "Enter OTP",
                               filled: true,
                               fillColor: Colors.white,
                               suffixIcon: _hasError
@@ -202,32 +158,9 @@ class _LoginPageState extends State<LoginPage> {
                                 borderSide: BorderSide.none,
                               ),
                             ),
+                            keyboardType: TextInputType.number,
                           ),
                           const SizedBox(height: 16),
-                          TextField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              hintText: "Password",
-                              filled: true,
-                              fillColor: Colors.white,
-                              suffixIcon: _hasError
-                                  ? Icon(Icons.error, color: Colors.red)
-                                  : null,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                            obscureText: true,
-                            onChanged: (value) {
-                              if (_hasError) {
-                                setState(() {
-                                  _errorMessage = null;
-                                });
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 10),
                           if (_errorMessage != null)
                             Container(
                               margin: const EdgeInsets.symmetric(vertical: 8),
@@ -236,6 +169,13 @@ class _LoginPageState extends State<LoginPage> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                                 border: Border.all(
                                     color: Colors.redAccent, width: 1.5),
                               ),
@@ -280,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _isLoading ? null : _verifyOTP,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF291C0E),
                       foregroundColor: Colors.white,
@@ -291,7 +231,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: _isLoading
                         ? const CircularProgressIndicator()
                         : const Text(
-                            "Login",
+                            "Verify OTP",
                             style: TextStyle(fontSize: 18),
                           ),
                   ),
@@ -302,12 +242,8 @@ class _LoginPageState extends State<LoginPage> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PreSignUpSegmentationPage(),
-                        ),
-                      );
+                      // Navigate back to login screen
+                      Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6E473B),
@@ -317,7 +253,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     child: const Text(
-                      "Don't have an account? Sign up",
+                      "Back to Login",
                       style: TextStyle(
                         fontSize: 16,
                       ),

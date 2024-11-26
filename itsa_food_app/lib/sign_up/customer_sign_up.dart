@@ -34,6 +34,11 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     String mobileNumber = _mobileNumberController.text.trim();
     String password = _passwordController.text.trim();
 
+    // Remove the +63 part from the mobile number before saving to Firestore
+    if (mobileNumber.startsWith('+63')) {
+      mobileNumber = mobileNumber.substring(3); // Strip "+63"
+    }
+
     setState(() {
       // Validate fields
       _errors["firstName"] = firstName.isEmpty;
@@ -122,12 +127,7 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                     hasError: _errors["email"]!,
                   ),
                   const SizedBox(height: 10),
-                  _buildTextField(
-                    controller: _mobileNumberController,
-                    hintText: 'Mobile Number',
-                    keyboardType: TextInputType.phone,
-                    hasError: _errors["mobileNumber"]!,
-                  ),
+                  _buildMobileNumberField(),
                   const SizedBox(height: 10),
                   _buildTextField(
                     controller: _passwordController,
@@ -261,6 +261,42 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
         contentPadding:
             const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
+    );
+  }
+
+  Widget _buildMobileNumberField() {
+    return TextField(
+      controller: _mobileNumberController,
+      keyboardType: TextInputType.phone,
+      decoration: InputDecoration(
+        hintText: 'Mobile Number',
+        prefixText: '+63 ', // Always show +63
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: _errors["mobileNumber"]!
+              ? const BorderSide(color: Colors.red, width: 2) // Red outline
+              : BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      ),
+      onChanged: (value) {
+        // Remove the +63 prefix and leading zero if present
+        if (value.startsWith('+63')) {
+          _mobileNumberController.text = value.substring(3); // Remove +63
+        } else if (value.startsWith('0')) {
+          // Remove the leading zero for local number input
+          _mobileNumberController.text =
+              value.substring(1); // Remove leading zero
+        }
+
+        // Keep the cursor at the end of the text
+        _mobileNumberController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _mobileNumberController.text.length),
+        );
+      },
     );
   }
 }
