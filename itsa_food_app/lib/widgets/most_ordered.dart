@@ -190,40 +190,50 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
               ),
             ),
             const SizedBox(height: 8),
+            // Use Row with Flexible widgets to make the buttons smaller and responsive
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                FilterButton(
-                  label: 'Today',
-                  isSelected: selectedFilter == 'Today',
-                  onTap: () {
-                    setState(() {
-                      selectedFilter = 'Today';
-                      fetchMostOrderedProduct();
-                    });
-                  },
+                Flexible(
+                  child: FilterButton(
+                    label: 'Today',
+                    isSelected: selectedFilter == 'Today',
+                    onTap: () {
+                      setState(() {
+                        selectedFilter = 'Today';
+                        fetchMostOrderedProduct();
+                      });
+                    },
+                    fontSize: 11,
+                  ),
                 ),
-                const SizedBox(width: 35), // Add space between buttons
-                FilterButton(
-                  label: '3 days',
-                  isSelected: selectedFilter == '3 days',
-                  onTap: () {
-                    setState(() {
-                      selectedFilter = '3 days';
-                      fetchMostOrderedProduct();
-                    });
-                  },
+                const SizedBox(width: 16), // Space between buttons
+                Flexible(
+                  child: FilterButton(
+                    label: '3 days',
+                    isSelected: selectedFilter == '3 days',
+                    onTap: () {
+                      setState(() {
+                        selectedFilter = '3 days';
+                        fetchMostOrderedProduct();
+                      });
+                    },
+                    fontSize: 11, // Reduced font size for "3 days"
+                  ),
                 ),
-                const SizedBox(width: 35), // Add space between buttons
-                FilterButton(
-                  label: '1 week',
-                  isSelected: selectedFilter == '1 week',
-                  onTap: () {
-                    setState(() {
-                      selectedFilter = '1 week';
-                      fetchMostOrderedProduct();
-                    });
-                  },
+                const SizedBox(width: 16), // Space between buttons
+                Flexible(
+                  child: FilterButton(
+                    label: '1 week',
+                    isSelected: selectedFilter == '1 week',
+                    onTap: () {
+                      setState(() {
+                        selectedFilter = '1 week';
+                        fetchMostOrderedProduct();
+                      });
+                    },
+                    fontSize: 10, // Reduced font size for "1 week"
+                  ),
                 ),
               ],
             ),
@@ -324,12 +334,14 @@ class FilterButton extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final double fontSize;
 
   const FilterButton({
     super.key,
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.fontSize = 14, // Default font size if not provided
   });
 
   @override
@@ -342,8 +354,19 @@ class FilterButton extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+        padding: const EdgeInsets.symmetric(
+            vertical: 8.0,
+            horizontal: 26.5), // Optional: Adjust padding if needed
       ),
-      child: Text(label),
+      child: Text(
+        label,
+        maxLines: 1, // Ensure text stays on one line
+        overflow:
+            TextOverflow.ellipsis, // Truncate text with "..." if it overflows
+        style: TextStyle(
+          fontSize: fontSize, // Font size set dynamically
+        ),
+      ),
     );
   }
 }

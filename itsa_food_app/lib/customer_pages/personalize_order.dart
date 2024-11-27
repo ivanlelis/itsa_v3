@@ -12,7 +12,7 @@ class PersonalizeOrder extends StatefulWidget {
   final double longitude;
 
   const PersonalizeOrder({
-    Key? key,
+    super.key,
     required this.userName,
     required this.emailAddress,
     required this.imageUrl,
@@ -21,7 +21,7 @@ class PersonalizeOrder extends StatefulWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
-  }) : super(key: key);
+  });
 
   @override
   _PersonalizeOrderState createState() => _PersonalizeOrderState();
@@ -63,7 +63,7 @@ class _PersonalizeOrderState extends State<PersonalizeOrder> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Select a Product"),
-          content: Container(
+          content: SizedBox(
             width: double.maxFinite,
             height: 200,
             child: ListView.builder(
@@ -131,17 +131,6 @@ class _PersonalizeOrderState extends State<PersonalizeOrder> {
                             children: leftOptions.map((option) {
                               return Draggable<String>(
                                 data: option,
-                                child: Card(
-                                  elevation: 4.0,
-                                  margin: EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      option,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
                                 feedback: Material(
                                   color: Colors.transparent,
                                   child: Card(
@@ -158,6 +147,17 @@ class _PersonalizeOrderState extends State<PersonalizeOrder> {
                                     child: Text(option),
                                   ),
                                 ),
+                                child: Card(
+                                  elevation: 4.0,
+                                  margin: EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      option,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
                               );
                             }).toList(),
                           ),
@@ -167,14 +167,17 @@ class _PersonalizeOrderState extends State<PersonalizeOrder> {
                       // Central product (Milk Tea or selected product)
                       Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: Container(
+                        child: SizedBox(
                           width:
                               screenWidth * 0.4, // Make the central product fit
                           child: DragTarget<String>(
-                            onAccept: (option) {
+                            onAcceptWithDetails:
+                                (DragTargetDetails<String> details) {
                               setState(() {
-                                selectedOption = option;
-                                mainProduct = '$mainProduct with $option';
+                                selectedOption =
+                                    details.data; // Extract the string data
+                                mainProduct =
+                                    '$mainProduct with ${details.data}';
                               });
                             },
                             builder: (context, candidateData, rejectedData) {
@@ -235,17 +238,6 @@ class _PersonalizeOrderState extends State<PersonalizeOrder> {
                             children: rightOptions.map((option) {
                               return Draggable<String>(
                                 data: option,
-                                child: Card(
-                                  elevation: 4.0,
-                                  margin: EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      option,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
                                 feedback: Material(
                                   color: Colors.transparent,
                                   child: Card(
@@ -260,6 +252,17 @@ class _PersonalizeOrderState extends State<PersonalizeOrder> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(option),
+                                  ),
+                                ),
+                                child: Card(
+                                  elevation: 4.0,
+                                  margin: EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      option,
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
                                 ),
                               );
