@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart'; // Ensure you import the provider package
@@ -26,6 +24,7 @@ class Sidebar extends StatefulWidget {
     required this.latitude,
     required this.longitude,
   });
+
   @override
   _SidebarState createState() => _SidebarState();
 }
@@ -57,108 +56,125 @@ class _SidebarState extends State<Sidebar> {
               CircularProgressIndicator()); // Show a loading indicator or handle the case when the user is not available
     }
 
+    const customColor = Color(0xFF6E473B); // Define your custom color
+
     return Column(
       children: [
         UserAccountsDrawerHeader(
-          accountName: Text(currentUser.userName),
-          accountEmail: Text(currentUser.emailAddress),
+          accountName: Text(
+            currentUser.userName,
+            style: const TextStyle(color: Colors.white),
+          ),
+          accountEmail: Text(
+            currentUser.emailAddress,
+            style: const TextStyle(color: Colors.white70),
+          ),
           currentAccountPicture: CircleAvatar(
             backgroundImage: currentUser.imageUrl.isNotEmpty
-                ? NetworkImage(currentUser
-                    .imageUrl) // Use the imageUrl from the current user
-                : const NetworkImage(
-                    'https://example.com/placeholder.png'), // Use your placeholder image URL
+                ? NetworkImage(currentUser.imageUrl)
+                : const NetworkImage('https://example.com/placeholder.png'),
+          ),
+          decoration: const BoxDecoration(
+            color: customColor, // Change the header background to your color
           ),
         ),
-        ListTile(
-          leading: const Icon(Icons.history),
-          title: const Text('Order History'),
-          onTap: () {
-            final Map<String, dynamic> args = {
-              'emailAddress': widget.emailAddress,
-              'userName': widget.userName,
-              'uid': widget.uid,
-              'latitude': widget.latitude,
-              'longitude': widget.longitude,
-            };
-
-            // Navigate to Address page with arguments
-            Navigator.pushNamed(context, '/orderHistory', arguments: args);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.person),
-          title: const Text('Profile'),
-          onTap: () {
-            final Map<String, dynamic> args = {
-              'emailAddress': widget.emailAddress,
-              'userName': widget.userName,
-              'email': widget.email,
-              'userAddress': widget.userAddress,
-              'uid': widget.uid,
-              'latitude': widget.latitude,
-              'longitude': widget.longitude,
-              'imageUrl': widget.imageUrl,
-            };
-
-            Navigator.pushNamed(context, '/profile', arguments: args);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.location_on),
-          title: const Text('Address'),
-          onTap: () {
-            // Create a map to hold the arguments
-            final Map<String, dynamic> args = {
-              'emailAddress': widget.emailAddress,
-              'userName': widget.userName,
-              'uid': widget.uid,
-              'latitude': widget.latitude,
-              'longitude': widget.longitude,
-            };
-
-            // Navigate to Address page with arguments
-            Navigator.pushNamed(context, '/address', arguments: args);
-          },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.card_giftcard),
-          title: const Text('Vouchers'),
-          onTap: () {
-            // Create a map to hold the arguments
-            final Map<String, dynamic> args = {
-              'emailAddress': widget.emailAddress,
-              'userName': widget.userName,
-              'uid': widget.uid,
-              'latitude': widget.latitude,
-              'longitude': widget.longitude,
-            };
-
-            // Navigate to Address page with arguments
-            Navigator.pushNamed(context, '/vouchers', arguments: args);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.contact_mail),
-          title: const Text('Contact Us'),
-          onTap: () {
-            // Navigate to Contact Us page
-            Navigator.pushNamed(context, '/contactUs');
-          },
-        ),
-        const Divider(), // Adds a divider line between sections
-        ListTile(
-          leading: const Icon(Icons.logout),
-          title: const Text('Log Out'),
-          onTap: () async {
-            await FirebaseAuth.instance.signOut();
-            // Navigate back to Home page and clear all previous routes
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/home', (route) => false);
-          },
+        Expanded(
+          child: ListView(
+            children: [
+              _buildSidebarItem(
+                context,
+                icon: Icons.history,
+                title: 'Order History',
+                customColor: customColor,
+                onTap: () {
+                  final args = _buildArguments();
+                  Navigator.pushNamed(context, '/orderHistory',
+                      arguments: args);
+                },
+              ),
+              _buildSidebarItem(
+                context,
+                icon: Icons.person,
+                title: 'Profile',
+                customColor: customColor,
+                onTap: () {
+                  final args = _buildArguments(includeEmail: true);
+                  Navigator.pushNamed(context, '/profile', arguments: args);
+                },
+              ),
+              _buildSidebarItem(
+                context,
+                icon: Icons.location_on,
+                title: 'Address',
+                customColor: customColor,
+                onTap: () {
+                  final args = _buildArguments();
+                  Navigator.pushNamed(context, '/address', arguments: args);
+                },
+              ),
+              _buildSidebarItem(
+                context,
+                icon: Icons.card_giftcard,
+                title: 'Vouchers',
+                customColor: customColor,
+                onTap: () {
+                  final args = _buildArguments();
+                  Navigator.pushNamed(context, '/vouchers', arguments: args);
+                },
+              ),
+              _buildSidebarItem(
+                context,
+                icon: Icons.contact_mail,
+                title: 'Contact Us',
+                customColor: customColor,
+                onTap: () {
+                  Navigator.pushNamed(context, '/contactUs');
+                },
+              ),
+              const Divider(),
+              _buildSidebarItem(
+                context,
+                icon: Icons.logout,
+                title: 'Log Out',
+                customColor: customColor,
+                onTap: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/home', (route) => false);
+                },
+              ),
+            ],
+          ),
         ),
       ],
     );
+  }
+
+  Widget _buildSidebarItem(BuildContext context,
+      {required IconData icon,
+      required String title,
+      required Color customColor,
+      required VoidCallback onTap}) {
+    return ListTile(
+      leading: Icon(icon, color: customColor), // Apply your color to the icons
+      title: Text(
+        title,
+        style: TextStyle(color: customColor), // Apply your color to the text
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Map<String, dynamic> _buildArguments({bool includeEmail = false}) {
+    return {
+      'emailAddress': widget.emailAddress,
+      'userName': widget.userName,
+      'email': includeEmail ? widget.email : null,
+      'userAddress': widget.userAddress,
+      'uid': widget.uid,
+      'latitude': widget.latitude,
+      'longitude': widget.longitude,
+      'imageUrl': widget.imageUrl,
+    };
   }
 }

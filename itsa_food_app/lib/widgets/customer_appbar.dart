@@ -166,7 +166,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
       backgroundColor: const Color(0xFF6E473B),
       toolbarHeight: 80,
       leading: IconButton(
-        icon: const Icon(Icons.menu),
+        icon: const Icon(Icons.menu,
+            color: Colors.white), // White burger menu icon
         onPressed: () {
           widget.scaffoldKey.currentState?.openDrawer();
         },
@@ -202,7 +203,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.shopping_cart),
+          icon: const Icon(Icons.shopping_cart,
+              color: Colors.white), // White cart icon
           onPressed: widget.onCartPressed,
         ),
       ],

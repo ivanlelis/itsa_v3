@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Ensure to import Firestore
+import 'package:itsa_food_app/customer_pages/select_custom.dart';
 import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
@@ -89,8 +90,25 @@ class _MenuState extends State<Menu> {
           ),
         );
         break;
-      case 2: // Favorites
-        // Navigate to the Favorites screen (replace with your actual screen)
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                SelectCustom(
+              userName: widget.userName,
+              emailAddress: widget.emailAddress,
+              imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
         break;
       case 3:
         Navigator.pushReplacement(
@@ -221,7 +239,11 @@ class _MenuState extends State<Menu> {
                     backgroundColor: Colors.grey[300],
                     minimumSize: const Size(40, 40),
                   ),
-                  child: const Icon(Icons.filter_alt, size: 20),
+                  child: const Icon(
+                    Icons.filter_alt,
+                    size: 20,
+                    color: Color(0xFFA78D78), // Updated icon color
+                  ),
                 ),
                 CategoryButton(
                   label: 'All', // Use text for 'All'
@@ -298,10 +320,10 @@ class _MenuState extends State<Menu> {
 
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                      crossAxisCount: 2, // Number of cards per row
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 0.58, // Adjust for a taller card layout
                     ),
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
@@ -496,6 +518,10 @@ class _ProductCardState extends State<ProductCard> {
     bool isOutOfStock = ingredientsStatus
         .any((ingredient) => ingredient['status'] == 'Out of Stock');
 
+    // Get screen dimensions for responsiveness
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return GestureDetector(
       onTap: () {
         if (isOutOfStock) {
@@ -535,14 +561,16 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Stack to dim the image if any ingredient is out of stock
+            // Responsive height for image
             Stack(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
                   child: SizedBox(
-                    width: double.infinity,
-                    height: 160, // Set a fixed height or adjust as needed
+                    width:
+                        screenWidth * 0.9, // Responsive width (90% of screen)
+                    height:
+                        screenHeight * 0.2, // Responsive height (20% of screen)
                     child: Image.network(
                       widget.imageUrl,
                       fit: BoxFit.cover,
@@ -554,15 +582,16 @@ class _ProductCardState extends State<ProductCard> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),
                     child: Container(
-                      width: double.infinity,
-                      height: 160, // Match the height of the image
+                      width: screenWidth * 0.9,
+                      height: screenHeight * 0.2,
                       color: Colors.black.withOpacity(0.5), // Dim the image
                       child: Center(
                         child: Text(
                           'Out of Stock',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize:
+                                screenWidth * 0.05, // Responsive font size
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -572,16 +601,20 @@ class _ProductCardState extends State<ProductCard> {
               ],
             ),
 
+            // Responsive padding and text
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: EdgeInsets.all(screenWidth * 0.02), // Dynamic padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.productName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: screenWidth * 0.045, // Responsive font size
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: screenWidth * 0.01), // Dynamic spacing
                   _buildPriceContainer(startingPriceText),
                 ],
               ),
@@ -614,19 +647,28 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   Widget _buildPriceContainer(String price) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+      padding: EdgeInsets.symmetric(
+        horizontal:
+            screenWidth * 0.03, // Adjust horizontal padding for responsiveness
+        vertical: 6.0,
+      ),
       decoration: BoxDecoration(
         color: Colors.green,
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Text(
         price,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 12.0,
+          fontSize:
+              screenWidth * 0.03, // Adjust font size based on screen width
         ),
+        overflow:
+            TextOverflow.ellipsis, // Avoid overflow if the text is too long
       ),
     );
   }
@@ -657,7 +699,8 @@ class CategoryButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? Colors.purple : Colors.grey[300],
+            backgroundColor:
+                isSelected ? const Color(0xFFA78D78) : Colors.grey[300],
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),

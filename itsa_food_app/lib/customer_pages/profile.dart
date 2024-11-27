@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:itsa_food_app/customer_pages/select_custom.dart';
 import 'dart:io';
 import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
@@ -100,7 +101,24 @@ class _ProfileViewState extends State<ProfileView> {
         );
         break;
       case 2: // Favorites
-        // Navigate to the Favorites screen (replace with your actual screen)
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                SelectCustom(
+              userName: widget.userName,
+              emailAddress: widget.emailAddress,
+              imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
         break;
     }
   }
@@ -207,7 +225,8 @@ class _ProfileViewState extends State<ProfileView> {
         automaticallyImplyLeading: false, // Removes the back button
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon:
+                Icon(Icons.refresh, color: Colors.white), // White refresh icon
             onPressed: () => _fetchUserData(context), // Refresh data on press
           ),
         ],

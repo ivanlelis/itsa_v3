@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
+import 'package:itsa_food_app/customer_pages/select_custom.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -89,6 +90,26 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => Menu(
+            userName: userProvider.currentUser?.userName ?? '',
+            emailAddress: userProvider.currentUser?.emailAddress ?? '',
+            imageUrl: userProvider.currentUser?.imageUrl ?? '',
+            uid: userProvider.currentUser?.uid ?? '',
+            email: userProvider.currentUser?.email ?? '',
+            userAddress: userProvider.currentUser?.userAddress ?? '',
+            latitude: userProvider.currentUser?.latitude ?? 0.0,
+            longitude: userProvider.currentUser?.longitude ?? 0.0,
+          ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
+
+    if (index == 2) {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => SelectCustom(
             userName: userProvider.currentUser?.userName ?? '',
             emailAddress: userProvider.currentUser?.emailAddress ?? '',
             imageUrl: userProvider.currentUser?.imageUrl ?? '',
@@ -229,7 +250,6 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
       ),
       drawer: Drawer(
         child: Container(
-          color: primaryAccentColor,
           child: Sidebar(
             userName: user?.userName ?? '',
             emailAddress: user?.emailAddress ?? '',

@@ -13,28 +13,46 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.grid_view),
-          label: 'Menu',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: 'Favorites',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'User',
-        ),
+      items: [
+        _buildNavItem(Icons.home, 'Home', 0),
+        _buildNavItem(Icons.grid_view, 'Menu', 1),
+        _buildNavItem(Icons.fastfood, 'Build Your Meal', 2),
+        _buildNavItem(Icons.person, 'User', 3),
       ],
       currentIndex: currentIndex,
-      selectedItemColor: Colors.deepPurple,
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: Color(0xFF291C0E), // Dark brown for text color
+      unselectedItemColor: Color(0xFF291C0E), // Beige for unselected items
+      backgroundColor: Color(0xFFE1D4C2), // Lightest beige for background
       onTap: onTap,
+      selectedLabelStyle: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF6E473B),
+      ),
+      unselectedLabelStyle: TextStyle(
+        fontWeight: FontWeight.normal,
+        color: Color(0xFF6E473B),
+      ),
+    );
+  }
+
+  BottomNavigationBarItem _buildNavItem(
+      IconData icon, String label, int index) {
+    return BottomNavigationBarItem(
+      icon: currentIndex == index
+          ? Container(
+              decoration: BoxDecoration(
+                color: Color(0xFFA78D78), // Dark brown for circle background
+                shape: BoxShape.circle,
+              ),
+              padding: EdgeInsets.all(8), // Adjust padding for the circle size
+              child: Icon(
+                icon,
+                size: 28, // Icon size inside the circle
+                color: Color(0xFF291C0E), // Light beige for icon color
+              ),
+            )
+          : Icon(icon), // Default icon when not selected
+      label: label,
     );
   }
 }

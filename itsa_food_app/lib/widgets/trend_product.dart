@@ -128,6 +128,9 @@ class _TrendProductState extends State<TrendProduct> {
 
   @override
   Widget build(BuildContext context) {
+    // Fetch the screen width for responsive layout
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +198,7 @@ class _TrendProductState extends State<TrendProduct> {
                                               .length >=
                                           3
                                       ? 13
-                                      : 20,
+                                      : 17,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black87,
                                 ),
@@ -227,7 +230,7 @@ class _TrendProductState extends State<TrendProduct> {
                 ),
                 Positioned(
                   bottom: 5,
-                  left: 272,
+                  left: screenWidth * 0.65, // Adjust the position dynamically
                   child: ElevatedButton(
                     onPressed: () {
                       // Navigate to OrderTrending and pass parameters
@@ -257,13 +260,16 @@ class _TrendProductState extends State<TrendProduct> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal:
+                            screenWidth * 0.03, // Reduced horizontal padding
+                        vertical: 6, // Reduced vertical padding
+                      ),
                     ),
                     child: Text(
                       'Order Now',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12, // Reduced font size for a smaller button
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
