@@ -11,6 +11,7 @@ import 'package:itsa_food_app/otp/Rider_OTPPage.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
 import 'dart:math';
+import 'package:itsa_food_app/login/forgot_pass.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -60,103 +61,108 @@ class _LoginPageState extends State<LoginPage> {
         password: password,
       );
 
-      if (userCredential.user != null && userCredential.user!.emailVerified) {
-        // Fetch user info from FirebaseService
-        Map<String, dynamic>? userInfo =
-            await firebaseService.getCurrentUserInfo();
+      if (userCredential.user != null) {
+        // Check if user is admin or super admin first
+        Map<String, dynamic>? adminInfo =
+            await firebaseService.getAdminInfo(email);
+        Map<String, dynamic>? superadInfo =
+            await firebaseService.getSuperAdInfo(email);
 
-        if (userInfo != null) {
-          // Generate OTP and send email
-          String otp = _generateOTP();
-          await _sendOTPEmail(email, otp);
+        if (adminInfo != null && adminInfo.isNotEmpty) {
+          // Bypass email verification for admin
+          String adminEmail = adminInfo['email'] ?? "No Email Provided";
+          Provider.of<UserProvider>(context, listen: false)
+              .setAdminEmail(adminEmail);
 
-          if (userInfo.containsKey('userName') &&
-              userInfo['emailAddress'] == email) {
-            // User is a customer
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CustomerOTPPage(
-                  userName: userInfo['userName'] ?? "Guest User",
-                  emailAddress: userInfo['emailAddress'] ?? "No Email Provided",
-                  imageUrl: userInfo['imageUrl'] ?? "",
-                  uid: userInfo['uid'] ?? "",
-                  email: userInfo['email'] ?? "",
-                  userAddress: userInfo['userAddress'] ?? "",
-                  latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
-                  longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
-                  otp: otp,
-                ),
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminHome(
+                userName: "Admin",
+                email: adminEmail,
+                imageUrl: "",
               ),
-            );
-          } else if (userInfo.containsKey('mobileNumber')) {
-            // User is a rider
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RiderOTPPage(
-                  email: email,
-                  otp: otp,
-                  mobileNumber: userInfo['mobileNumber'],
-                ),
+            ),
+          );
+          return;
+        }
+
+        if (superadInfo != null && superadInfo.isNotEmpty) {
+          // Bypass email verification for super admin
+          String superadEmail = superadInfo['email'] ?? "No Email Provided";
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SuperAdminHome(
+                userName: "Super Admin",
+                email: superadEmail,
+                imageUrl: "",
               ),
-            );
+            ),
+          );
+          return;
+        }
+
+        // If user is not an admin or super admin, proceed with email verification check
+        if (userCredential.user!.emailVerified) {
+          // Fetch user info from FirebaseService
+          Map<String, dynamic>? userInfo =
+              await firebaseService.getCurrentUserInfo();
+
+          if (userInfo != null) {
+            // Generate OTP and send email for customers or riders
+            String otp = _generateOTP();
+            await _sendOTPEmail(email, otp);
+
+            if (userInfo.containsKey('userName') &&
+                userInfo['emailAddress'] == email) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CustomerOTPPage(
+                    userName: userInfo['userName'] ?? "Guest User",
+                    emailAddress:
+                        userInfo['emailAddress'] ?? "No Email Provided",
+                    imageUrl: userInfo['imageUrl'] ?? "",
+                    uid: userInfo['uid'] ?? "",
+                    email: userInfo['email'] ?? "",
+                    userAddress: userInfo['userAddress'] ?? "",
+                    latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
+                    longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
+                    otp: otp,
+                  ),
+                ),
+              );
+            } else if (userInfo.containsKey('mobileNumber')) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RiderOTPPage(
+                    email: email,
+                    otp: otp,
+                    mobileNumber: userInfo['mobileNumber'],
+                  ),
+                ),
+              );
+            } else {
+              setState(() {
+                _errorMessage = "User information not found.";
+                _isLoading = false;
+              });
+            }
           } else {
-            // User might be an admin or super admin, check for their info
-            Map<String, dynamic>? adminInfo =
-                await firebaseService.getAdminInfo(email);
-            if (adminInfo != null && adminInfo.isNotEmpty) {
-              String adminEmail = adminInfo['email'] ?? "No Email Provided";
-              Provider.of<UserProvider>(context, listen: false)
-                  .setAdminEmail(adminEmail);
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AdminHome(
-                    userName: "Admin",
-                    email: adminEmail,
-                    imageUrl: "",
-                  ),
-                ),
-              );
-              return;
-            }
-
-            Map<String, dynamic>? superadInfo =
-                await firebaseService.getSuperAdInfo(email);
-            if (superadInfo != null && superadInfo.isNotEmpty) {
-              String superadEmail = superadInfo['email'] ?? "No Email Provided";
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SuperAdminHome(
-                    userName: "Super Admin",
-                    email: superadEmail,
-                    imageUrl: "",
-                  ),
-                ),
-              );
-              return;
-            }
-
             setState(() {
               _errorMessage = "User information not found.";
               _isLoading = false;
             });
-            return;
           }
         } else {
           setState(() {
-            _errorMessage = "User information not found.";
+            _errorMessage = "Please verify your email before logging in.";
             _isLoading = false;
           });
         }
-      } else {
-        setState(() {
-          _errorMessage = "Please verify your email before logging in.";
-          _isLoading = false;
-        });
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -269,7 +275,36 @@ class _LoginPageState extends State<LoginPage> {
                               }
                             },
                           ),
-                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ForgotPass(),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(
+                                      0.6), // Semi-transparent black
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "Forgot Password?",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                           if (_errorMessage != null)
                             Container(
                               margin: const EdgeInsets.symmetric(vertical: 8),

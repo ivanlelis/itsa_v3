@@ -146,9 +146,12 @@ class _TrendProductState extends State<TrendProduct> {
               TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.orangeAccent,
+                  foregroundColor: Color(0xFF6E473B), // Updated color
                 ),
-                child: Text('View full menu'),
+                child: Text(
+                  'View full menu',
+                  style: TextStyle(fontSize: 15), // Set font size to 15
+                ),
               ),
             ],
           ),
@@ -172,7 +175,7 @@ class _TrendProductState extends State<TrendProduct> {
                         ),
                         child: Image.network(
                           productImageUrl!,
-                          height: 250,
+                          height: 200,
                           width: double.infinity,
                           fit: BoxFit.cover,
                         ),
@@ -249,7 +252,8 @@ class _TrendProductState extends State<TrendProduct> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent,
+                      backgroundColor:
+                          Color(0xFFA78D78), // Updated background color
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

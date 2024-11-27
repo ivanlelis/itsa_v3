@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
-import 'package:itsa_food_app/widgets/customer_navbar.dart';
-import 'package:itsa_food_app/widgets/customer_appbar.dart';
-import 'package:itsa_food_app/widgets/customer_sidebar.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
 import 'package:itsa_food_app/user_provider/user_provider.dart';
@@ -12,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/featured_products.dart';
 import 'package:itsa_food_app/widgets/game_card.dart';
 import 'package:itsa_food_app/widgets/trend_product.dart';
+import 'package:itsa_food_app/widgets/customer_navbar.dart';
+import 'package:itsa_food_app/widgets/customer_appbar.dart';
+import 'package:itsa_food_app/widgets/customer_sidebar.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String userName;
@@ -44,6 +44,13 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late Future<DocumentSnapshot> _featuredProduct;
 
+  // Define the color palette
+  final Color backgroundColor = const Color(0xFFE1D4C2);
+  final Color primaryAccentColor = const Color(0xFF6E473B);
+  final Color highlightColor = const Color(0xFFA78D78);
+  final Color inputBackgroundColor = const Color(0xFFBEB5A9);
+  final Color lightTextColor = const Color(0xFFE1D4C2);
+
   @override
   void initState() {
     super.initState();
@@ -52,7 +59,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         .collection('featured')
         .doc('featured')
         .get(); // Initialize once
-    _fetchDataAndUpdateUI(); // Move this out of didChangeDependencies
+    _fetchDataAndUpdateUI();
   }
 
   Future<void> _fetchDataAndUpdateUI() async {
@@ -64,11 +71,6 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
     final currentTime = DateTime.now().millisecondsSinceEpoch;
     prefs.setInt('lastLoginTime', currentTime);
     print("Last active time updated: $currentTime");
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
   }
 
   Future<void> _refreshData() async {
@@ -130,6 +132,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
 
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: backgroundColor,
       appBar: CustomAppBar(
         scaffoldKey: _scaffoldKey,
         onCartPressed: () {
@@ -174,16 +177,21 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                     future: _featuredProduct,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(); // Show a loading spinner
+                        return CircularProgressIndicator(color: highlightColor);
                       }
                       if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
+                        return Text(
+                          'Error: ${snapshot.error}',
+                          style: TextStyle(color: lightTextColor),
+                        );
                       }
                       if (!snapshot.hasData) {
-                        return Text('No featured product data');
+                        return Text(
+                          'No featured product data',
+                          style: TextStyle(color: lightTextColor),
+                        );
                       }
 
-                      // Pass the data to FeaturedProductWidget
                       return FeaturedProductWidget(
                         featuredProduct: _featuredProduct,
                         userName: user?.userName ?? '',
@@ -220,15 +228,18 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         onTap: _onItemTapped,
       ),
       drawer: Drawer(
-        child: Sidebar(
-          userName: user?.userName ?? '',
-          emailAddress: user?.emailAddress ?? '',
-          imageUrl: user?.imageUrl ?? '',
-          uid: user?.uid ?? '',
-          latitude: user?.latitude ?? 0.0,
-          longitude: user?.longitude ?? 0.0,
-          email: user?.email ?? '',
-          userAddress: user?.userAddress ?? '',
+        child: Container(
+          color: primaryAccentColor,
+          child: Sidebar(
+            userName: user?.userName ?? '',
+            emailAddress: user?.emailAddress ?? '',
+            imageUrl: user?.imageUrl ?? '',
+            uid: user?.uid ?? '',
+            latitude: user?.latitude ?? 0.0,
+            longitude: user?.longitude ?? 0.0,
+            email: user?.email ?? '',
+            userAddress: user?.userAddress ?? '',
+          ),
         ),
       ),
     );
