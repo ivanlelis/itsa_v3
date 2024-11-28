@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:itsa_food_app/main_home/rider_home.dart';
 
 class RiderOTPPage extends StatefulWidget {
-  final String mobileNumber;
+  final String userName;
   final String email;
+  final String imageUrl;
   final String otp;
-  const RiderOTPPage(
-      {super.key,
-      required this.mobileNumber,
-      required this.email,
-      required this.otp});
+
+  const RiderOTPPage({
+    super.key,
+    required this.userName,
+    required this.email,
+    required this.imageUrl,
+    required this.otp,
+  });
 
   @override
   State<RiderOTPPage> createState() => _RiderOTPPageState();
@@ -18,60 +22,11 @@ class RiderOTPPage extends StatefulWidget {
 
 class _RiderOTPPageState extends State<RiderOTPPage> {
   final _otpController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _errorMessage;
   bool _isLoading = false;
-  String? _verificationId;
 
   bool get _hasError => _errorMessage != null;
 
-  // Send OTP to the user's phone number
-  void _sendOTP() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: widget.mobileNumber,
-        timeout: const Duration(seconds: 60),
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // If auto-retrieval or instant validation happens, sign in automatically
-          await _auth.signInWithCredential(credential);
-          Fluttertoast.showToast(msg: "Phone number verified!");
-          Navigator.pushReplacementNamed(context, '/home'); // Adjust as needed
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          setState(() {
-            _errorMessage = e.message;
-            _isLoading = false;
-          });
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          // Store the verification ID for later verification
-          setState(() {
-            _verificationId = verificationId;
-            _isLoading = false;
-          });
-          Fluttertoast.showToast(msg: "OTP Sent!");
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          setState(() {
-            _verificationId = verificationId;
-            _isLoading = false;
-          });
-        },
-      );
-    } catch (e) {
-      setState(() {
-        _errorMessage = "An unexpected error occurred.";
-        _isLoading = false;
-      });
-    }
-  }
-
-  // Verify OTP entered by the user
   void _verifyOTP() async {
     setState(() {
       _isLoading = true;
@@ -80,7 +35,6 @@ class _RiderOTPPageState extends State<RiderOTPPage> {
 
     String otp = _otpController.text.trim();
 
-    // Validate OTP
     if (otp.isEmpty) {
       setState(() {
         _errorMessage = "Please enter the OTP.";
@@ -90,36 +44,39 @@ class _RiderOTPPageState extends State<RiderOTPPage> {
     }
 
     try {
-      // Create a PhoneAuthCredential with the verification ID and OTP
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: otp,
-      );
-
-      // Sign in with the phone number credential
-      await _auth.signInWithCredential(credential);
-      Fluttertoast.showToast(msg: "Phone number verified!");
-      Navigator.pushReplacementNamed(context, '/home'); // Adjust as needed
+      // Check if the entered OTP matches the one sent
+      if (otp == widget.otp) {
+        // OTP is correct, navigate to RiderDashboard
+        Fluttertoast.showToast(msg: "OTP verified!");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RiderDashboard(
+              userName: widget.userName,
+              email: widget.email,
+              imageUrl: widget.imageUrl,
+            ),
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = "Invalid OTP. Please try again.";
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
-        _errorMessage = "Invalid OTP. Please try again.";
+        _errorMessage = "An unexpected error occurred: $e";
         _isLoading = false;
       });
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    _sendOTP(); // Automatically send OTP when the page loads
-  }
-
-  @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
-      resizeToAvoidBottomInset:
-          false, // Prevent resizing when the keyboard appears
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           Positioned.fill(

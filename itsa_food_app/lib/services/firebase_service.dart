@@ -19,14 +19,18 @@ class FirebaseService {
     return _instance;
   }
 
+  // Helper method to access collections
+  CollectionReference getCollection(String collectionName) {
+    return _firestore.collection(collectionName);
+  }
+
   Future<Map<String, dynamic>?> getCurrentUserInfo() async {
     User? user = _auth.currentUser;
     if (user != null) {
       String userEmail = user.email ?? '';
 
       // Check the 'customer' collection for the user's document
-      QuerySnapshot customerSnapshot = await _firestore
-          .collection('customer')
+      QuerySnapshot customerSnapshot = await getCollection('customer')
           .where('emailAddress', isEqualTo: userEmail)
           .get();
 
@@ -35,8 +39,7 @@ class FirebaseService {
       }
 
       // If not found in 'customer', check the 'rider' collection
-      QuerySnapshot riderSnapshot = await _firestore
-          .collection('rider')
+      QuerySnapshot riderSnapshot = await getCollection('rider')
           .where('emailAddress', isEqualTo: userEmail)
           .get();
 
@@ -51,6 +54,7 @@ class FirebaseService {
     }
     return null;
   }
+
 
   Future<Map<String, dynamic>?> getAdminInfo(String email) async {
     try {

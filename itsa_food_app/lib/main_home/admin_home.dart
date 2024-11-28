@@ -4,6 +4,7 @@ import 'package:itsa_food_app/widgets/admin_appbar.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_sidebar.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:itsa_food_app/widgets/to_sales_forecast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/tags_chart.dart';
 import 'package:itsa_food_app/widgets/pending_orders.dart';
@@ -175,6 +176,7 @@ class _AdminHomeState extends State<AdminHome> {
                 ),
                 // New Most Ordered Card
                 const MostOrderedCard(),
+                ToSalesForecast(),
                 if (productCount.isNotEmpty)
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 1,

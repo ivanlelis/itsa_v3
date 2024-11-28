@@ -56,20 +56,21 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
+      // Attempt Firebase authentication
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       if (userCredential.user != null) {
-        // Check if user is admin or super admin first
+        // Check for admin or super admin access
         Map<String, dynamic>? adminInfo =
             await firebaseService.getAdminInfo(email);
         Map<String, dynamic>? superadInfo =
             await firebaseService.getSuperAdInfo(email);
 
         if (adminInfo != null && adminInfo.isNotEmpty) {
-          // Bypass email verification for admin
+          // Admin navigation
           String adminEmail = adminInfo['email'] ?? "No Email Provided";
           Provider.of<UserProvider>(context, listen: false)
               .setAdminEmail(adminEmail);
@@ -88,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
         }
 
         if (superadInfo != null && superadInfo.isNotEmpty) {
-          // Bypass email verification for super admin
+          // Super admin navigation
           String superadEmail = superadInfo['email'] ?? "No Email Provided";
 
           Navigator.pushReplacement(
@@ -104,29 +105,29 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
 
-        // If user is not an admin or super admin, proceed with email verification check
+        // If the user is not admin/super admin, proceed with verification
         if (userCredential.user!.emailVerified) {
-          // Fetch user info from FirebaseService
+          // Fetch user info for customer/rider
           Map<String, dynamic>? userInfo =
               await firebaseService.getCurrentUserInfo();
 
           if (userInfo != null) {
-            // Generate OTP and send email for customers or riders
-            String otp = _generateOTP();
+            String userType = userInfo['userType'] ?? "";
+            String otp = _generateOTP(); // Generate OTP once
+
             await _sendOTPEmail(email, otp);
 
-            if (userInfo.containsKey('userName') &&
-                userInfo['emailAddress'] == email) {
+            if (userType == "customer") {
+              // Customer navigation
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => CustomerOTPPage(
                     userName: userInfo['userName'] ?? "Guest User",
-                    emailAddress:
-                        userInfo['emailAddress'] ?? "No Email Provided",
+                    emailAddress: userInfo['emailAddress'] ?? email,
                     imageUrl: userInfo['imageUrl'] ?? "",
                     uid: userInfo['uid'] ?? "",
-                    email: userInfo['email'] ?? "",
+                    email: email,
                     userAddress: userInfo['userAddress'] ?? "",
                     latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
                     longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
@@ -134,20 +135,22 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               );
-            } else if (userInfo.containsKey('mobileNumber')) {
+            } else if (userType == "rider") {
+              // Rider navigation
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => RiderOTPPage(
-                    email: email,
+                    email: userInfo['emailAddress'] ?? email,
                     otp: otp,
-                    mobileNumber: userInfo['mobileNumber'],
+                    userName: userInfo['userName'] ?? "Rider",
+                    imageUrl: userInfo['imageUrl'] ?? "",
                   ),
                 ),
               );
             } else {
               setState(() {
-                _errorMessage = "User information not found.";
+                _errorMessage = "User type is not recognized.";
                 _isLoading = false;
               });
             }
@@ -166,14 +169,51 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = e.message;
+        _errorMessage = e.message ?? "Authentication failed.";
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = "An unexpected error occurred.";
+        _errorMessage = "An unexpected error occurred: ${e.toString()}";
         _isLoading = false;
       });
+    }
+  }
+
+  Future<String?> _getUserType(String email) async {
+    try {
+      // Check "customer" collection
+      var customerSnapshot = await firebaseService
+          .getCollection("customer")
+          .where("emailAddress", isEqualTo: email)
+          .get();
+      if (customerSnapshot.docs.isNotEmpty) {
+        var customerData =
+            customerSnapshot.docs.first.data() as Map<String, dynamic>?;
+        if (customerData != null) {
+          return customerData[
+              'userType']; // Accessing userType only if data() is not null
+        }
+      }
+
+      // Check "rider" collection
+      var riderSnapshot = await firebaseService
+          .getCollection("rider")
+          .where("emailAddress", isEqualTo: email)
+          .get();
+      if (riderSnapshot.docs.isNotEmpty) {
+        var riderData =
+            riderSnapshot.docs.first.data() as Map<String, dynamic>?;
+        if (riderData != null) {
+          return riderData[
+              'userType']; // Accessing userType only if data() is not null
+        }
+      }
+
+      return null; // No match found
+    } catch (e) {
+      print("Error fetching user type: $e");
+      return null;
     }
   }
 
