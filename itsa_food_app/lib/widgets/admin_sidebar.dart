@@ -19,7 +19,7 @@ class AdminSidebar extends StatelessWidget {
         children: <Widget>[
           const DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.deepPurple,
+              color: Color(0xFF6E473B), // Updated color
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

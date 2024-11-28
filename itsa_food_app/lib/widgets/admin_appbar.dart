@@ -90,7 +90,7 @@ class _AdminAppBarState extends State<AdminAppBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.deepPurple,
+      backgroundColor: const Color(0xFF6E473B), // Updated color
       toolbarHeight: 80,
       leading: IconButton(
         icon: const Icon(Icons.menu, color: Colors.white),

@@ -218,7 +218,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                         fetchMostOrderedProduct();
                       });
                     },
-                    fontSize: 11, // Reduced font size for "3 days"
+                    fontSize: 10, // Reduced font size for "3 days"
                   ),
                 ),
                 const SizedBox(width: 16), // Space between buttons

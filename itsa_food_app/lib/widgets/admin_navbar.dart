@@ -17,67 +17,78 @@ class AdminBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
+      items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.home),
+          icon: _buildNavItem(Icons.home, 0),
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.note),
+          icon: _buildNavItem(Icons.note, 1),
           label: 'Orders',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.grid_view),
+          icon: _buildNavItem(Icons.grid_view, 2),
           label: 'Menu',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person),
+          icon: _buildNavItem(Icons.person, 3),
           label: 'Users',
         ),
       ],
       currentIndex: selectedIndex,
-      selectedItemColor: Colors.deepPurple,
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: const Color(0xFF291C0E), // Updated selected icon color
+      unselectedItemColor: const Color(0xFF291C0E),
       onTap: (index) {
         if (index == selectedIndex) {
-          // If the tapped index is the same as the current index, do nothing
-          return;
+          return; // Prevent redundant navigation
         }
 
+        // Navigation logic based on index
         if (index == 0) {
-          // If the home item is tapped, navigate to AdminHome
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => AdminHome(
-                    email:
-                        "your_email@example.com")), // Replace with actual email
-          );
-        } else if (index == 1) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
                 builder: (context) =>
-                    OrdersManagement()), // Replace with actual email
+                    AdminHome(email: "your_email@example.com")),
+          );
+        } else if (index == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => OrdersManagement()),
           );
         } else if (index == 2) {
-          // If the menu item is tapped, navigate to MenuManagement
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const MenuManagement()),
           );
         } else if (index == 3) {
-          // If the users item is tapped, navigate to UserManagement
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => UserManagement()),
           );
         } else {
-          // For other items, call the provided function
           onItemTapped(index);
         }
       },
-      type: BottomNavigationBarType.fixed, // Keeps all items visible
+      type: BottomNavigationBarType.fixed,
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int index) {
+    final isSelected = selectedIndex == index;
+    return Container(
+      decoration: isSelected
+          ? BoxDecoration(
+              color: const Color(0xFFA78D78), // Circle color (adjust as needed)
+              shape: BoxShape.circle,
+            )
+          : null,
+      padding: const EdgeInsets.all(8), // Space around the icon
+      child: Icon(icon,
+          color: isSelected
+              ? const Color(0xFF291C0E)
+              : const Color(0xFF291C0E) // Icon color
+          ),
     );
   }
 }
