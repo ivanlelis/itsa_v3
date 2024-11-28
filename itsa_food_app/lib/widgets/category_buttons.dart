@@ -4,12 +4,14 @@ import 'package:itsa_food_app/customer_pages/menu.dart';
 
 class CategoryButtonsRow extends StatelessWidget {
   final int selectedIndex;
+  final Color buttonColor;
   final ValueChanged<int> onCategorySelected;
 
   const CategoryButtonsRow({
     super.key,
     required this.selectedIndex,
     required this.onCategorySelected,
+    required this.buttonColor,
   });
 
   @override

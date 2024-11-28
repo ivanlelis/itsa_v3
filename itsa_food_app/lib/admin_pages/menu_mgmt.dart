@@ -676,8 +676,13 @@ class ProductCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red, // Set color to red
               ),
-              child: const Text('Delete Product'),
-            ),
+              child: const Text(
+                'Delete Product',
+                style: TextStyle(
+                  color: Colors.white, // Set text color to white
+                ),
+              ),
+            )
           ],
         ),
       ),
@@ -710,7 +715,9 @@ class CategoryButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? Colors.purple : Colors.grey[300],
+            backgroundColor: isSelected
+                ? const Color(0xFF6E473B) // Apply the color when selected
+                : Colors.grey[300], // Color when not selected
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
