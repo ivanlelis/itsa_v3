@@ -193,9 +193,9 @@ class _SalesTabState extends State<SalesTab> {
                   const SizedBox(height: 16),
                   Text(
                     salesChangePercentage > 0
-                        ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% higher than this week\'s sales.'
+                        ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% higher (capped at 20%) than this week\'s sales.'
                         : salesChangePercentage < 0
-                            ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% lower than this week\'s sales.'
+                            ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% lower (capped at 20%) than this week\'s sales.'
                             : 'Target for next week is the same as this week\'s sales.',
                     style: TextStyle(
                       fontSize: 16,
