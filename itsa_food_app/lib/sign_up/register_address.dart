@@ -190,13 +190,17 @@ class _RegisterAddressState extends State<RegisterAddress> {
     });
   }
 
-  void _saveAddress() {
-    if (_selectedAddress != null) {
-      // You can save the selected address here (e.g., using a method that saves to Firestore or any state management solution).
-      // For now, we will pass it back to the previous screen and go back to the CustomerSignUp screen.
-      Navigator.pop(context, _selectedAddress);
-    }
+  void _confirmAddress() {
+    final selectedAddress = _addressController.text;
+    final nearestBranch =
+        _nearestBranch; // Compute this based on the user's location
+
+    Navigator.pop(context, {
+      'selectedAddress': selectedAddress,
+      'nearestBranch': nearestBranch,
+    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +277,7 @@ class _RegisterAddressState extends State<RegisterAddress> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: _saveAddress,
+              onPressed: _confirmAddress,
               child: const Text('Save This Address'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),

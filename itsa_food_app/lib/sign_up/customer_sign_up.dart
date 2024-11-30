@@ -31,23 +31,18 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     "password": false,
   };
 
-  // Example logic to set nearest branch based on the address
-  String _getNearestBranch(String address) {
-    if (address.contains('Dasmariñas')) {
-      return 'Branch 1: 8XQ2+94H, Dasmariñas, Cavite'; // Example branch
-    }
-    // Add logic for other addresses if needed
-    return 'Branch 1'; // Default branch
-  }
-
   Future<void> _signUp() async {
     String firstName = _firstNameController.text.trim();
     String lastName = _lastNameController.text.trim();
     String email = _emailController.text.trim();
     String mobileNumber = _mobileNumberController.text.trim();
     String password = _passwordController.text.trim();
+    String address = _addressController.text.trim();
+    String nearestBranch = _nearestBranchController.text.trim();
 
-    // Remove the +63 part from the mobile number before saving to Firestore
+    // Map the nearestBranch to branch IDs
+    nearestBranch = _formatNearestBranch(nearestBranch);
+
     if (mobileNumber.startsWith('+63')) {
       mobileNumber = mobileNumber.substring(3); // Strip "+63"
     }
@@ -59,12 +54,13 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
       _errors["email"] = email.isEmpty;
       _errors["mobileNumber"] = mobileNumber.isEmpty;
       _errors["password"] = password.isEmpty;
+      _errors["address"] = address.isEmpty;
+      _errors["nearestBranch"] = nearestBranch.isEmpty;
 
       // Clear the previous message
       _message = null;
     });
 
-    // If any field is empty, show an error and stop
     if (_errors.values.any((error) => error)) {
       setState(() {
         _message = "All fields are required.";
@@ -80,6 +76,10 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
         mobileNumber,
         password,
         userType: 'customer',
+        additionalData: {
+          'address': address,
+          'branchID': nearestBranch,
+        },
       );
       setState(() {
         _message = "A verification link has been sent to your email.";
@@ -88,6 +88,20 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
       setState(() {
         _message = e.toString();
       });
+    }
+  }
+
+// Helper function to format the nearestBranch
+  String _formatNearestBranch(String branchName) {
+    switch (branchName) {
+      case "Sta. Lucia":
+        return "branch 1";
+      case "Sta. Cruz II":
+        return "branch 2";
+      case "San Dionisio":
+        return "branch 3";
+      default:
+        return branchName; // Return the original name if no match is found
     }
   }
 
@@ -301,15 +315,26 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
         suffixIcon: IconButton(
           icon: const Icon(Icons.location_on),
           onPressed: () async {
-            // Navigate to RegisterAddress and wait for the selected address
-            String? selectedAddress = await Navigator.push(
+            // Navigate to RegisterAddress and wait for the result
+            final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const RegisterAddress()),
+              MaterialPageRoute(
+                builder: (context) => const RegisterAddress(),
+              ),
             );
-            if (selectedAddress != null) {
-              _addressController.text = selectedAddress;
-              _nearestBranchController.text =
-                  _getNearestBranch(selectedAddress); // Update nearest branch
+
+            if (result != null && result is Map<String, String>) {
+              // Extract selectedAddress and nearestBranch from the result
+              final selectedAddress = result['selectedAddress'];
+              final nearestBranch = result['nearestBranch'];
+
+              // Update the fields
+              if (selectedAddress != null) {
+                _addressController.text = selectedAddress;
+              }
+              if (nearestBranch != null) {
+                _nearestBranchController.text = nearestBranch;
+              }
             }
           },
         ),

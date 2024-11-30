@@ -55,7 +55,6 @@ class FirebaseService {
     return null;
   }
 
-
   Future<Map<String, dynamic>?> getAdminInfo(String email) async {
     try {
       DocumentSnapshot snapshot =
