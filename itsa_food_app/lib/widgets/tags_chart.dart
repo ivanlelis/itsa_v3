@@ -41,11 +41,14 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
         List<Future<void>> tagFetches = [];
 
         for (var orderDoc in ordersSnapshot.docs) {
-          // Extract productNames from each order
-          List<dynamic> productNames = orderDoc['productNames'] ?? [];
+          // Extract products array from each order
+          List<dynamic> products = orderDoc['products'] ?? [];
 
-          for (var productName in productNames) {
-            // Match productName with productName field in products collection
+          for (var product in products) {
+            String productName = product['productName'] ?? '';
+            int quantity = product['quantity'] ?? 0;
+
+            // Match productName with the productName field in products collection
             tagFetches.add(FirebaseFirestore.instance
                 .collection('products')
                 .where('productName', isEqualTo: productName)
@@ -55,8 +58,8 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                 // Fetch tags from matched product document
                 List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
                 for (var tag in tags) {
-                  // Count tag occurrences
-                  tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + 1;
+                  // Count tag occurrences, multiply by quantity
+                  tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + quantity;
                 }
               }
             }));

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'weekly_sales.dart'; // Import the WeeklySales screen
+import 'dart:math';
 
 class SalesTab extends StatefulWidget {
   @override
@@ -89,6 +90,12 @@ class _SalesTabState extends State<SalesTab> {
         totalPreviousWeekSales = previousWeekSales;
         isLoading = false;
       });
+
+      // Debug prints after fetching and calculating sales data
+      print('Current Week Sales Data: $currentWeekSalesData');
+      print('Previous Week Sales Data: $previousWeekSalesData');
+      print('Total Current Week Sales: $totalCurrentWeekSales');
+      print('Total Previous Week Sales: $totalPreviousWeekSales');
     } catch (e) {
       print("Error fetching sales data: $e");
       setState(() {
@@ -97,9 +104,24 @@ class _SalesTabState extends State<SalesTab> {
     }
   }
 
+  double calculateWMA(List<Map<String, dynamic>> salesData) {
+    // Assign weights (recent sales get higher weights)
+    List<int> weights = [7, 6, 5, 4, 3, 2, 1];
+    double weightedSum = 0.0;
+    int weightSum = 0;
+
+    for (int i = 0; i < salesData.length; i++) {
+      double sales = salesData[i]['sales'] ?? 0.0;
+      weightedSum += sales * weights[i];
+      weightSum += weights[i];
+    }
+
+    // Calculate WMA: sum of (sales * weight) / sum of weights
+    return weightedSum / weightSum;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Calculate the target sales for next week
     double nextWeekTargetSales = totalCurrentWeekSales;
 
     // Calculate percentage change
@@ -111,23 +133,25 @@ class _SalesTabState extends State<SalesTab> {
               100;
     }
 
-    // Dynamic adjustment based on sales change
-    if (salesChangePercentage > 0) {
-      // Increase target by the percentage change, with a cap of 20%
-      nextWeekTargetSales =
-          totalCurrentWeekSales * (1 + (salesChangePercentage / 100));
-      nextWeekTargetSales = nextWeekTargetSales > totalCurrentWeekSales * 1.20
-          ? totalCurrentWeekSales * 1.20
-          : nextWeekTargetSales; // Ensure no more than a 20% increase
-    } else if (salesChangePercentage < 0) {
-      // Decrease target by the percentage change, with a cap of 20%
-      nextWeekTargetSales =
-          totalCurrentWeekSales * (1 + (salesChangePercentage / 100));
-      nextWeekTargetSales = nextWeekTargetSales < totalCurrentWeekSales * 0.80
-          ? totalCurrentWeekSales * 0.80
-          : nextWeekTargetSales; // Ensure no more than a 20% decrease
-    } // else, keep the target the same (no change)
+    // Adjusted Sales Change Factor to smooth extreme changes
+    double salesChangeFactor = 1 + (salesChangePercentage / 200);
 
+    // Calculate WMA for current week's sales data
+    double weightedMovingAverage = calculateWMA(currentWeekSalesData);
+
+    // Apply the revised hybrid formula
+    nextWeekTargetSales = max(
+        (weightedMovingAverage * 0.5) +
+            (totalCurrentWeekSales * salesChangeFactor * 0.5),
+        0.8 * totalCurrentWeekSales);
+
+    // Debug prints after calculations
+    print('Weighted Moving Average: $weightedMovingAverage');
+    print('Sales Change Percentage: $salesChangePercentage');
+    print('Sales Change Factor: $salesChangeFactor');
+    print('Next Week Target Sales: $nextWeekTargetSales');
+
+    // Displaying the results
     return SingleChildScrollView(
         child: Padding(
       padding: const EdgeInsets.all(16.0),
@@ -193,9 +217,9 @@ class _SalesTabState extends State<SalesTab> {
                   const SizedBox(height: 16),
                   Text(
                     salesChangePercentage > 0
-                        ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% higher (capped at 20%) than this week\'s sales.'
+                        ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% higher than this week\'s sales.'
                         : salesChangePercentage < 0
-                            ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% lower (capped at 20%) than this week\'s sales.'
+                            ? 'Target for next week is ${salesChangePercentage.toStringAsFixed(2)}% lower than this week\'s sales.'
                             : 'Target for next week is the same as this week\'s sales.',
                     style: TextStyle(
                       fontSize: 16,
@@ -220,6 +244,44 @@ class _SalesTabState extends State<SalesTab> {
           ),
           const SizedBox(height: 16),
 
+          // Display Weighted Moving Average
+          SizedBox(
+            width:
+                double.infinity, // Ensures the card takes full available width
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Weighted Moving Average (WMA):",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6E473B),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '₱${weightedMovingAverage.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6E473B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
           // Current Week Sales Card
           Card(
             elevation: 3,

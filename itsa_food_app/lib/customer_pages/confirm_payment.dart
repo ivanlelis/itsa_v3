@@ -199,14 +199,18 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         paymentReceiptUrl = await snapshot.ref.getDownloadURL();
       }
 
-      // Step 2: Prepare the order data
+      // Step 2: Prepare the order data with quantity
       Map<String, dynamic> orderData = {
         'deliveryType': widget.deliveryType,
         'orderID': orderID,
         'orderType': widget.orderType,
         'paymentMethod': widget.paymentMethod,
-        'productNames':
-            widget.cartItems.map((item) => item['productName']).toList(),
+        'products': widget.cartItems.map((item) {
+          return {
+            'productName': item['productName'],
+            'quantity': item['quantity'], // Include the quantity
+          };
+        }).toList(),
         'timestamp': timestamp,
         'total': widget.totalAmount,
         'voucherCode': widget.voucherCode,
@@ -907,7 +911,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Qty: $quantity',
+                              'Quantity: $quantity',
                               style: const TextStyle(fontSize: 16),
                             ),
                           ),

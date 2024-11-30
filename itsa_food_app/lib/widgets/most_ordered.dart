@@ -64,39 +64,34 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
     productCount.clear();
 
     // Get current date in Philippine Time (UTC+8)
-    DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
+    DateTime now = DateTime.now().toUtc().add(const Duration(hours: 8));
 
     // Define the start and end time based on the selected filter
     DateTime startTime;
     DateTime endTime;
 
     if (selectedFilter == 'Today') {
-      // Set to the start of the current day in Philippine Time (midnight)
+      // Start and end of the current day
       startTime = DateTime(now.year, now.month, now.day, 0, 0, 0);
-      endTime =
-          DateTime(now.year, now.month, now.day, 23, 59, 59); // End of today
+      endTime = DateTime(now.year, now.month, now.day, 23, 59, 59);
     } else if (selectedFilter == '3 days') {
-      // Set to 3 days ago, at the same time of day
+      // Last 3 days
       startTime = now.subtract(const Duration(days: 3));
-      startTime = DateTime(startTime.year, startTime.month, startTime.day, 0, 0,
-          0); // Midnight of that day
-      endTime = now.subtract(
-          const Duration(days: 2)); // End time is the day before yesterday
-      endTime = DateTime(endTime.year, endTime.month, endTime.day, 23, 59,
-          59); // End of that day
+      startTime =
+          DateTime(startTime.year, startTime.month, startTime.day, 0, 0, 0);
+      endTime = now.subtract(const Duration(days: 1));
+      endTime = DateTime(endTime.year, endTime.month, endTime.day, 23, 59, 59);
     } else if (selectedFilter == '1 week') {
-      // Set to 1 week ago, at the same time of day
+      // Last 7 days
       startTime = now.subtract(const Duration(days: 7));
-      startTime = DateTime(startTime.year, startTime.month, startTime.day, 0, 0,
-          0); // Midnight of that day
-      endTime = now.subtract(const Duration(days: 1)); // End time is 1 day ago
-      endTime = DateTime(endTime.year, endTime.month, endTime.day, 23, 59,
-          59); // End of that day
+      startTime =
+          DateTime(startTime.year, startTime.month, startTime.day, 0, 0, 0);
+      endTime = now.subtract(const Duration(days: 1));
+      endTime = DateTime(endTime.year, endTime.month, endTime.day, 23, 59, 59);
     } else {
-      // Fallback to 'Today' if no filter is selected
+      // Default to Today
       startTime = DateTime(now.year, now.month, now.day, 0, 0, 0);
-      endTime =
-          DateTime(now.year, now.month, now.day, 23, 59, 59); // End of today
+      endTime = DateTime(now.year, now.month, now.day, 23, 59, 59);
     }
 
     try {
@@ -104,14 +99,13 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      // Fetch all orders for all customers concurrently, applying both start and end times
+      // Fetch all orders for all customers concurrently with time filtering
       List<Future<QuerySnapshot>> orderFutures = customerSnapshot.docs.map(
         (customerDoc) {
           return customerDoc.reference
               .collection('orders')
               .where('timestamp', isGreaterThanOrEqualTo: startTime)
-              .where('timestamp',
-                  isLessThanOrEqualTo: endTime) // End time filter
+              .where('timestamp', isLessThanOrEqualTo: endTime)
               .get();
         },
       ).toList();
@@ -121,9 +115,15 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       // Process all orders
       for (var orderSnapshot in orderSnapshots) {
         for (var orderDoc in orderSnapshot.docs) {
-          List<dynamic> products = orderDoc['productNames'] ?? [];
+          List<dynamic> products = orderDoc['products'] ?? [];
           for (var product in products) {
-            productCount[product] = (productCount[product] ?? 0) + 1;
+            // Extract productName and quantity
+            String productName = product['productName'];
+            int quantity = product['quantity'] ?? 1;
+
+            // Update product count
+            productCount[productName] =
+                (productCount[productName] ?? 0) + quantity;
           }
         }
       }

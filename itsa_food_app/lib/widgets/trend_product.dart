@@ -41,87 +41,126 @@ class _TrendProductState extends State<TrendProduct> {
   void initState() {
     super.initState();
     fetchMostOrderedProduct();
-    fetchFeaturedProductName();
   }
 
   Future<void> fetchMostOrderedProduct() async {
-    productCount.clear();
+    try {
+      productCount.clear();
 
-    DateTime now = DateTime.now();
-    DateTime todayStart = DateTime(now.year, now.month, now.day);
-    DateTime tomorrowStart = todayStart.add(Duration(days: 1));
+      DateTime now = DateTime.now();
+      DateTime todayStart = DateTime(now.year, now.month, now.day);
+      DateTime tomorrowStart = todayStart.add(Duration(days: 1));
 
-    QuerySnapshot customerSnapshot =
-        await FirebaseFirestore.instance.collection('customer').get();
+      // Fetch all customers
+      QuerySnapshot customerSnapshot =
+          await FirebaseFirestore.instance.collection('customer').get();
 
-    for (var customerDoc in customerSnapshot.docs) {
-      QuerySnapshot orderSnapshot =
-          await customerDoc.reference.collection('orders').get();
+      if (customerSnapshot.docs.isEmpty) {
+        print('No customers found in Firestore.');
+        setState(() {
+          mostOrderedProduct = null;
+          productImageUrl = null;
+        });
+        return;
+      }
 
-      for (var orderDoc in orderSnapshot.docs) {
-        Timestamp? timestamp = orderDoc['timestamp'];
-        if (timestamp != null) {
+      // Loop through each customer's orders
+      for (var customerDoc in customerSnapshot.docs) {
+        QuerySnapshot orderSnapshot =
+            await customerDoc.reference.collection('orders').get();
+
+        if (orderSnapshot.docs.isEmpty) {
+          print('No orders found for customer: ${customerDoc.id}');
+          continue;
+        }
+
+        for (var orderDoc in orderSnapshot.docs) {
+          // Validate and process the timestamp
+          Timestamp? timestamp = orderDoc['timestamp'];
+          if (timestamp == null) {
+            print('Order missing timestamp: ${orderDoc.id}');
+            continue;
+          }
           DateTime orderDate = timestamp.toDate();
+
           if (orderDate.isAfter(todayStart) &&
               orderDate.isBefore(tomorrowStart)) {
-            List<dynamic> products = orderDoc['productNames'] ?? [];
+            // Validate and process the products array
+            List<dynamic> products = orderDoc['products'] ?? [];
             for (var product in products) {
-              productCount[product] = (productCount[product] ?? 0) + 1;
+              if (product['productName'] == null) {
+                print('Product missing productName: ${orderDoc.id}');
+                continue;
+              }
+              String productName = product['productName'];
+              int quantity = product['quantity'] ?? 1;
+
+              // Update product count by quantity
+              productCount[productName] =
+                  (productCount[productName] ?? 0) + quantity;
             }
           }
         }
       }
-    }
 
-    String? mostOrdered;
-    int maxCount = 0;
-    productCount.forEach((product, count) {
-      if (count > maxCount) {
-        mostOrdered = product;
-        maxCount = count;
+      // Find the most ordered product
+      String? mostOrdered;
+      int maxCount = 0;
+      productCount.forEach((product, count) {
+        if (count > maxCount) {
+          mostOrdered = product;
+          maxCount = count;
+        }
+      });
+
+      if (mostOrdered != null) {
+        print('Most ordered product: $mostOrdered');
+        setState(() {
+          mostOrderedProduct = mostOrdered;
+        });
+        await fetchProductDetails(mostOrdered!);
+      } else {
+        print('No orders found today.');
+        setState(() {
+          mostOrderedProduct = null;
+          productImageUrl = null;
+        });
       }
-    });
-
-    setState(() {
-      mostOrderedProduct = mostOrdered;
-    });
-
-    if (mostOrdered != null) {
-      await fetchProductDetails(mostOrdered!);
+    } catch (e) {
+      print('Error fetching most ordered product: $e');
+      setState(() {
+        mostOrderedProduct = null;
+        productImageUrl = null;
+      });
     }
   }
 
   Future<void> fetchProductDetails(String productName) async {
-    QuerySnapshot productSnapshot =
-        await FirebaseFirestore.instance.collection('products').get();
+    try {
+      QuerySnapshot productSnapshot =
+          await FirebaseFirestore.instance.collection('products').get();
 
-    for (var productDoc in productSnapshot.docs) {
-      if (productDoc['productName'] == productName) {
-        setState(() {
-          productImageUrl = productDoc['imageUrl'];
-          productType = productDoc['productType'];
-          if (productType == 'Milk Tea') {
-            productDetail = productDoc['regular'];
-          } else if (productType == 'Takoyaki') {
-            productDetail = productDoc['4pc'];
-          } else {
-            productDetail = '';
-          }
-        });
-        break;
+      for (var productDoc in productSnapshot.docs) {
+        if (productDoc['productName'] == productName) {
+          setState(() {
+            productImageUrl = productDoc['imageUrl'];
+            productType = productDoc['productType'];
+            if (productType == 'Milk Tea') {
+              productDetail = productDoc['regular'];
+            } else if (productType == 'Takoyaki') {
+              productDetail = productDoc['4pc'];
+            } else {
+              productDetail = '';
+            }
+          });
+          return;
+        }
       }
-    }
-  }
-
-  Future<void> fetchFeaturedProductName() async {
-    DocumentSnapshot featuredDoc = await FirebaseFirestore.instance
-        .collection('featured')
-        .doc('featured')
-        .get();
-
-    if (featuredDoc.exists) {
+      print('Product details not found for: $productName');
+    } catch (e) {
+      print('Error fetching product details: $e');
       setState(() {
-        featuredProductName = featuredDoc['productName'];
+        productImageUrl = null;
       });
     }
   }

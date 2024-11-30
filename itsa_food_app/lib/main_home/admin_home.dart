@@ -53,16 +53,17 @@ class _AdminHomeState extends State<AdminHome> {
 
   Future<void> fetchMostOrderedProduct(String filter) async {
     setState(() {
-      isLoading = true; // Set loading to true when fetching starts
+      isLoading = true; // Start loading indicator
     });
 
-    productCount.clear(); // Clear existing data before fetching
+    productCount.clear(); // Clear the previous data
 
     DateTime now = DateTime.now();
     DateTime startTime;
 
+    // Determine the filter's start time
     if (filter == 'Today') {
-      startTime = DateTime(now.year, now.month, now.day); // Midnight today
+      startTime = DateTime(now.year, now.month, now.day);
     } else if (filter == '3 Days') {
       startTime = now.subtract(Duration(days: 3));
     } else if (filter == '1 Week') {
@@ -71,31 +72,45 @@ class _AdminHomeState extends State<AdminHome> {
       throw ArgumentError('Invalid filter: $filter');
     }
 
-    // Fetch customer data
-    QuerySnapshot customerSnapshot =
-        await FirebaseFirestore.instance.collection('customer').get();
+    try {
+      // Fetch all customer documents
+      QuerySnapshot customerSnapshot =
+          await FirebaseFirestore.instance.collection('customer').get();
 
-    for (var customerDoc in customerSnapshot.docs) {
-      // Fetch orders for each customer
-      QuerySnapshot orderSnapshot =
-          await customerDoc.reference.collection('orders').get();
+      for (var customerDoc in customerSnapshot.docs) {
+        // For each customer, fetch their orders
+        QuerySnapshot orderSnapshot =
+            await customerDoc.reference.collection('orders').get();
 
-      for (var orderDoc in orderSnapshot.docs) {
-        Timestamp timestamp = orderDoc['timestamp'];
-        DateTime orderDate = timestamp.toDate();
+        for (var orderDoc in orderSnapshot.docs) {
+          Timestamp timestamp = orderDoc['timestamp'];
+          DateTime orderDate = timestamp.toDate();
 
-        // Filter orders by the selected time range
-        if (orderDate.isAfter(startTime)) {
-          List<dynamic> products = orderDoc['productNames'] ?? [];
-          for (var product in products) {
-            productCount[product] = (productCount[product] ?? 0) + 1;
+          // Only process orders within the selected time range
+          if (orderDate.isAfter(startTime)) {
+            List<dynamic> products = orderDoc['products'] ?? [];
+
+            for (var product in products) {
+              // Ensure the product has the required fields
+              if (product['productName'] != null &&
+                  product['quantity'] != null) {
+                String productName = product['productName'];
+                int quantity = product['quantity'];
+
+                // Accumulate product quantities
+                productCount[productName] =
+                    (productCount[productName] ?? 0) + quantity;
+              }
+            }
           }
         }
       }
+    } catch (e) {
+      print('Error fetching product counts: $e');
     }
 
     setState(() {
-      isLoading = false; // Set loading to false once the data is fetched
+      isLoading = false; // Stop loading indicator
     });
   }
 
@@ -176,6 +191,63 @@ class _AdminHomeState extends State<AdminHome> {
                 ),
                 // New Most Ordered Card
                 const MostOrderedCard(),
+                // New Card with Button to Forecasting
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 1,
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 20, horizontal: 5),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Forecasting',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              // Navigate to Forecasting page
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ForecastingPage(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14.0, horizontal: 30.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              backgroundColor: Colors
+                                  .blue, // Use backgroundColor instead of primary
+                            ),
+                            child: const Text(
+                              'Go to Forecasting',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 if (productCount.isNotEmpty)
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 1,
@@ -251,7 +323,11 @@ class _AdminHomeState extends State<AdminHome> {
                                   BarChart(
                                     BarChartData(
                                       alignment: BarChartAlignment.spaceAround,
-                                      maxY: 100,
+                                      maxY: productCount.values.isEmpty
+                                          ? 0
+                                          : productCount.values
+                                              .reduce((a, b) => a > b ? a : b)
+                                              .toDouble(),
                                       barTouchData: BarTouchData(
                                         enabled: true,
                                         touchTooltipData: BarTouchTooltipData(
@@ -287,11 +363,13 @@ class _AdminHomeState extends State<AdminHome> {
                                       ),
                                       titlesData: FlTitlesData(
                                         topTitles: AxisTitles(
-                                            sideTitles:
-                                                SideTitles(showTitles: false)),
+                                          sideTitles:
+                                              SideTitles(showTitles: false),
+                                        ),
                                         rightTitles: AxisTitles(
-                                            sideTitles:
-                                                SideTitles(showTitles: false)),
+                                          sideTitles:
+                                              SideTitles(showTitles: false),
+                                        ),
                                         leftTitles: AxisTitles(
                                           sideTitles: SideTitles(
                                             showTitles: true,
@@ -361,8 +439,7 @@ class _AdminHomeState extends State<AdminHome> {
                                   if (isLoading)
                                     Positioned.fill(
                                       child: Container(
-                                        color: Colors.white.withOpacity(
-                                            0.7), // Semi-transparent background
+                                        color: Colors.white.withOpacity(0.7),
                                         alignment: Alignment.center,
                                         child:
                                             const CircularProgressIndicator(),
@@ -376,64 +453,6 @@ class _AdminHomeState extends State<AdminHome> {
                       ),
                     ),
                   ),
-
-                // New Card with Button to Forecasting
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 1,
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 20, horizontal: 5),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Forecasting',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Navigate to Forecasting page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ForecastingPage(),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 14.0, horizontal: 30.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              backgroundColor: Colors
-                                  .blue, // Use backgroundColor instead of primary
-                            ),
-                            child: const Text(
-                              'Go to Forecasting',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
                 const SizedBox(height: 10),
                 const FrequentOrdersByTagsChart(),
               ],
