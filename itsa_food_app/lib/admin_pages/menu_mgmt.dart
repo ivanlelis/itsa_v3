@@ -27,12 +27,11 @@ class _MenuManagementState extends State<MenuManagement> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedCategoryIndex = 0;
 
-  // Method to show the add product modal
   void _showAddProductModal() {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return const AddProductModal();
+        return AddProductModal(userName: widget.userName); // Pass userName here
       },
     );
   }
@@ -116,6 +115,7 @@ class _MenuManagementState extends State<MenuManagement> {
 
                   // Filter products based on selected category
                   final filteredProducts = products.where((product) {
+                    // Filter by category first
                     if (_selectedCategoryIndex == 0) return true; // All
                     if (_selectedCategoryIndex == 1 &&
                         product['productType'] == 'Takoyaki') return true;
@@ -123,6 +123,23 @@ class _MenuManagementState extends State<MenuManagement> {
                         product['productType'] == 'Milk Tea') return true;
                     if (_selectedCategoryIndex == 3 &&
                         product['productType'] == 'Meals') return true;
+
+                    // Filter by branchID based on user role
+                    final userName =
+                        widget.userName; // Get the logged-in user's name
+                    if (userName == 'Main Branch Admin' &&
+                        product['branchID'] == 'branch 1') {
+                      return true;
+                    }
+                    if (userName == 'Sta. Cruz II Admin' &&
+                        product['branchID'] == 'branch 2') {
+                      return true;
+                    }
+                    if (userName == 'San Dionisio Admin' &&
+                        product['branchID'] == 'branch 3') {
+                      return true;
+                    }
+
                     return false;
                   }).toList();
 
@@ -139,8 +156,10 @@ class _MenuManagementState extends State<MenuManagement> {
                         productType: product['productType'],
                         prices: _getProductPrices(product),
                         imageUrl: product['imageUrl'], // Pass the imageUrl
-                        productID: product[
-                            'productID'], // Add this line to pass the productID
+                        productID: product['productID'], // Pass productID
+                        branchID: product[
+                            'branchID'], // Pass branchID to the ProductCard
+                        userName: widget.userName,
                       );
                     },
                   );
@@ -193,7 +212,9 @@ class _MenuManagementState extends State<MenuManagement> {
 }
 
 class AddProductModal extends StatefulWidget {
-  const AddProductModal({super.key});
+  final String userName;
+
+  const AddProductModal({super.key, required this.userName});
 
   @override
   _AddProductModalState createState() => _AddProductModalState();
@@ -314,9 +335,18 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     }
 
-    // Save product data to Firestore
+    // Determine the collection based on userName
+    String collectionName = 'products'; // Default collection
+
+    if (widget.userName == "Sta. Cruz II Admin") {
+      collectionName = 'branch1_products'; // Save to branch1_products
+    } else if (widget.userName == "San Dionisio Admin") {
+      collectionName = 'branch2_products'; // Save to branch2_products
+    }
+
+    // Save product data to Firestore in the appropriate collection
     await FirebaseFirestore.instance
-        .collection('products')
+        .collection(collectionName)
         .doc(productID)
         .set(productData);
 
@@ -556,6 +586,8 @@ class ProductCard extends StatelessWidget {
   final Map<String, String> prices;
   final String imageUrl; // Directly using the provided imageUrl
   final String productID;
+  final String branchID; // The branchID field from the product
+  final String userName;
 
   const ProductCard({
     super.key,
@@ -564,7 +596,23 @@ class ProductCard extends StatelessWidget {
     required this.prices,
     required this.imageUrl,
     required this.productID,
+    required this.branchID, // Add branchID to constructor
+    required this.userName,
   });
+
+  // Filter the products based on the user's userName
+  bool shouldDisplayProduct(String branchID) {
+    // Compare the user's name and filter by branchID
+    if (userName == 'Main Branch Admin' && branchID == 'branch 1') {
+      return true;
+    } else if (userName == 'Sta. Cruz II Admin' && branchID == 'branch 2') {
+      return true;
+    } else if (userName == 'San Dionisio Admin' && branchID == 'branch 3') {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   void _showEditProductModal(BuildContext context, String productID) {
     showModalBottomSheet(
@@ -638,6 +686,11 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Only display the product if the user's branchID matches the product's branchID
+    if (!shouldDisplayProduct(branchID)) {
+      return Container(); // Return an empty container if the product shouldn't be displayed
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -645,6 +698,7 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FutureBuilder<String>(
+              // Fetch and display image
               future: _getImageUrl(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -673,6 +727,12 @@ class ProductCard extends StatelessWidget {
                   priceEntry.value.isNotEmpty ? priceEntry.value : 'N/A';
               return Text('${priceEntry.key}: ₱$priceValue');
             }),
+            const SizedBox(height: 8),
+            // Display userName
+            Text(
+              'User: $userName',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () =>
@@ -691,7 +751,7 @@ class ProductCard extends StatelessWidget {
                   color: Colors.white, // Set text color to white
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
