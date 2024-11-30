@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:itsa_food_app/widgets/admin_appbar.dart'; // Import AdminAppBar
@@ -9,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for lo
 
 class UserManagement extends StatefulWidget {
   final String userName;
-  const UserManagement({super.key, required this.userName,});
+  const UserManagement({super.key, required this.userName});
 
   @override
   _UserManagementState createState() => _UserManagementState();
@@ -38,8 +36,22 @@ class _UserManagementState extends State<UserManagement> {
 
   // Function to load users based on the userType
   Future<List<Map<String, dynamic>>> _loadUsers(String userType) async {
-    final QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection(userType).get();
+    // Define branchID based on userName
+    String branchID = "";
+    if (widget.userName == "Main Branch Admin") {
+      branchID = "branch 1";
+    } else if (widget.userName == "Sta. Cruz II Admin") {
+      branchID = "branch 2";
+    } else if (widget.userName == "San Dionisio Admin") {
+      branchID = "branch 3";
+    }
+
+    // Fetch customers from Firestore and filter by branchID
+    final QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection(userType)
+        .where('branchID', isEqualTo: branchID) // Filter by branchID
+        .get();
+
     return snapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();
