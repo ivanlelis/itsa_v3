@@ -18,6 +18,8 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
   final TextEditingController _mobileNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _nearestBranchController =
+      TextEditingController(); // New controller
 
   String? _message; // Error message or notification
 
@@ -28,6 +30,15 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     "mobileNumber": false,
     "password": false,
   };
+
+  // Example logic to set nearest branch based on the address
+  String _getNearestBranch(String address) {
+    if (address.contains('Dasmariñas')) {
+      return 'Branch 1: 8XQ2+94H, Dasmariñas, Cavite'; // Example branch
+    }
+    // Add logic for other addresses if needed
+    return 'Branch 1'; // Default branch
+  }
 
   Future<void> _signUp() async {
     String firstName = _firstNameController.text.trim();
@@ -132,6 +143,16 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                   // Address Field with "Select Address" Button
                   _buildAddressField(),
                   const SizedBox(height: 10),
+                  // Nearest Branch Field
+                  _buildTextField(
+                    controller: _nearestBranchController,
+                    hintText: 'Nearest Branch',
+                    hasError: false, // No error for this field
+                    obscureText: false,
+                    readOnly: true, // Makes the field uneditable
+                  ),
+
+                  const SizedBox(height: 10),
                   _buildMobileNumberField(),
                   const SizedBox(height: 10),
                   _buildTextField(
@@ -192,7 +213,6 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                         ],
                       ),
                     ),
-
                   const SizedBox(height: 10),
                   // Sign Up Button
                   SizedBox(
@@ -248,11 +268,13 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     required bool hasError, // Indicates whether this field has an error
+    bool readOnly = false, // New property to make the field uneditable
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      readOnly: readOnly, // Makes the field uneditable
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
@@ -284,12 +306,10 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
               context,
               MaterialPageRoute(builder: (context) => const RegisterAddress()),
             );
-
-            // If an address is selected, update the controller with the selected address
             if (selectedAddress != null) {
-              setState(() {
-                _addressController.text = selectedAddress;
-              });
+              _addressController.text = selectedAddress;
+              _nearestBranchController.text =
+                  _getNearestBranch(selectedAddress); // Update nearest branch
             }
           },
         ),
@@ -308,33 +328,14 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
       keyboardType: TextInputType.phone,
       decoration: InputDecoration(
         hintText: 'Mobile Number',
-        prefixText: '+63 ', // Always show +63
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Colors.white.withOpacity(1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
-          borderSide: _errors["mobileNumber"]!
-              ? const BorderSide(color: Colors.red, width: 2) // Red outline
-              : BorderSide.none,
         ),
         contentPadding:
             const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
-      onChanged: (value) {
-        // Remove the +63 prefix and leading zero if present
-        if (value.startsWith('+63')) {
-          _mobileNumberController.text = value.substring(3); // Remove +63
-        } else if (value.startsWith('0')) {
-          // Remove the leading zero for local number input
-          _mobileNumberController.text =
-              value.substring(1); // Remove leading zero
-        }
-
-        // Keep the cursor at the end of the text
-        _mobileNumberController.selection = TextSelection.fromPosition(
-          TextPosition(offset: _mobileNumberController.text.length),
-        );
-      },
     );
   }
 }
