@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import the fl_chart package
 
 class WeeklySales extends StatefulWidget {
+  const WeeklySales({super.key});
+
   @override
   _WeeklySalesState createState() => _WeeklySalesState();
 }

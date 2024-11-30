@@ -100,8 +100,8 @@ class _RiderSignUpState extends State<RiderSignUp> {
                   // Logo
                   Image.asset(
                     'assets/images/logo.png',
-                    height: 250,
-                    width: 250,
+                    height: 200,
+                    width: 200,
                   ),
                   const SizedBox(height: 20),
                   // Input Fields

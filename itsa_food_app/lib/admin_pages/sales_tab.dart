@@ -5,6 +5,8 @@ import 'weekly_sales.dart'; // Import the WeeklySales screen
 import 'dart:math';
 
 class SalesTab extends StatefulWidget {
+  const SalesTab({super.key});
+
   @override
   _SalesTabState createState() => _SalesTabState();
 }
@@ -346,7 +348,7 @@ class _SalesTabState extends State<SalesTab> {
                                     ),
                                   ),
                                 )
-                                .toList(),
+                                ,
                           ],
                         ),
                 ],
@@ -419,7 +421,7 @@ class _SalesTabState extends State<SalesTab> {
                                     ),
                                   ),
                                 )
-                                .toList(),
+                                ,
                           ],
                         ),
                 ],

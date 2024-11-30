@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/login/login.dart';
+import 'package:itsa_food_app/sign_up/register_address.dart';
 
 class CustomerSignUp extends StatefulWidget {
   const CustomerSignUp({super.key});
@@ -16,6 +17,7 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   String? _message; // Error message or notification
 
@@ -103,8 +105,8 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                   // Logo
                   Image.asset(
                     'assets/images/logo.png',
-                    height: 250,
-                    width: 250,
+                    height: 200,
+                    width: 200,
                   ),
                   const SizedBox(height: 20),
                   // Input Fields
@@ -126,6 +128,11 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                     keyboardType: TextInputType.emailAddress,
                     hasError: _errors["email"]!,
                   ),
+                  const SizedBox(height: 10),
+                  // Address Field with "Select Address" Button
+                  _buildAddressField(),
+                  const SizedBox(height: 10),
+                  _buildMobileNumberField(),
                   const SizedBox(height: 10),
                   _buildMobileNumberField(),
                   const SizedBox(height: 10),
@@ -188,7 +195,7 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                       ),
                     ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   // Sign Up Button
                   SizedBox(
                     width: double.infinity, // Full width
@@ -257,6 +264,39 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
           borderSide: hasError
               ? const BorderSide(color: Colors.red, width: 2) // Red outline
               : BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      ),
+    );
+  }
+
+  Widget _buildAddressField() {
+    return TextField(
+      controller: _addressController,
+      decoration: InputDecoration(
+        hintText: 'Select Address',
+        filled: true,
+        fillColor: Colors.white,
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.location_on),
+          onPressed: () async {
+            // Navigate to RegisterAddress and wait for the selected address
+            String? selectedAddress = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RegisterAddress()),
+            );
+
+            // If an address is selected, update the controller with the selected address
+            if (selectedAddress != null) {
+              setState(() {
+                _addressController.text = selectedAddress;
+              });
+            }
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
         contentPadding:
             const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
