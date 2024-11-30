@@ -12,7 +12,12 @@ import 'package:itsa_food_app/edit/editProduct.dart';
 import 'dart:math'; // Import for random number generation
 
 class MenuManagement extends StatefulWidget {
-  const MenuManagement({super.key});
+  final String userName;
+
+  const MenuManagement({
+    super.key,
+    required this.userName,
+  });
 
   @override
   _MenuManagementState createState() => _MenuManagementState();
@@ -145,14 +150,18 @@ class _MenuManagementState extends State<MenuManagement> {
           ],
         ),
       ),
-      drawer: AdminSidebar(onLogout: () {
-        // Add logout logic here
-      }),
+      drawer: AdminSidebar(
+        onLogout: () {
+          // Add logout logic here
+        },
+        userName: widget.userName,
+      ),
       bottomNavigationBar: AdminBottomNavBar(
-        selectedIndex: 2, // Set to the appropriate index for Menu Management
+        selectedIndex: 2,
         onItemTapped: (index) {
           // Add navigation logic here
         },
+        userName: widget.userName,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddProductModal,

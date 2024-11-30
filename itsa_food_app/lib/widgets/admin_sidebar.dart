@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,8 +6,13 @@ import 'package:itsa_food_app/admin_pages/scratch&win.dart';
 
 class AdminSidebar extends StatelessWidget {
   final VoidCallback onLogout; // Callback for logout action
+  final String userName; // Add userName as a parameter
 
-  const AdminSidebar({super.key, required this.onLogout});
+  const AdminSidebar({
+    super.key,
+    required this.onLogout,
+    required this.userName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,25 +20,25 @@ class AdminSidebar extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          const DrawerHeader(
+          DrawerHeader(
             decoration: BoxDecoration(
-              color: Color(0xFF6E473B), // Updated color
+              color: const Color(0xFF6E473B), // Updated color
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Admin Panel',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Welcome, Admin!',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  'Welcome, $userName', // Display the userName here
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),
@@ -55,7 +58,7 @@ class AdminSidebar extends StatelessWidget {
             leading: const Icon(Icons.note),
             title: const Text('Mini Games'),
             onTap: () {
-              // Navigate to CreateVouchers screen
+              // Navigate to Mini Games screen
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ScratchCardGrid()),
@@ -132,16 +135,13 @@ class AdminSidebar extends StatelessWidget {
   }
 
   Future<void> _logout(BuildContext context) async {
-    // Accept context as a parameter
     try {
       await FirebaseAuth.instance.signOut(); // Sign out from Firebase
-      // Navigate to Home page without a back button
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false, // This removes all previous routes
       );
     } catch (e) {
-      // Handle logout errors if needed
       print("Error logging out: $e");
     }
   }

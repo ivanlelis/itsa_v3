@@ -18,7 +18,7 @@ class AdminHome extends StatefulWidget {
 
   const AdminHome({
     super.key,
-    this.userName = "Admin",
+    required this.userName,
     required this.email,
     this.imageUrl = '',
   });
@@ -191,7 +191,6 @@ class _AdminHomeState extends State<AdminHome> {
                 ),
                 // New Most Ordered Card
                 const MostOrderedCard(),
-                // New Card with Button to Forecasting
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 1,
                   child: Card(
@@ -460,7 +459,11 @@ class _AdminHomeState extends State<AdminHome> {
           ),
         ),
       ),
-      drawer: AdminSidebar(onLogout: _logout),
+      drawer: AdminSidebar(
+        onLogout: _logout,
+        userName: widget.userName,
+      ),
+
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -536,6 +539,7 @@ class _AdminHomeState extends State<AdminHome> {
           AdminBottomNavBar(
             selectedIndex: _selectedIndex,
             onItemTapped: _onItemTapped,
+            userName: widget.userName,
           ),
         ],
       ),

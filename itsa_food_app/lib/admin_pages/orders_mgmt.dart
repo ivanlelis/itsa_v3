@@ -9,7 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/admin_pages/order_details.dart';
 
 class OrdersManagement extends StatefulWidget {
-  const OrdersManagement({super.key});
+  final String userName;
+  const OrdersManagement({super.key, required this.userName,});
 
   @override
   _OrdersManagementState createState() => _OrdersManagementState();
@@ -80,7 +81,7 @@ class _OrdersManagementState extends State<OrdersManagement>
     return Scaffold(
       key: _scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
-      drawer: AdminSidebar(onLogout: _onLogout),
+      drawer: AdminSidebar(onLogout: _onLogout, userName: widget.userName,),
       body: Column(
         children: [
           const SizedBox(height: 20),
@@ -197,6 +198,7 @@ class _OrdersManagementState extends State<OrdersManagement>
       bottomNavigationBar: AdminBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
+        userName: widget.userName,
       ),
     );
   }

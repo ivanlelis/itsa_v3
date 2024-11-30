@@ -57,12 +57,19 @@ class FirebaseService {
 
   Future<Map<String, dynamic>?> getAdminInfo(String email) async {
     try {
-      DocumentSnapshot snapshot =
-          await _firestore.collection('admin').doc('admin_1').get();
-      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+      // List of admin document IDs
+      List<String> adminDocIDs = ['admin_1', 'admin_2', 'admin_3'];
 
-      if (data != null && data['email'] == email) {
-        return data; // Return admin data if email matches
+      // Loop through the admin document IDs
+      for (String docID in adminDocIDs) {
+        DocumentSnapshot snapshot =
+            await _firestore.collection('admin').doc(docID).get();
+        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+
+        // Check if the document exists and the email matches
+        if (data != null && data['email'] == email) {
+          return data; // Return the admin data if email matches
+        }
       }
     } catch (e) {
       print("Error fetching admin info: $e");

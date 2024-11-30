@@ -8,7 +8,8 @@ import 'package:itsa_food_app/widgets/admin_sidebar.dart'; // Import AdminSideba
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for logout
 
 class UserManagement extends StatefulWidget {
-  const UserManagement({super.key});
+  final String userName;
+  const UserManagement({super.key, required this.userName,});
 
   @override
   _UserManagementState createState() => _UserManagementState();
@@ -57,7 +58,8 @@ class _UserManagementState extends State<UserManagement> {
       key: scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: scaffoldKey),
       drawer: AdminSidebar(
-        onLogout: _onLogout, // Pass the _onLogout function to AdminSidebar
+        onLogout: _onLogout,
+        userName: widget.userName,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
@@ -135,6 +137,7 @@ class _UserManagementState extends State<UserManagement> {
       bottomNavigationBar: AdminBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
+        userName: widget.userName,
       ),
     );
   }

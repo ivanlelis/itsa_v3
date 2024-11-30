@@ -72,14 +72,27 @@ class _LoginPageState extends State<LoginPage> {
         if (adminInfo != null && adminInfo.isNotEmpty) {
           // Admin navigation
           String adminEmail = adminInfo['email'] ?? "No Email Provided";
+          String branchName = ""; // Placeholder for branch name
+
+          // Determine branch name based on admin email
+          if (adminEmail == 'admin1@gmail.com') {
+            branchName = "Main Branch Admin";
+          } else if (adminEmail == 'admin2@gmail.com') {
+            branchName = "Sta. Cruz II Admin";
+          } else if (adminEmail == 'admin3@gmail.com') {
+            branchName = "San Dionisio Admin";
+          }
+
+          // Update provider with admin email
           Provider.of<UserProvider>(context, listen: false)
               .setAdminEmail(adminEmail);
 
+          // Navigate to AdminHome with specific branch name
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => AdminHome(
-                userName: "Admin",
+                userName: branchName, // Display branch-specific username
                 email: adminEmail,
                 imageUrl: "",
               ),
@@ -92,11 +105,12 @@ class _LoginPageState extends State<LoginPage> {
           // Super admin navigation
           String superadEmail = superadInfo['email'] ?? "No Email Provided";
 
+          // Pass "Super Admin" as userName
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => SuperAdminHome(
-                userName: "Super Admin",
+                userName: "Super Admin", // Super admin name
                 email: superadEmail,
                 imageUrl: "",
               ),

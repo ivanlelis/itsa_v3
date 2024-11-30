@@ -7,11 +7,13 @@ import 'package:itsa_food_app/admin_pages/user_mgmt.dart';
 class AdminBottomNavBar extends StatelessWidget {
   final int selectedIndex; // Index of the currently selected icon
   final Function(int) onItemTapped; // Callback function when an icon is tapped
+  final String userName;
 
   const AdminBottomNavBar({
     super.key,
     required this.selectedIndex,
     required this.onItemTapped,
+    required this.userName,
   });
 
   @override
@@ -48,23 +50,34 @@ class AdminBottomNavBar extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                    AdminHome(email: "your_email@example.com")),
+                builder: (context) => AdminHome(
+                      email: "your_email@example.com",
+                      userName: userName,
+                    )),
           );
         } else if (index == 1) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => OrdersManagement()),
+            MaterialPageRoute(
+                builder: (context) => OrdersManagement(
+                      userName: userName,
+                    )),
           );
         } else if (index == 2) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const MenuManagement()),
+            MaterialPageRoute(
+                builder: (context) => MenuManagement(
+                      userName: userName,
+                    )),
           );
         } else if (index == 3) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => UserManagement()),
+            MaterialPageRoute(
+                builder: (context) => UserManagement(
+                      userName: userName,
+                    )),
           );
         } else {
           onItemTapped(index);
