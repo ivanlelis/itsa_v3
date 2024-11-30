@@ -134,8 +134,6 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                   const SizedBox(height: 10),
                   _buildMobileNumberField(),
                   const SizedBox(height: 10),
-                  _buildMobileNumberField(),
-                  const SizedBox(height: 10),
                   _buildTextField(
                     controller: _passwordController,
                     hintText: 'Password',

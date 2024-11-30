@@ -144,14 +144,20 @@ class _RegisterAddressState extends State<RegisterAddress> {
     double minDistance = double.infinity;
     String nearestBranch = '';
 
+    // Define the mapping of plus codes to branch names
+    final Map<String, String> branchNames = {
+      '8XQ2+94H, Dasmariñas, Cavite': 'Sta. Lucia',
+      '8X85+44, Dasmariñas, Cavite': 'Sta. Cruz II',
+      '8XQ4+228, Dasmariñas, Cavite': 'San Dionisio',
+    };
+
     for (var branchPlusCode in branchPlusCodes) {
       final coordinates = await _getCoordinatesFromPlusCode(branchPlusCode);
       if (coordinates != null) {
         double distance = _getDistance(selectedLocation, coordinates);
         if (distance < minDistance) {
           minDistance = distance;
-          nearestBranch =
-              branchPlusCode; // You can modify this to return branch name if needed
+          nearestBranch = branchNames[branchPlusCode] ?? 'Unknown Branch';
         }
       }
     }
