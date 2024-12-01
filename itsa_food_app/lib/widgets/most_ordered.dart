@@ -57,7 +57,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
 
   Future<void> fetchMostOrderedProduct() async {
     setState(() {
-      mostOrderedProduct = null; // Show fetching state
+      mostOrderedProduct = null;
       mostOrderedProductImageUrl = null;
     });
 
@@ -73,23 +73,23 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
     if (selectedFilter == 'Today') {
       // Start and end of the current day in Philippine Time
       startDate = DateTime(now.year, now.month, now.day);
-      endDate = DateTime(now.year, now.month, now.day);
+      endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
     } else if (selectedFilter == '3 days') {
       // Start and end of the last 3 days in Philippine Time
       startDate = now.subtract(const Duration(days: 3));
       startDate = DateTime(startDate.year, startDate.month, startDate.day);
       endDate = now.subtract(const Duration(days: 1));
-      endDate = DateTime(endDate.year, endDate.month, endDate.day);
+      endDate = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
     } else if (selectedFilter == '1 week') {
       // Start and end of the last 7 days in Philippine Time
       startDate = now.subtract(const Duration(days: 7));
       startDate = DateTime(startDate.year, startDate.month, startDate.day);
       endDate = now.subtract(const Duration(days: 1));
-      endDate = DateTime(endDate.year, endDate.month, endDate.day);
+      endDate = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
     } else {
       // Default to Today
       startDate = DateTime(now.year, now.month, now.day);
-      endDate = DateTime(now.year, now.month, now.day);
+      endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
     }
 
     try {
@@ -114,8 +114,9 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
           Timestamp orderTimestamp = orderDoc['timestamp'];
           DateTime orderDate =
               orderTimestamp.toDate().toUtc().add(const Duration(hours: 8));
-          orderDate = DateTime(orderDate.year, orderDate.month,
-              orderDate.day); // Normalize to the start of the day
+
+          // Normalize orderDate to midnight Philippine Time (start of day)
+          orderDate = DateTime(orderDate.year, orderDate.month, orderDate.day);
 
           // Check if the orderDate falls within the selected date range
           if (orderDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
@@ -164,7 +165,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
         mostOrderedProduct = mostOrdered;
       });
 
-      // Debugging: Log the most ordered product
       debugPrint('Most Ordered Product: $mostOrdered');
     } catch (e) {
       setState(() {

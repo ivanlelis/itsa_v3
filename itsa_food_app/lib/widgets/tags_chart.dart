@@ -210,8 +210,9 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                             showTitles: true,
                             reservedSize: 40,
                             getTitlesWidget: (value, _) {
-                              if (value.toInt() >= tagCounts.length)
+                              if (value.toInt() >= tagCounts.length) {
                                 return const SizedBox.shrink();
+                              }
                               final tag =
                                   tagCounts.keys.elementAt(value.toInt());
                               return Transform.rotate(
