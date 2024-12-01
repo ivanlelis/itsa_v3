@@ -3,7 +3,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class FrequentOrdersByTagsChart extends StatefulWidget {
-  const FrequentOrdersByTagsChart({super.key});
+  final String userName;
+
+  const FrequentOrdersByTagsChart({super.key, required this.userName});
 
   @override
   _FrequentOrdersByTagsChartState createState() =>
@@ -35,10 +37,23 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
+      // Determine the branchID based on the userName
+      String branchID;
+      if (widget.userName == "Main Branch Admin") {
+        branchID = "branch 1";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        branchID = "branch 2";
+      } else if (widget.userName == "San Dionisio Admin") {
+        branchID = "branch 3";
+      } else {
+        branchID = ""; // Default or invalid branchID if needed
+      }
+
       // Fetch orders for all customers in parallel
       List<Future> orderFetches = [];
       for (var customerDoc in customerSnapshot.docs) {
-        orderFetches.add(fetchOrdersForCustomer(customerDoc, tempTagCounts));
+        orderFetches
+            .add(fetchOrdersForCustomer(customerDoc, tempTagCounts, branchID));
       }
 
       // Wait for all order fetches to complete
@@ -57,9 +72,9 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
     }
   }
 
-  // Function to fetch orders for a specific customer and process them
-  Future<void> fetchOrdersForCustomer(
-      DocumentSnapshot customerDoc, Map<String, int> tempTagCounts) async {
+// Function to fetch orders for a specific customer and process them
+  Future<void> fetchOrdersForCustomer(DocumentSnapshot customerDoc,
+      Map<String, int> tempTagCounts, String branchID) async {
     try {
       // Get the timestamp range based on selected time filter
       DateTime now = DateTime.now();
@@ -72,10 +87,11 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
         startDate = now.subtract(Duration(days: 7)); // Last 7 days
       }
 
-      // Fetch each customer's orders, filtered by timestamp
+      // Fetch each customer's orders, filtered by timestamp and branchID
       QuerySnapshot orderSnapshot = await customerDoc.reference
           .collection('orders')
           .where('timestamp', isGreaterThanOrEqualTo: startDate)
+          .where('branchID', isEqualTo: branchID) // Filter by branchID
           .get();
 
       for (var orderDoc in orderSnapshot.docs) {
@@ -118,6 +134,10 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
   }
 
   List<BarChartGroupData> _buildBarChartData() {
+    if (tagCounts.isEmpty) {
+      return []; // Return empty list when no data
+    }
+
     int index = 0;
     return tagCounts.entries.map((entry) {
       final currentIndex = index++;
@@ -180,60 +200,63 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
             ),
             const SizedBox(height: 20),
             SizedBox(
-                height: 300,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: tagCounts.values
-                            .reduce((a, b) => a > b ? a : b)
-                            .toDouble() +
-                        5,
-                    barGroups: _buildBarChartData(),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, _) => Text(
-                            value.toInt().toString(),
-                            style: const TextStyle(fontSize: 10),
-                          ),
+              height: 300,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: tagCounts.isNotEmpty
+                      ? tagCounts.values
+                              .reduce((a, b) => a > b ? a : b)
+                              .toDouble() +
+                          5
+                      : 5, // Ensure maxY is set even with empty data
+                  barGroups: _buildBarChartData(),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, _) => Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(fontSize: 10),
                         ),
                       ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 40,
-                            getTitlesWidget: (value, _) {
-                              if (value.toInt() >= tagCounts.length) {
-                                return const SizedBox.shrink();
-                              }
-                              final tag =
-                                  tagCounts.keys.elementAt(value.toInt());
-                              return Transform.rotate(
-                                angle: -45 * 3.1415927 / 180,
-                                child: Text(
-                                  tag.length > 10
-                                      ? '${tag.substring(0, 10)}...'
-                                      : tag,
-                                  style: const TextStyle(fontSize: 10),
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.right,
-                                ),
-                              );
-                            }),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, _) {
+                          if (value.toInt() >= tagCounts.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final tag = tagCounts.keys.elementAt(value.toInt());
+                          return Transform.rotate(
+                            angle: -45 * 3.1415927 / 180,
+                            child: Text(
+                              tag.length > 10
+                                  ? '${tag.substring(0, 10)}...'
+                                  : tag,
+                              style: const TextStyle(fontSize: 10),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    gridData: FlGridData(show: true),
-                    borderData: FlBorderData(show: true),
-                    barTouchData: BarTouchData(enabled: false),
                   ),
-                )),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
+                  barTouchData: BarTouchData(enabled: false),
+                ),
+              ),
+            ),
           ],
         ),
       ),

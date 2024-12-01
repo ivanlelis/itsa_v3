@@ -259,22 +259,37 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         'matCostPerProduct': rawMatCostPerProd,
       };
 
-      // Save the transaction data in the transactions collection and subcollection
+      // Step 6: Determine the correct path based on branchID
+      String transactionsCollectionPath;
+      if (widget.branchID == 'branch 1') {
+        transactionsCollectionPath =
+            'transactions/transactions/$transactionsSubCollectionName';
+      } else if (widget.branchID == 'branch 2') {
+        transactionsCollectionPath =
+            'transactions_branch1/transactions/$transactionsSubCollectionName';
+      } else if (widget.branchID == 'branch 3') {
+        transactionsCollectionPath =
+            'transactions_branch2/transactions/$transactionsSubCollectionName';
+      } else {
+        throw Exception('Invalid branchID');
+      }
+
+      // Save the transaction data in the appropriate collection and subcollection
       await FirebaseFirestore.instance
-          .collection('transactions') // Top-level collection
-          .doc('transactions') // Use a placeholder for the top-level document
-          .collection(transactionsSubCollectionName) // Subcollection
+          .doc(
+              transactionsCollectionPath) // Dynamic collection path based on branchID
+          .collection('transactions')
           .doc(orderID) // Document created inside the subcollection
           .set(transactionData);
 
       await _updateDailySales(currentDate, totalProdCost);
       await _updateDailyNetProfit(currentDate, totalNetProfit);
 
-      // Step 6: Update stock and clear the cart
+      // Step 7: Update stock and clear the cart
       await _updateStockFromCartItems();
       await _deleteCart();
 
-      // Step 7: Show success modal
+      // Step 8: Show success modal
       _showPaymentSuccessModal();
     } catch (e) {
       print('Error creating order: $e');

@@ -140,13 +140,26 @@ class _MenuState extends State<Menu> {
   }
 
   Stream<QuerySnapshot> _getProducts() {
-    final collection = FirebaseFirestore.instance.collection('products');
+    final firestore = FirebaseFirestore.instance;
+
+    // Set the collection based on the branchID
+    String productsCollection = 'products'; // Default collection
+    if (widget.branchID == 'branch 2') {
+      productsCollection =
+          'products_branch1'; // For branch 2, fetch from products_branch1
+    } else if (widget.branchID == 'branch 3') {
+      productsCollection =
+          'products_branch2'; // For branch 3, fetch from products_branch2
+    }
+
+    final collection = firestore.collection(productsCollection);
 
     if (_selectedTags.isNotEmpty) {
       return collection
           .where('tags', arrayContainsAny: _selectedTags)
           .snapshots();
     }
+
     return collection.snapshots();
   }
 
@@ -391,7 +404,7 @@ class _MenuState extends State<Menu> {
 }
 
 class ProductCard extends StatefulWidget {
-  final String productID; // Updated to use productID
+  final String productID;
   final String productName;
   final String imageUrl;
   final String? takoyakiPrices;
@@ -448,38 +461,50 @@ class _ProductCardState extends State<ProductCard> {
     final firestore = FirebaseFirestore.instance;
 
     try {
-      // Fetch product's ingredients field using productID as document ID
-      final productDoc =
-          await firestore.collection('products').doc(widget.productID).get();
-      final List<dynamic> ingredients = productDoc.data()!['ingredients'] ?? [];
+      String productsCollection;
 
-      // Check stock status for each ingredient in rawStock
+      // Assign collection based on the branchID
+      if (widget.branchID == 'branch 2') {
+        productsCollection =
+            'products_branch1'; // For branch 2, fetch from products_branch1
+      } else if (widget.branchID == 'branch 1') {
+        productsCollection = 'products'; // For branch 1, fetch from products
+      } else if (widget.branchID == 'branch 3') {
+        productsCollection =
+            'products_branch2'; // For branch 3, fetch from products_branch2
+      } else {
+        productsCollection =
+            'products'; // Default to 'products' if branchID is unknown
+      }
+
+      // Fetch product's ingredients field using productID as document ID
+      final productDoc = await firestore
+          .collection(productsCollection)
+          .doc(widget.productID)
+          .get();
+      final List<dynamic> ingredients = productDoc.data()?['ingredients'] ?? [];
+
       List<Map<String, String>> fetchedIngredientsStatus = [];
 
+      // Check stock status for each ingredient
       for (var ingredient in ingredients) {
-        final String ingredientName =
-            ingredient['name']; // Assuming each ingredient has a name field
+        final String ingredientName = ingredient['name'];
 
-        // Fetch raw stock document using ingredient name as the document ID
+        // Fetch raw stock document using ingredient name
         final rawStockQuery = await firestore
             .collection('rawStock')
             .where('matName', isEqualTo: ingredientName)
             .get();
 
         if (rawStockQuery.docs.isNotEmpty) {
-          // Retrieve the quantity value from the raw stock document
           final int quantity = rawStockQuery.docs.first.data()['quantity'] ?? 0;
-
-          // Determine stock status based on quantity
           final bool inStock = quantity >= 1;
 
-          // Add ingredient status to the list
           fetchedIngredientsStatus.add({
             'name': ingredientName,
             'status': inStock ? 'In Stock' : 'Out of Stock',
           });
         } else {
-          // If no matching ingredient is found in rawStock, mark as Out of Stock
           fetchedIngredientsStatus.add({
             'name': ingredientName,
             'status': 'Out of Stock',
@@ -522,14 +547,12 @@ class _ProductCardState extends State<ProductCard> {
     bool isOutOfStock = ingredientsStatus
         .any((ingredient) => ingredient['status'] == 'Out of Stock');
 
-    // Get screen dimensions for responsiveness
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return GestureDetector(
       onTap: () {
         if (isOutOfStock) {
-          // Show the dialog when the product is out of stock
           _showOutOfStockDialog(context);
         } else {
           Navigator.push(
@@ -566,16 +589,13 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Responsive height for image
             Stack(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
                   child: SizedBox(
-                    width:
-                        screenWidth * 0.9, // Responsive width (90% of screen)
-                    height:
-                        screenHeight * 0.2, // Responsive height (20% of screen)
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.2,
                     child: Image.network(
                       widget.imageUrl,
                       fit: BoxFit.cover,
@@ -589,14 +609,13 @@ class _ProductCardState extends State<ProductCard> {
                     child: Container(
                       width: screenWidth * 0.9,
                       height: screenHeight * 0.2,
-                      color: Colors.black.withOpacity(0.5), // Dim the image
+                      color: Colors.black.withOpacity(0.5),
                       child: Center(
                         child: Text(
                           'Out of Stock',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize:
-                                screenWidth * 0.05, // Responsive font size
+                            fontSize: screenWidth * 0.05,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -605,10 +624,8 @@ class _ProductCardState extends State<ProductCard> {
                   ),
               ],
             ),
-
-            // Responsive padding and text
             Padding(
-              padding: EdgeInsets.all(screenWidth * 0.02), // Dynamic padding
+              padding: EdgeInsets.all(screenWidth * 0.02),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -616,10 +633,10 @@ class _ProductCardState extends State<ProductCard> {
                     widget.productName,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: screenWidth * 0.045, // Responsive font size
+                      fontSize: screenWidth * 0.045,
                     ),
                   ),
-                  SizedBox(height: screenWidth * 0.01), // Dynamic spacing
+                  SizedBox(height: screenWidth * 0.01),
                   _buildPriceContainer(startingPriceText),
                 ],
               ),
@@ -630,7 +647,6 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  // Method to show the out-of-stock dialog
   void _showOutOfStockDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -641,7 +657,7 @@ class _ProductCardState extends State<ProductCard> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: Text("OK"),
             ),
@@ -657,8 +673,7 @@ class _ProductCardState extends State<ProductCard> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       padding: EdgeInsets.symmetric(
-        horizontal:
-            screenWidth * 0.03, // Adjust horizontal padding for responsiveness
+        horizontal: screenWidth * 0.03,
         vertical: 6.0,
       ),
       decoration: BoxDecoration(
@@ -669,11 +684,9 @@ class _ProductCardState extends State<ProductCard> {
         price,
         style: TextStyle(
           color: Colors.white,
-          fontSize:
-              screenWidth * 0.03, // Adjust font size based on screen width
+          fontSize: screenWidth * 0.03,
         ),
-        overflow:
-            TextOverflow.ellipsis, // Avoid overflow if the text is too long
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

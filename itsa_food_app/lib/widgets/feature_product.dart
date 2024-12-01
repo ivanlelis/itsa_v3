@@ -3,7 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'feature_modal.dart';
 
 class FeatureProduct extends StatefulWidget {
-  const FeatureProduct({super.key});
+  final String userName;
+
+  const FeatureProduct({super.key, required this.userName});
 
   @override
   State<FeatureProduct> createState() => _FeatureProductState();
@@ -28,9 +30,24 @@ class _FeatureProductState extends State<FeatureProduct> {
       setState(() => isLoading = true);
       productCount.clear();
 
-      // Fetch customers and orders
-      QuerySnapshot customerSnapshot =
-          await FirebaseFirestore.instance.collection('customer').get();
+      // Determine branchID filter based on userName
+      String? branchID;
+      String collectionName = 'products'; // Default collection
+      if (widget.userName == "Main Branch Admin") {
+        branchID = "branch 1";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        branchID = "branch 2";
+        collectionName = 'products_branch1'; // Fetch from branch 1 collection
+      } else if (widget.userName == "San Dionisio Admin") {
+        branchID = "branch 3";
+        collectionName = 'products_branch2'; // Fetch from branch 2 collection
+      }
+
+      // Fetch customers and orders with branch filtering
+      QuerySnapshot customerSnapshot = await FirebaseFirestore.instance
+          .collection('customer')
+          .where('branchID', isEqualTo: branchID)
+          .get();
 
       for (var customerDoc in customerSnapshot.docs) {
         QuerySnapshot orderSnapshot =
@@ -62,7 +79,7 @@ class _FeatureProductState extends State<FeatureProduct> {
       String? imageUrl;
       if (mostOrdered != null) {
         QuerySnapshot productSnapshot =
-            await FirebaseFirestore.instance.collection('products').get();
+            await FirebaseFirestore.instance.collection(collectionName).get();
 
         for (var productDoc in productSnapshot.docs) {
           if (productDoc['productName'] == mostOrdered) {
@@ -72,9 +89,9 @@ class _FeatureProductState extends State<FeatureProduct> {
         }
       }
 
-      // Fetch all products
+      // Fetch all products from the appropriate collection
       QuerySnapshot productSnapshot =
-          await FirebaseFirestore.instance.collection('products').get();
+          await FirebaseFirestore.instance.collection(collectionName).get();
       allProducts = productSnapshot.docs
           .map((doc) => doc['productName'].toString())
           .toList();

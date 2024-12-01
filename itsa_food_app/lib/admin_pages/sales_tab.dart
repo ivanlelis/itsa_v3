@@ -5,7 +5,9 @@ import 'weekly_sales.dart'; // Import the WeeklySales screen
 import 'dart:math';
 
 class SalesTab extends StatefulWidget {
-  const SalesTab({super.key});
+  final String userName;
+
+  const SalesTab({super.key, required this.userName});
 
   @override
   _SalesTabState createState() => _SalesTabState();
@@ -333,22 +335,20 @@ class _SalesTabState extends State<SalesTab> {
                                 ),
                               ),
                             ),
-                            ...currentWeekSalesData
-                                .map(
-                                  (data) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 4.0),
-                                    child: Text(
-                                      '${data['date']}: ₱${data['sales'].toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF6E473B),
-                                      ),
-                                    ),
+                            ...currentWeekSalesData.map(
+                              (data) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4.0),
+                                child: Text(
+                                  '${data['date']}: ₱${data['sales'].toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF6E473B),
                                   ),
-                                )
-                                ,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                 ],
@@ -406,22 +406,20 @@ class _SalesTabState extends State<SalesTab> {
                                 ),
                               ),
                             ),
-                            ...previousWeekSalesData
-                                .map(
-                                  (data) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 4.0),
-                                    child: Text(
-                                      '${data['date']}: ₱${data['sales'].toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF6E473B),
-                                      ),
-                                    ),
+                            ...previousWeekSalesData.map(
+                              (data) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4.0),
+                                child: Text(
+                                  '${data['date']}: ₱${data['sales'].toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF6E473B),
                                   ),
-                                )
-                                ,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                 ],

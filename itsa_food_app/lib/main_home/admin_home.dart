@@ -72,15 +72,34 @@ class _AdminHomeState extends State<AdminHome> {
       throw ArgumentError('Invalid filter: $filter');
     }
 
+    String? branchID;
+    // Determine the branchID based on the userName
+    if (widget.userName == "Main Branch Admin") {
+      branchID = "branch 1";
+    } else if (widget.userName == "Sta. Cruz II Admin") {
+      branchID = "branch 2";
+    } else if (widget.userName == "San Dionisio Admin") {
+      branchID = "branch 3";
+    }
+
+    if (branchID == null) {
+      setState(() {
+        isLoading = false; // Stop loading indicator
+      });
+      throw ArgumentError("Invalid userName: ${widget.userName}");
+    }
+
     try {
       // Fetch all customer documents
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
       for (var customerDoc in customerSnapshot.docs) {
-        // For each customer, fetch their orders
-        QuerySnapshot orderSnapshot =
-            await customerDoc.reference.collection('orders').get();
+        // For each customer, fetch their orders and filter by branchID
+        QuerySnapshot orderSnapshot = await customerDoc.reference
+            .collection('orders')
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
+            .get();
 
         for (var orderDoc in orderSnapshot.docs) {
           Timestamp timestamp = orderDoc['timestamp'];
@@ -188,10 +207,11 @@ class _AdminHomeState extends State<AdminHome> {
                   totalOrders: totalOrders,
                   deliveryOrders: deliveryOrders,
                   pickupOrders: pickupOrders,
+                  userName: widget.userName,
                 ),
                 // New Most Ordered Card
                 MostOrderedCard(userName: widget.userName),
-                SizedBox( 
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 1,
                   child: Card(
                     elevation: 4,
@@ -220,7 +240,7 @@ class _AdminHomeState extends State<AdminHome> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ForecastingPage(),
+                                  builder: (context) => ForecastingPage(userName: widget.userName),
                                 ),
                               );
                             },
@@ -452,7 +472,7 @@ class _AdminHomeState extends State<AdminHome> {
                       ),
                     ),
                   ),
-                const FrequentOrdersByTagsChart(),
+                FrequentOrdersByTagsChart(userName: widget.userName),
               ],
             ),
           ),

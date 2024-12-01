@@ -35,19 +35,13 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       "emerged as the favorite",
     ];
 
-    List<String> subjects = [
-      mostOrderedProduct,
-    ];
-
     String timeReference = timeFrame == 'Today'
         ? 'today'
         : timeReferences[Random().nextInt(timeReferences.length)];
 
     String action = actions[Random().nextInt(actions.length)];
 
-    String subject = subjects[0];
-
-    return "$subject $action $timeReference!";
+    return "$mostOrderedProduct $action $timeReference!";
   }
 
   Future<void> fetchMostOrderedProduct() async {
@@ -66,38 +60,54 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
     DateTime endDate;
 
     if (selectedFilter == 'Today') {
-      // Start and end of the current day in Philippine Time
       startDate = DateTime(now.year, now.month, now.day);
       endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
     } else if (selectedFilter == '3 days') {
-      // Start and end of the last 3 days in Philippine Time
       startDate = now.subtract(const Duration(days: 3));
       startDate = DateTime(startDate.year, startDate.month, startDate.day);
       endDate = now.subtract(const Duration(days: 1));
       endDate = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
     } else if (selectedFilter == '1 week') {
-      // Start and end of the last 7 days in Philippine Time
       startDate = now.subtract(const Duration(days: 7));
       startDate = DateTime(startDate.year, startDate.month, startDate.day);
       endDate = now.subtract(const Duration(days: 1));
       endDate = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
     } else {
-      // Default to Today
       startDate = DateTime(now.year, now.month, now.day);
       endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
     }
 
     try {
+      // Determine branchID based on userName
+      String? branchID;
+
+      if (widget.userName == "Main Branch Admin") {
+        branchID = "branch 1";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        branchID = "branch 2";
+      } else if (widget.userName == "San Dionisio Admin") {
+        branchID = "branch 3";
+      }
+
+      if (branchID == null) {
+        setState(() {
+          mostOrderedProduct = 'User does not have access to any branch.';
+          mostOrderedProductImageUrl = null;
+        });
+        return;
+      }
+
       // Fetch all customer documents
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      // Fetch all orders for all customers concurrently
+      // Fetch orders for all customers, filtered by branchID
       List<Future<QuerySnapshot>> orderFutures = customerSnapshot.docs.map(
         (customerDoc) {
           return customerDoc.reference
               .collection('orders')
-              .get(); // Fetch all orders without time range filtering
+              .where('branchID', isEqualTo: branchID)
+              .get();
         },
       ).toList();
 
@@ -109,20 +119,15 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
           Timestamp orderTimestamp = orderDoc['timestamp'];
           DateTime orderDate =
               orderTimestamp.toDate().toUtc().add(const Duration(hours: 8));
-
-          // Normalize orderDate to midnight Philippine Time (start of day)
           orderDate = DateTime(orderDate.year, orderDate.month, orderDate.day);
 
-          // Check if the orderDate falls within the selected date range
           if (orderDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
               orderDate.isBefore(endDate.add(const Duration(days: 1)))) {
             List<dynamic> products = orderDoc['products'] ?? [];
             for (var product in products) {
-              // Extract productName and quantity
               String productName = product['productName'];
               int quantity = product['quantity'] ?? 1;
 
-              // Update product count
               productCount[productName] =
                   (productCount[productName] ?? 0) + quantity;
             }
@@ -141,7 +146,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       });
 
       if (mostOrdered != null) {
-        // Search for the most ordered product in the "products" collection
         QuerySnapshot productsSnapshot =
             await FirebaseFirestore.instance.collection('products').get();
 
@@ -173,7 +177,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
   @override
   void initState() {
     super.initState();
-    // Fetch data for 'Today' immediately
     selectedFilter = 'Today';
     fetchMostOrderedProduct();
   }
@@ -191,7 +194,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
             Text(
               "What's getting ordered the most?",
               style: TextStyle(
-                fontSize: 20, // Increased font size for the header
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -243,7 +246,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
               ],
             ),
             const SizedBox(height: 16),
-            if (mostOrderedProduct == null && selectedFilter == 'Today')
+            if (mostOrderedProduct == null)
               Center(
                 child: Text(
                   "No most ordered product yet.",
@@ -283,10 +286,8 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          mostOrderedProduct != null
-                              ? generateRandomText(
-                                  selectedFilter, mostOrderedProduct!)
-                              : '',
+                          generateRandomText(
+                              selectedFilter, mostOrderedProduct!),
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[700],
@@ -305,7 +306,9 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const FeatureProduct()),
+                      builder: (context) =>
+                          FeatureProduct(userName: widget.userName),
+                    ),
                   );
                 },
                 style: TextButton.styleFrom(

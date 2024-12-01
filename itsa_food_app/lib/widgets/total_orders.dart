@@ -7,8 +7,7 @@ class TotalOrdersCard extends StatefulWidget {
   final int totalOrders;
   final int deliveryOrders;
   final int pickupOrders;
-
-  // New parameters for customization
+  final String userName;
   final double chartWidth;
   final double chartHeight;
   final double sectionRadius;
@@ -16,6 +15,7 @@ class TotalOrdersCard extends StatefulWidget {
 
   const TotalOrdersCard({
     super.key,
+    required this.userName,
     required this.totalOrders,
     required this.deliveryOrders,
     required this.pickupOrders,
@@ -37,7 +37,6 @@ class _TotalOrdersCardState extends State<TotalOrdersCard> {
   bool loading = true; // New loading state
   Timer? updateTimer; // Timer for periodic fetching
 
-  // Function to fetch data from Firestore
   Future<void> fetchOrderCounts() async {
     setState(() {
       loading = true; // Set loading to true when fetching starts
@@ -47,14 +46,31 @@ class _TotalOrdersCardState extends State<TotalOrdersCard> {
       int deliveryCount = 0;
       int pickupCount = 0;
 
-      // Fetch all customer documents and process orders in parallel
+      // Determine branchID based on userName
+      String? branchID;
+      if (widget.userName == "Main Branch Admin") {
+        branchID = "branch 1";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        branchID = "branch 2";
+      } else if (widget.userName == "San Dionisio Admin") {
+        branchID = "branch 3";
+      }
+
+      if (branchID == null) {
+        throw ArgumentError("Invalid userName: ${widget.userName}");
+      }
+
+      // Fetch all customer documents
       final customersSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      // Use asyncMap for concurrent order subcollection fetches
+      // Filter orders based on branchID
       await Future.wait(customersSnapshot.docs.map((customerDoc) async {
-        final ordersSnapshot =
-            await customerDoc.reference.collection('orders').get();
+        final ordersSnapshot = await customerDoc.reference
+            .collection('orders')
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
+            .get();
+
         for (var orderDoc in ordersSnapshot.docs) {
           String orderType = orderDoc['orderType'];
           if (orderType == 'Delivery') {
