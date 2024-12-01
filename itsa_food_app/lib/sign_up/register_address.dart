@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:math';
 
 class RegisterAddress extends StatefulWidget {
-  const RegisterAddress({Key? key}) : super(key: key);
+  const RegisterAddress({super.key});
 
   @override
   _RegisterAddressState createState() => _RegisterAddressState();
@@ -235,7 +235,7 @@ class _RegisterAddressState extends State<RegisterAddress> {
                 ),
                 const SizedBox(height: 10),
                 if (_suggestions.isNotEmpty) ...[
-                  Container(
+                  SizedBox(
                     height: 200,
                     child: ListView.builder(
                       itemCount: _suggestions.length,
@@ -278,12 +278,12 @@ class _RegisterAddressState extends State<RegisterAddress> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: _confirmAddress,
-              child: const Text('Save This Address'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
                 minimumSize: Size(double.infinity, 50),
               ),
+              child: const Text('Save This Address'),
             ),
           ),
         ],

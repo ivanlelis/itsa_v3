@@ -279,13 +279,14 @@ class _AddProductModalState extends State<AddProductModal> {
     // Check for product name, type, and image selection
     if (productName.isEmpty || _selectedProductType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter product name and select type')),
+        const SnackBar(
+            content: Text('Please enter product name and select type')),
       );
       return;
     }
     if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select an image')),
+        const SnackBar(content: Text('Please select an image')),
       );
       return;
     }
@@ -294,7 +295,8 @@ class _AddProductModalState extends State<AddProductModal> {
     final imageUrl = await _uploadImageToFirebase(productID);
     if (imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image. Please try again.')),
+        const SnackBar(
+            content: Text('Failed to upload image. Please try again.')),
       );
       return;
     }
@@ -335,18 +337,18 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     }
 
-    // Determine the collection based on userName
-    String collectionName = 'products'; // Default collection
-
-    if (widget.userName == "Sta. Cruz II Admin") {
-      collectionName = 'branch1_products'; // Save to branch1_products
+    // Add branchID based on userName
+    if (widget.userName == "Main Branch Admin") {
+      productData['branchID'] = 'branch 1';
+    } else if (widget.userName == "Sta. Cruz II Admin") {
+      productData['branchID'] = 'branch 2';
     } else if (widget.userName == "San Dionisio Admin") {
-      collectionName = 'branch2_products'; // Save to branch2_products
+      productData['branchID'] = 'branch 3';
     }
 
-    // Save product data to Firestore in the appropriate collection
+    // Save product data to Firestore
     await FirebaseFirestore.instance
-        .collection(collectionName)
+        .collection('products')
         .doc(productID)
         .set(productData);
 
@@ -727,12 +729,6 @@ class ProductCard extends StatelessWidget {
                   priceEntry.value.isNotEmpty ? priceEntry.value : 'N/A';
               return Text('${priceEntry.key}: ₱$priceValue');
             }),
-            const SizedBox(height: 8),
-            // Display userName
-            Text(
-              'User: $userName',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () =>
