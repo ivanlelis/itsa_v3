@@ -190,8 +190,8 @@ class _AdminHomeState extends State<AdminHome> {
                   pickupOrders: pickupOrders,
                 ),
                 // New Most Ordered Card
-                const MostOrderedCard(),
-                SizedBox(
+                MostOrderedCard(userName: widget.userName),
+                SizedBox( 
                   width: MediaQuery.of(context).size.width * 1,
                   child: Card(
                     elevation: 4,

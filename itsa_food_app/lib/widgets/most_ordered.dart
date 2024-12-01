@@ -4,7 +4,9 @@ import 'dart:math';
 import 'package:itsa_food_app/widgets/feature_product.dart';
 
 class MostOrderedCard extends StatefulWidget {
-  const MostOrderedCard({super.key});
+  final String userName;
+
+  const MostOrderedCard({super.key, required this.userName});
 
   @override
   _MostOrderedCardState createState() => _MostOrderedCardState();
@@ -17,7 +19,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
   String? mostOrderedProductImageUrl;
 
   String generateRandomText(String timeFrame, String mostOrderedProduct) {
-    // Possible time references
     List<String> timeReferences = [
       "today",
       "this week",
@@ -26,7 +27,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       "during the past $timeFrame",
     ];
 
-    // Possible actions
     List<String> actions = [
       "garnered the most orders",
       "was the most popular choice",
@@ -35,23 +35,18 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       "emerged as the favorite",
     ];
 
-    // Use the actual most ordered product in place of generic terms
     List<String> subjects = [
-      mostOrderedProduct, // No "this" prefix anymore
+      mostOrderedProduct,
     ];
 
-    // Ensure we don't use "in the past today" or "this week" awkwardly
     String timeReference = timeFrame == 'Today'
-        ? 'today' // Special handling for "Today"
+        ? 'today'
         : timeReferences[Random().nextInt(timeReferences.length)];
 
-    // Choose a random action
     String action = actions[Random().nextInt(actions.length)];
 
-    // We only have one subject: mostOrderedProduct
     String subject = subjects[0];
 
-    // Combine them into a complete sentence
     return "$subject $action $timeReference!";
   }
 
@@ -178,6 +173,8 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
   @override
   void initState() {
     super.initState();
+    // Fetch data for 'Today' immediately
+    selectedFilter = 'Today';
     fetchMostOrderedProduct();
   }
 
@@ -199,7 +196,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
               ),
             ),
             const SizedBox(height: 8),
-            // Use Row with Flexible widgets to make the buttons smaller and responsive
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -216,7 +212,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                     fontSize: 11,
                   ),
                 ),
-                const SizedBox(width: 16), // Space between buttons
+                const SizedBox(width: 16),
                 Flexible(
                   child: FilterButton(
                     label: '3 days',
@@ -227,10 +223,10 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                         fetchMostOrderedProduct();
                       });
                     },
-                    fontSize: 10, // Reduced font size for "3 days"
+                    fontSize: 10,
                   ),
                 ),
-                const SizedBox(width: 16), // Space between buttons
+                const SizedBox(width: 16),
                 Flexible(
                   child: FilterButton(
                     label: '1 week',
@@ -241,7 +237,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                         fetchMostOrderedProduct();
                       });
                     },
-                    fontSize: 10, // Reduced font size for "1 week"
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -266,8 +262,8 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
                         mostOrderedProductImageUrl!,
-                        height: 120, // Increased image height
-                        width: 120, // Increased image width
+                        height: 120,
+                        width: 120,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             Icon(Icons.image_not_supported, size: 120),
@@ -281,8 +277,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                         Text(
                           mostOrderedProduct ?? '',
                           style: TextStyle(
-                            fontSize:
-                                20, // Increased font size for most ordered product
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -293,7 +288,7 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                                   selectedFilter, mostOrderedProduct!)
                               : '',
                           style: TextStyle(
-                            fontSize: 16, // Increased font size for random text
+                            fontSize: 16,
                             color: Colors.grey[700],
                           ),
                         ),
@@ -301,10 +296,6 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
                     ),
                   ),
                 ],
-              )
-            else
-              Center(
-                child: CircularProgressIndicator(),
               ),
             const SizedBox(height: 16),
             Align(

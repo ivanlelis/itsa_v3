@@ -39,7 +39,11 @@ class _FeatureProductState extends State<FeatureProduct> {
         for (var orderDoc in orderSnapshot.docs) {
           List<dynamic> products = orderDoc['products'] ?? [];
           for (var product in products) {
-            productCount[product] = (productCount[product] ?? 0) + 1;
+            if (product is Map<String, dynamic> &&
+                product.containsKey('productName')) {
+              String productName = product['productName'];
+              productCount[productName] = (productCount[productName] ?? 0) + 1;
+            }
           }
         }
       }
@@ -68,16 +72,12 @@ class _FeatureProductState extends State<FeatureProduct> {
         }
       }
 
+      // Fetch all products
       QuerySnapshot productSnapshot =
           await FirebaseFirestore.instance.collection('products').get();
       allProducts = productSnapshot.docs
           .map((doc) => doc['productName'].toString())
           .toList();
-
-      setState(() {
-        mostOrderedProduct = mostOrdered;
-        isLoading = false;
-      });
 
       // Set state with the fetched data
       setState(() {
