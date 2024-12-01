@@ -461,25 +461,25 @@ class _ProductCardState extends State<ProductCard> {
     final firestore = FirebaseFirestore.instance;
 
     try {
-      String productsCollection;
+      String rawStockCollection;
 
       // Assign collection based on the branchID
       if (widget.branchID == 'branch 2') {
-        productsCollection =
-            'products_branch1'; // For branch 2, fetch from products_branch1
+        rawStockCollection =
+            'rawStock_branch1'; // For branch 2, fetch from rawStock_branch1
       } else if (widget.branchID == 'branch 1') {
-        productsCollection = 'products'; // For branch 1, fetch from products
+        rawStockCollection = 'rawStock'; // For branch 1, fetch from rawStock
       } else if (widget.branchID == 'branch 3') {
-        productsCollection =
-            'products_branch2'; // For branch 3, fetch from products_branch2
+        rawStockCollection =
+            'rawStock_branch2'; // For branch 3, fetch from rawStock_branch2
       } else {
-        productsCollection =
-            'products'; // Default to 'products' if branchID is unknown
+        rawStockCollection =
+            'rawStock'; // Default to 'rawStock' if branchID is unknown
       }
 
       // Fetch product's ingredients field using productID as document ID
       final productDoc = await firestore
-          .collection(productsCollection)
+          .collection('products') // Always fetch from the 'products' collection
           .doc(widget.productID)
           .get();
       final List<dynamic> ingredients = productDoc.data()?['ingredients'] ?? [];
@@ -490,9 +490,10 @@ class _ProductCardState extends State<ProductCard> {
       for (var ingredient in ingredients) {
         final String ingredientName = ingredient['name'];
 
-        // Fetch raw stock document using ingredient name
+        // Fetch raw stock document using ingredient name from the determined rawStock collection
         final rawStockQuery = await firestore
-            .collection('rawStock')
+            .collection(
+                rawStockCollection) // Use the branch-specific rawStock collection
             .where('matName', isEqualTo: ingredientName)
             .get();
 

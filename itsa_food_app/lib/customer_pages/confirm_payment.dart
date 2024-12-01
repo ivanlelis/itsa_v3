@@ -163,10 +163,16 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
   }
 
   Future<void> _createOrder(File? paymentReceiptImage) async {
-    String orderID = _generateOrderID();
-    String documentName = widget.selectedItemName == null
-        ? orderID
-        : "exBundle-$orderID"; // Access widget.selectedItemName
+    String orderID =
+        _generateOrderID().replaceAll(RegExp(r'[^a-zA-Z0-9_-\s]'), '');
+
+    String documentName = orderID; // Directly use orderID
+
+    print('selectedItemName: ${widget.selectedItemName}');
+    print('Document path: ${documentName}');
+    if (orderID.isEmpty) {
+      throw Exception('Order ID cannot be empty');
+    }
 
     // Use the current date and time in the Philippines
     DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
@@ -221,8 +227,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 widget.orderType.toLowerCase() == 'pickup') &&
             widget.paymentMethod.toLowerCase() == 'gcash')
           'paymentReceipt': paymentReceiptUrl,
-        if (widget.selectedItemName != null)
-          'exBundle': widget.selectedItemName, // Use widget.selectedItemName
+        'exBundle': widget.selectedItemName?.isNotEmpty ?? false
+            ? widget.selectedItemName
+            : 'default_value', // Firestore will handle null automatically
         'branchID': widget.branchID, // Add branchID to the order data
       };
 
@@ -257,31 +264,20 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         'prodCost': totalProdCost,
         'totalNetProfit': totalNetProfit,
         'matCostPerProduct': rawMatCostPerProd,
+        'branchID': widget.branchID, // Add branchID to the transaction data
       };
 
-      // Step 6: Determine the correct path based on branchID
-      String transactionsCollectionPath;
-      if (widget.branchID == 'branch 1') {
-        transactionsCollectionPath =
-            'transactions/transactions/$transactionsSubCollectionName';
-      } else if (widget.branchID == 'branch 2') {
-        transactionsCollectionPath =
-            'transactions_branch1/transactions/$transactionsSubCollectionName';
-      } else if (widget.branchID == 'branch 3') {
-        transactionsCollectionPath =
-            'transactions_branch2/transactions/$transactionsSubCollectionName';
-      } else {
-        throw Exception('Invalid branchID');
-      }
+      // Step 6: Save the transaction data in the same path, regardless of branchID
+      String transactionsCollectionPath =
+          'transactions/transactions/$transactionsSubCollectionName';
 
-      // Save the transaction data in the appropriate collection and subcollection
+      // Save the transaction data in the same collection and subcollection
       await FirebaseFirestore.instance
-          .doc(
-              transactionsCollectionPath) // Dynamic collection path based on branchID
-          .collection('transactions')
+          .collection(transactionsCollectionPath)
           .doc(orderID) // Document created inside the subcollection
           .set(transactionData);
 
+      // Update daily sales and net profit
       await _updateDailySales(currentDate, totalProdCost);
       await _updateDailyNetProfit(currentDate, totalNetProfit);
 
@@ -298,11 +294,27 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _updateDailySales(
       String currentDate, double totalProdCost) async {
-    // Reference to the document within the 'transactions' collection
-    // with the subcollection 'transactions_<currentDate>'
+    // Determine the collection path based on branchID
+    String transactionsCollectionPath;
+
+    switch (widget.branchID) {
+      case 'branch 1':
+        transactionsCollectionPath = 'transactions';
+        break;
+      case 'branch 2':
+        transactionsCollectionPath = 'transactions_branch1';
+        break;
+      case 'branch 3':
+        transactionsCollectionPath = 'transactions_branch2';
+        break;
+      default:
+        throw Exception('Invalid branchID');
+    }
+
+    // Reference to the document within the appropriate collection
     DocumentReference dailySalesDoc = FirebaseFirestore.instance
-        .collection('transactions') // Top-level collection
-        .doc('transactions') // Using the orderID as the document ID
+        .collection(transactionsCollectionPath) // Use the dynamic path
+        .doc('transactions') // Using a fixed document ID 'transactions'
         .collection(
             'transactions_$currentDate') // Subcollection with the current date
         .doc('dailySales');
@@ -330,11 +342,27 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _updateDailyNetProfit(
       String currentDate, double totalNetProfit) async {
-    // Reference to the document within the 'transactions' collection
-    // with the subcollection 'transactions_<currentDate>'
+    // Determine the collection path based on branchID
+    String transactionsCollectionPath;
+
+    switch (widget.branchID) {
+      case 'branch 1':
+        transactionsCollectionPath = 'transactions';
+        break;
+      case 'branch 2':
+        transactionsCollectionPath = 'transactions_branch1';
+        break;
+      case 'branch 3':
+        transactionsCollectionPath = 'transactions_branch2';
+        break;
+      default:
+        throw Exception('Invalid branchID');
+    }
+
+    // Reference to the document within the appropriate collection
     DocumentReference dailyNetProfitDoc = FirebaseFirestore.instance
-        .collection('transactions') // Top-level collection
-        .doc('transactions') // Using the orderID as the document ID
+        .collection(transactionsCollectionPath) // Use the dynamic path
+        .doc('transactions') // Using a fixed document ID 'transactions'
         .collection(
             'transactions_$currentDate') // Subcollection with the current date
         .doc('dailyNetProfit');
@@ -360,18 +388,38 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-// Helper function to calculate raw material costs for each product
   Future<List<Map<String, dynamic>>> _calculateRawMatCosts(
       List<Map<String, dynamic>> cartItems) async {
     List<Map<String, dynamic>> costs = [];
+
+    // Determine the correct collection paths based on branchID
+    String productsCollectionPath;
+    String rawStockCollectionPath;
+
+    switch (widget.branchID) {
+      case 'branch 1':
+        productsCollectionPath = 'products'; // Default collection for branch 1
+        rawStockCollectionPath = 'rawStock'; // Default collection for branch 1
+        break;
+      case 'branch 2':
+        productsCollectionPath = 'products_branch1'; // Collection for branch 2
+        rawStockCollectionPath = 'rawStock_branch1'; // Collection for branch 2
+        break;
+      case 'branch 3':
+        productsCollectionPath = 'products_branch2'; // Collection for branch 3
+        rawStockCollectionPath = 'rawStock_branch2'; // Collection for branch 3
+        break;
+      default:
+        throw Exception('Invalid branchID');
+    }
 
     for (var item in cartItems) {
       String productName = item['productName'];
       double prodCost = item['total'] ?? 0.0; // Total from buildCartItems
 
-      // Fetch product details from Firestore
+      // Fetch product details from Firestore based on branchID
       QuerySnapshot productSnapshot = await FirebaseFirestore.instance
-          .collection('products')
+          .collection(productsCollectionPath) // Use dynamic collection path
           .where('productName', isEqualTo: productName)
           .limit(1)
           .get();
@@ -387,51 +435,62 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         for (var ingredient in ingredients) {
           String ingredientName = ingredient['name'];
           String quantityString = ingredient['quantity'];
-          double quantity = double.tryParse(quantityString.split(' ')[0]) ?? 0;
 
-          // Extract unit from the quantity (e.g., "ml", "grams", "liters")
+          // Extract the numeric part of the quantity (e.g., "210 grams" becomes 210.0)
+          double quantity =
+              double.tryParse(quantityString.split(' ')[0]) ?? 0.0;
+
+          // Extract the unit from the quantity string (e.g., "grams", "pcs", etc.)
           String unit = quantityString.split(' ')[1];
 
           // Log ingredient and quantity
           print('Ingredient: ${ingredient['name']}, Quantity: $quantity $unit');
 
-          // Fetch raw material details
+          // Fetch raw material details from Firestore based on branchID
           DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
-              .collection('rawStock')
+              .collection(rawStockCollectionPath) // Use dynamic collection path
               .doc(ingredientName)
               .get();
 
           if (rawMaterialDoc.exists) {
-            double costPerMl = rawMaterialDoc['costPerMl'] ?? 0.0; // costPerMl
-            double costPerGram =
-                rawMaterialDoc['costPerGram'] ?? 0.0; // costPerGram
-            double costPerLiter =
-                rawMaterialDoc['costPerLiter'] ?? 0.0; // costPerLiter
-            double pricePerUnit = rawMaterialDoc['pricePerUnit'] ?? 0.0;
-            double conversionRate = rawMaterialDoc['conversionRate'] ?? 1.0;
+            // Make sure that costPerGram, costPerMl, and other values are treated as double
+            double costPerGram = (rawMaterialDoc['costPerGram'] ?? 0.0)
+                .toDouble(); // Ensures it's a double
+            double costPerMl = (rawMaterialDoc['costPerMl'] ?? 0.0)
+                .toDouble(); // Ensures it's a double
+            double costPerLiter = (rawMaterialDoc['costPerLiter'] ?? 0.0)
+                .toDouble(); // Ensures it's a double
+            double pricePerUnit = (rawMaterialDoc['pricePerUnit'] ?? 0.0)
+                .toDouble(); // Ensures it's a double
+            double conversionRate = (rawMaterialDoc['conversionRate'] ?? 1.0)
+                .toDouble(); // Ensures it's a double
 
             // Log raw material document values
             print(
                 'Raw Material: $ingredientName, Unit: ${rawMaterialDoc['unit']}');
             print(
-                'costPerMl: $costPerMl, costPerGram: $costPerGram, costPerLiter: $costPerLiter');
+                'costPerGram: $costPerGram, costPerMl: $costPerMl, costPerLiter: $costPerLiter');
 
             double cost = 0.0;
 
-            // Calculate cost based on unit
-            if (unit == 'ml') {
+            // Directly multiply if the unit is grams
+            if (unit == 'grams') {
+              cost =
+                  (quantity * costPerGram); // Direct multiplication for grams
+              print('Cost for $ingredientName (grams): $cost');
+            } else if (unit == 'pcs') {
+              // Handle pcs as before
+              cost = (quantity * pricePerUnit);
+              print('Cost for $ingredientName (pcs): $cost');
+            } else if (unit == 'ml') {
               cost = (quantity * costPerMl); // Calculate cost using costPerMl
               print('Cost for $ingredientName (ml): $cost');
-            } else if (unit == 'grams') {
-              cost =
-                  (quantity * costPerGram); // Calculate cost using costPerGram
-              print('Cost for $ingredientName (grams): $cost');
             } else if (unit == 'liters') {
               cost = (quantity *
                   costPerLiter); // Calculate cost using costPerLiter
               print('Cost for $ingredientName (liters): $cost');
             } else {
-              // Fallback to the existing logic for other units
+              // Fallback for any unhandled units
               cost = (quantity / conversionRate) * pricePerUnit;
               print('Fallback cost for $ingredientName: $cost');
             }
@@ -463,9 +522,30 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
   }
 
   Future<Map<String, dynamic>> freeRawMatCost(String selectedItemName) async {
+    // Determine the correct collection paths based on branchID
+    String productsCollectionPath;
+    String rawStockCollectionPath;
+
+    switch (widget.branchID) {
+      case 'branch 1':
+        productsCollectionPath = 'products'; // Default collection for branch 1
+        rawStockCollectionPath = 'rawStock'; // Default collection for branch 1
+        break;
+      case 'branch 2':
+        productsCollectionPath = 'products_branch1'; // Collection for branch 2
+        rawStockCollectionPath = 'rawStock_branch1'; // Collection for branch 2
+        break;
+      case 'branch 3':
+        productsCollectionPath = 'products_branch2'; // Collection for branch 3
+        rawStockCollectionPath = 'rawStock_branch2'; // Collection for branch 3
+        break;
+      default:
+        throw Exception('Invalid branchID');
+    }
+
     // Fetch product details from Firestore for the selected item
     QuerySnapshot productSnapshot = await FirebaseFirestore.instance
-        .collection('products')
+        .collection(productsCollectionPath) // Use dynamic collection path
         .where('productName', isEqualTo: selectedItemName)
         .limit(1)
         .get();
@@ -489,9 +569,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         // Log ingredient and quantity
         print('Ingredient: ${ingredient['name']}, Quantity: $quantity $unit');
 
-        // Fetch raw material details
+        // Fetch raw material details from Firestore for the selected ingredient
         DocumentSnapshot rawMaterialDoc = await FirebaseFirestore.instance
-            .collection('rawStock')
+            .collection(rawStockCollectionPath) // Use dynamic collection path
             .doc(ingredientName)
             .get();
 
@@ -548,18 +628,39 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       productNames.add(selectedItemName);
     }
 
-    // Step 3: Fetch all product details in parallel
+    // Step 3: Determine the collection paths based on branchID
+    String productsCollectionPath;
+    String rawStockCollectionPath;
+
+    switch (widget.branchID) {
+      case 'branch 1':
+        productsCollectionPath = 'products'; // Default collection for branch 1
+        rawStockCollectionPath = 'rawStock'; // Default collection for branch 1
+        break;
+      case 'branch 2':
+        productsCollectionPath = 'products_branch1'; // Collection for branch 2
+        rawStockCollectionPath = 'rawStock_branch1'; // Collection for branch 2
+        break;
+      case 'branch 3':
+        productsCollectionPath = 'products_branch2'; // Collection for branch 3
+        rawStockCollectionPath = 'rawStock_branch2'; // Collection for branch 3
+        break;
+      default:
+        throw Exception('Invalid branchID');
+    }
+
+    // Step 4: Fetch all product details in parallel
     List<QuerySnapshot> productSnapshots = await Future.wait(
       productNames.map(
         (productName) => FirebaseFirestore.instance
-            .collection('products')
+            .collection(productsCollectionPath) // Use dynamic collection path
             .where('productName', isEqualTo: productName)
             .limit(1)
             .get(),
       ),
     );
 
-    // Step 4: Collect all raw material stock IDs needed
+    // Step 5: Collect all raw material stock IDs needed
     Set<String> rawStockIds = {};
     for (var productSnapshot in productSnapshots) {
       if (productSnapshot.docs.isNotEmpty) {
@@ -571,11 +672,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       }
     }
 
-    // Step 5: Fetch all required raw material documents in one query
+    // Step 6: Fetch all required raw material documents in one query
     List<DocumentSnapshot> rawMaterialDocs = await Future.wait(
       rawStockIds.map(
         (matName) => FirebaseFirestore.instance
-            .collection('rawStock')
+            .collection(rawStockCollectionPath) // Use dynamic collection path
             .doc(matName)
             .get(),
       ),
@@ -586,7 +687,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       for (var doc in rawMaterialDocs) doc.id: doc,
     };
 
-    // Step 6: Process and prepare stock updates
+    // Step 7: Process and prepare stock updates
     for (var productSnapshot in productSnapshots) {
       if (productSnapshot.docs.isNotEmpty) {
         var productDoc = productSnapshot.docs.first;
@@ -615,7 +716,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             if (availableStock >= ingredientQuantityInStockUnit) {
               batch.update(
-                FirebaseFirestore.instance.collection('rawStock').doc(matName),
+                FirebaseFirestore.instance
+                    .collection(
+                        rawStockCollectionPath) // Use dynamic collection path
+                    .doc(matName),
                 {'quantity': availableStock - ingredientQuantityInStockUnit},
               );
             } else {
@@ -627,7 +731,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       }
     }
 
-    // Step 7: Commit all updates in a single batch
+    // Step 8: Commit all updates in a single batch
     await batch.commit();
   }
 
@@ -724,12 +828,15 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             // Cart Items
             _buildSectionTitle('Cart Items'),
             _buildCartItems(
-                widget.selectedItemName ?? ''), // Pass selectedItemName here
+              widget.selectedItemName ?? '',
+              branchID: widget.branchID,
+            ), // Pass selectedItemName here
 
             SizedBox(height: 20),
 
             // Delivery and Payment Details
             _buildSectionTitle('Order & Payment Details'),
+
             _buildDetailsRow('Order Type:', widget.deliveryType),
             _buildDetailsRow('Payment Method:', widget.paymentMethod),
             if (widget.voucherCode.isNotEmpty) ...[
@@ -810,7 +917,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     );
   }
 
-  Widget _buildCartItems(String? selectedItemName) {
+  Widget _buildCartItems(String? selectedItemName, {required String branchID}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
@@ -845,11 +952,23 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           final productName = item['productName']; // Get the productName
           List<dynamic> ingredients = [];
 
+          // Determine the collection to fetch data from based on branchID
+          String collectionName;
+          if (branchID == "branch 1") {
+            collectionName = 'products';
+          } else if (branchID == "branch 2") {
+            collectionName = 'products_branch1';
+          } else if (branchID == "branch 3") {
+            collectionName = 'products_branch2';
+          } else {
+            collectionName = 'products'; // Default to 'products' if no match
+          }
+
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0),
             child: FutureBuilder<QuerySnapshot>(
               future: FirebaseFirestore.instance
-                  .collection('products')
+                  .collection(collectionName) // Use dynamic collection
                   .where('productName', isEqualTo: productName)
                   .get(),
               builder: (context, snapshot) {
@@ -957,36 +1076,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             ),
                           ),
                         ),
-                        if (ingredients.isNotEmpty)
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Ingredients:',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  ...ingredients.map<Widget>((ingredient) {
-                                    final ingredientName =
-                                        ingredient['name'] ?? 'Unknown';
-                                    final ingredientQuantity =
-                                        ingredient['quantity'] ?? 'N/A';
-                                    return Text(
-                                      '- $ingredientName: $ingredientQuantity',
-                                      style: const TextStyle(fontSize: 14),
-                                    );
-                                  }),
-                                ],
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ],

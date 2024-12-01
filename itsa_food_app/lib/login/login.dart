@@ -126,72 +126,65 @@ class _LoginPageState extends State<LoginPage> {
           Map<String, dynamic>? userInfo =
               await firebaseService.getCurrentUserInfo();
 
-          if (userInfo != null) {
-            String userType = userInfo['userType'] ?? "";
-            String otp = _generateOTP(); // Generate OTP once
+          String userType = userInfo!['userType'] ?? "";
+          String otp = _generateOTP(); // Generate OTP once
 
-            await _sendOTPEmail(email, otp);
+          await _sendOTPEmail(email, otp);
 
-            if (userType == "customer") {
-              // Fetch the branchID from the "customer" collection in Firestore
-              String? branchID;
-              try {
-                DocumentSnapshot customerDoc = await FirebaseFirestore.instance
-                    .collection('customer')
-                    .doc(userInfo['uid'])
-                    .get();
-                if (customerDoc.exists) {
-                  branchID = customerDoc['branchID'] ??
-                      ""; // Fetch branchID from Firestore
-                }
-              } catch (e) {
-                setState(() {
-                  _errorMessage = "Error fetching branch ID: $e";
-                  _isLoading = false;
-                });
-                return;
+          if (userType == "customer") {
+            // Fetch the branchID from the "customer" collection in Firestore
+            String? branchID;
+            try {
+              DocumentSnapshot customerDoc = await FirebaseFirestore.instance
+                  .collection('customer')
+                  .doc(userInfo['uid'])
+                  .get();
+              if (customerDoc.exists) {
+                branchID = customerDoc['branchID'] ??
+                    ""; // Fetch branchID from Firestore
               }
-
-              // Navigate to CustomerOTPPage with branchID
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CustomerOTPPage(
-                    userName: userInfo['userName'] ?? "Guest User",
-                    emailAddress: userInfo['emailAddress'] ?? email,
-                    imageUrl: userInfo['imageUrl'] ?? "",
-                    uid: userInfo['uid'] ?? "",
-                    email: email,
-                    userAddress: userInfo['userAddress'] ?? "",
-                    latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
-                    longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
-                    otp: otp,
-                    branchID: branchID ?? "", // Pass branchID
-                  ),
-                ),
-              );
-            } else if (userType == "rider") {
-              // Rider navigation
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RiderOTPPage(
-                    email: userInfo['emailAddress'] ?? email,
-                    otp: otp,
-                    userName: userInfo['userName'] ?? "Rider",
-                    imageUrl: userInfo['imageUrl'] ?? "",
-                  ),
-                ),
-              );
-            } else {
+            } catch (e) {
               setState(() {
-                _errorMessage = "User type is not recognized.";
+                _errorMessage = "Error fetching branch ID: $e";
                 _isLoading = false;
               });
+              return;
             }
+
+            // Navigate to CustomerOTPPage with branchID
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CustomerOTPPage(
+                  userName: userInfo['userName'] ?? "Guest User",
+                  emailAddress: userInfo['emailAddress'] ?? email,
+                  imageUrl: userInfo['imageUrl'] ?? "",
+                  uid: userInfo['uid'] ?? "",
+                  email: email,
+                  userAddress: userInfo['userAddress'] ?? "",
+                  latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
+                  longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
+                  otp: otp,
+                  branchID: branchID ?? "", // Pass branchID
+                ),
+              ),
+            );
+          } else if (userType == "rider") {
+            // Rider navigation
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RiderOTPPage(
+                  email: userInfo['emailAddress'] ?? email,
+                  otp: otp,
+                  userName: userInfo['userName'] ?? "Rider",
+                  imageUrl: userInfo['imageUrl'] ?? "",
+                ),
+              ),
+            );
           } else {
             setState(() {
-              _errorMessage = "User information not found.";
+              _errorMessage = "User type is not recognized.";
               _isLoading = false;
             });
           }

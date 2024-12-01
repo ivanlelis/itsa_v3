@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/widgets/admin_inventory.dart';
+import 'package:itsa_food_app/widgets/admin_stock.dart'; // Import ProductsStock
 
 class InventoryPage extends StatelessWidget {
   final String userName; // Add a userName parameter to the InventoryPage
@@ -20,6 +21,8 @@ class InventoryPage extends StatelessWidget {
           children: [
             AdminInventory(
                 userName: userName), // Pass userName to AdminInventory
+            AdminStock(
+                userName: userName), // Call ProductsStock below AdminInventory
           ],
         ),
       ),

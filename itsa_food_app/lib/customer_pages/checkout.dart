@@ -252,6 +252,14 @@ class _CheckoutState extends State<Checkout>
               ),
             ],
           ),
+          Text(
+            'Branch ID: ${widget.branchID}',
+            style: TextStyle(
+              fontSize: 14,
+              color: const Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w400,
+            ),
+          ),
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

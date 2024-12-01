@@ -35,6 +35,16 @@ class _SalesTabState extends State<SalesTab> {
       double currentWeekSales = 0.0;
       double previousWeekSales = 0.0;
 
+      // Determine the branchID based on userName
+      String branchID = '';
+      if (widget.userName == "Main Branch Admin") {
+        branchID = "branch 1";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        branchID = "branch 2";
+      } else if (widget.userName == "San Dionisio Admin") {
+        branchID = "branch 3";
+      }
+
       // Fetch sales for the current week (7 days)
       for (int i = 0; i < 7; i++) {
         DateTime date = now.subtract(Duration(days: i));
@@ -45,19 +55,26 @@ class _SalesTabState extends State<SalesTab> {
             .collection('transactions')
             .doc('transactions')
             .collection(collectionName)
-            .doc('dailySales')
-            .get();
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
+            .get(); // Get the documents
 
-        if (snapshot.exists) {
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          double sales = data['sales'] != null
-              ? double.parse(data['sales'].toString())
-              : 0.0;
+        if (snapshot.docs.isNotEmpty) {
+          // Iterate over the documents if they exist
+          for (var doc in snapshot.docs) {
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            double sales = data['sales'] != null
+                ? double.parse(data['sales'].toString())
+                : 0.0;
+            String readableDate = DateFormat('MM/dd/yy').format(date);
+
+            fetchedCurrentWeekSalesData
+                .add({'date': readableDate, 'sales': sales});
+            currentWeekSales += sales;
+          }
+        } else {
+          // If no data is found, treat it as 0 sales for that day
           String readableDate = DateFormat('MM/dd/yy').format(date);
-
-          fetchedCurrentWeekSalesData
-              .add({'date': readableDate, 'sales': sales});
-          currentWeekSales += sales;
+          fetchedCurrentWeekSalesData.add({'date': readableDate, 'sales': 0.0});
         }
       }
 
@@ -71,19 +88,27 @@ class _SalesTabState extends State<SalesTab> {
             .collection('transactions')
             .doc('transactions')
             .collection(collectionName)
-            .doc('dailySales')
-            .get();
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
+            .get(); // Get the documents
 
-        if (snapshot.exists) {
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          double sales = data['sales'] != null
-              ? double.parse(data['sales'].toString())
-              : 0.0;
+        if (snapshot.docs.isNotEmpty) {
+          // Iterate over the documents if they exist
+          for (var doc in snapshot.docs) {
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            double sales = data['sales'] != null
+                ? double.parse(data['sales'].toString())
+                : 0.0;
+            String readableDate = DateFormat('MM/dd/yy').format(date);
+
+            fetchedPreviousWeekSalesData
+                .add({'date': readableDate, 'sales': sales});
+            previousWeekSales += sales;
+          }
+        } else {
+          // If no data is found, treat it as 0 sales for that day
           String readableDate = DateFormat('MM/dd/yy').format(date);
-
           fetchedPreviousWeekSalesData
-              .add({'date': readableDate, 'sales': sales});
-          previousWeekSales += sales;
+              .add({'date': readableDate, 'sales': 0.0});
         }
       }
 

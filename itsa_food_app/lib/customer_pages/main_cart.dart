@@ -176,6 +176,14 @@ class _MainCartState extends State<MainCart> {
       ),
       body: Column(
         children: [
+          Text(
+            'Branch ID: ${widget.branchID}',
+            style: TextStyle(
+              fontSize: 14,
+              color: const Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w400,
+            ),
+          ),
           Expanded(
             child: cartItems.isEmpty
                 ? const Center(child: Text('Your cart is empty.'))

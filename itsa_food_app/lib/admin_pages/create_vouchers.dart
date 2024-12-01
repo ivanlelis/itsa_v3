@@ -244,12 +244,10 @@ class _VouchersState extends State<Vouchers> {
     );
 
     // Check if pickedDate is not null
-    if (pickedDate != null) {
-      setState(() {
-        _startDateController.text = DateFormat('MM-dd-yyyy').format(pickedDate);
-      });
+    setState(() {
+      _startDateController.text = DateFormat('MM-dd-yyyy').format(pickedDate!);
+    });
     }
-  }
 
   Future<void> _selectExpirationDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
@@ -260,13 +258,11 @@ class _VouchersState extends State<Vouchers> {
     );
 
     // Check if pickedDate is not null
-    if (pickedDate != null) {
-      setState(() {
-        _expirationDateController.text =
-            DateFormat('MM-dd-yyyy').format(pickedDate);
-      });
+    setState(() {
+      _expirationDateController.text =
+          DateFormat('MM-dd-yyyy').format(pickedDate!);
+    });
     }
-  }
 
   Widget _buildTextField(
       TextEditingController controller, String label, String? validatorMessage,
