@@ -23,6 +23,7 @@ class CustomerMainHome extends StatefulWidget {
   final String userAddress;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const CustomerMainHome({
     super.key,
@@ -34,6 +35,7 @@ class CustomerMainHome extends StatefulWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
 
   @override
@@ -98,6 +100,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             userAddress: userProvider.currentUser?.userAddress ?? '',
             latitude: userProvider.currentUser?.latitude ?? 0.0,
             longitude: userProvider.currentUser?.longitude ?? 0.0,
+            branchID: widget.branchID,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -118,6 +121,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             userAddress: userProvider.currentUser?.userAddress ?? '',
             latitude: userProvider.currentUser?.latitude ?? 0.0,
             longitude: userProvider.currentUser?.longitude ?? 0.0,
+            branchID: widget.branchID,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -138,6 +142,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
             userAddress: userProvider.currentUser?.userAddress ?? '',
             latitude: userProvider.currentUser?.latitude ?? 0.0,
             longitude: userProvider.currentUser?.longitude ?? 0.0,
+            branchID: widget.branchID,
           ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
@@ -170,6 +175,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                   userAddress: user.userAddress,
                   latitude: user.latitude,
                   longitude: user.longitude,
+                  branchID: widget.branchID,
                 ),
               ),
             );
@@ -223,6 +229,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                         userAddress: user?.userAddress ?? '',
                         latitude: user?.latitude ?? 0.0,
                         longitude: user?.longitude ?? 0.0,
+                        branchID: widget.branchID,
                       );
                     },
                   ),
@@ -236,6 +243,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
                     userAddress: user?.userAddress ?? '',
                     latitude: user?.latitude ?? 0.0,
                     longitude: user?.longitude ?? 0.0,
+                    branchID: widget.branchID,
                   ),
                   SizedBox(height: 30),
                 ],

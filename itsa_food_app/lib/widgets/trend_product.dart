@@ -12,6 +12,7 @@ class TrendProduct extends StatefulWidget {
   final String userAddress;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const TrendProduct({
     super.key,
@@ -23,6 +24,7 @@ class TrendProduct extends StatefulWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
 
   @override
@@ -289,6 +291,7 @@ class _TrendProductState extends State<TrendProduct> {
                             productImageUrl: productImageUrl,
                             productType: productType,
                             productDetail: productDetail,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );

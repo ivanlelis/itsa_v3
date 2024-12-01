@@ -20,6 +20,7 @@ class Checkout extends StatefulWidget {
   final String userAddress;
   final List<Map<String, dynamic>> cartItems;
   final String selectedItemName;
+  final String branchID;
 
   const Checkout({
     super.key,
@@ -34,6 +35,7 @@ class Checkout extends StatefulWidget {
     required this.userAddress,
     required this.cartItems,
     required this.selectedItemName,
+    required this.branchID,
   });
 
   @override
@@ -407,6 +409,7 @@ class _CheckoutState extends State<Checkout>
                   orderType: orderType ?? "Delivery",
                   userAddress: widget.userAddress,
                   paymentMethod: selectedPaymentMethod,
+                  branchID: widget.branchID,
                   onPaymentMethodChange: (method) => setState(() {
                     selectedPaymentMethod = method;
                     if (method == 'GCash') {
@@ -470,6 +473,7 @@ class _CheckoutState extends State<Checkout>
                             email: widget.email,
                             imageUrl: widget.imageUrl,
                             selectedItemName: widget.selectedItemName,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );

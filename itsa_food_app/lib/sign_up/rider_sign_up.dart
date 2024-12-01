@@ -22,6 +22,15 @@ class _RiderSignUpState extends State<RiderSignUp> {
   String? _errorMessage;
   String? _verificationMessage;
 
+  String? _selectedBranch;
+
+  // List of branch options for dropdown
+  final List<String> _branches = [
+    'Sta. Lucia Branch',
+    'Sta. Cruz II Branch',
+    'San Dionisio Branch',
+  ];
+
   void _signUp() async {
     setState(() {
       _isLoading = true;
@@ -42,12 +51,28 @@ class _RiderSignUpState extends State<RiderSignUp> {
         email.isEmpty ||
         mobileNumber.isEmpty ||
         password.isEmpty ||
-        vehicleInfo.isEmpty) {
+        vehicleInfo.isEmpty ||
+        _selectedBranch == null) {
+      // Check if branch is selected
       setState(() {
         _errorMessage = "Please fill in all fields.";
         _isLoading = false;
       });
       return;
+    }
+
+    // Determine branchID based on selected branch
+    String branchID = '';
+    switch (_selectedBranch) {
+      case 'Sta. Lucia Branch':
+        branchID = 'branch 1';
+        break;
+      case 'Sta. Cruz II Branch':
+        branchID = 'branch 2';
+        break;
+      case 'San Dionisio Branch':
+        branchID = 'branch 3';
+        break;
     }
 
     try {
@@ -59,7 +84,10 @@ class _RiderSignUpState extends State<RiderSignUp> {
         mobileNumber,
         password,
         userType: 'rider', // Indicating it's a rider
-        additionalData: {'vehicleInfo': vehicleInfo}, // Adding vehicle info
+        additionalData: {
+          'vehicleInfo': vehicleInfo,
+          'branchID': branchID, // Add branchID to additional data
+        },
       );
 
       setState(() {
@@ -137,6 +165,34 @@ class _RiderSignUpState extends State<RiderSignUp> {
                     controller: _vehicleInfoController,
                     hintText: 'Vehicle Information',
                   ),
+                  const SizedBox(height: 20),
+                  // Dropdown for Branch Selection
+                  // Dropdown for Branch Selection
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    value: _selectedBranch,
+                    items: _branches.map((branch) {
+                      return DropdownMenuItem<String>(
+                        value: branch,
+                        child: Text(branch),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedBranch = value;
+                      });
+                    },
+                    hint: Text(
+                        "Where do you want to be assigned?"), // This is the hint text
+                  ),
+
                   const SizedBox(height: 20),
                   if (_errorMessage != null) _buildErrorMessage(_errorMessage!),
                   if (_verificationMessage != null)
@@ -273,14 +329,14 @@ class _RiderSignUpState extends State<RiderSignUp> {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: Colors.green, width: 1.5),
+        border: Border.all(color: Colors.greenAccent, width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
             Icons.check_circle_outline,
-            color: Colors.green,
+            color: Colors.greenAccent,
           ),
           const SizedBox(width: 8),
           Expanded(

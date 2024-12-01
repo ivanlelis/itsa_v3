@@ -48,35 +48,57 @@ class _OrdersManagementState extends State<OrdersManagement>
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
-  // Fetch completed orders from "orders" subcollection
+  // Fetch completed orders with branchID filtering
   Stream<List<DocumentSnapshot>> fetchCompletedOrders() {
+    String branchID = _getBranchIDForUser(widget.userName);
+
     return FirebaseFirestore.instance
         .collection('customer')
         .snapshots()
         .asyncMap((snapshot) async {
       List<DocumentSnapshot> orders = [];
       for (var doc in snapshot.docs) {
-        var orderSnapshot = await doc.reference.collection('orders').get();
+        var orderSnapshot = await doc.reference
+            .collection('orders')
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
+            .get();
         orders.addAll(orderSnapshot.docs);
       }
       return orders;
     });
   }
 
-  // Fetch cancelled orders from "cancelled" subcollection
+  // Fetch cancelled orders with branchID filtering
   Stream<List<DocumentSnapshot>> fetchCancelledOrders() {
+    String branchID = _getBranchIDForUser(widget.userName);
+
     return FirebaseFirestore.instance
         .collection('customer')
         .snapshots()
         .asyncMap((snapshot) async {
       List<DocumentSnapshot> cancelledOrders = [];
       for (var doc in snapshot.docs) {
-        var cancelledSnapshot =
-            await doc.reference.collection('cancelled').get();
+        var cancelledSnapshot = await doc.reference
+            .collection('cancelled')
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
+            .get();
         cancelledOrders.addAll(cancelledSnapshot.docs);
       }
       return cancelledOrders;
     });
+  }
+
+  // Method to return branchID based on userName
+  String _getBranchIDForUser(String userName) {
+    if (userName == "Main Branch Admin") {
+      return "branch 1";
+    } else if (userName == "Sta. Cruz II Admin") {
+      return "branch 2";
+    } else if (userName == "San Dionisio Admin") {
+      return "branch 3";
+    } else {
+      return ""; // Default case if userName doesn't match
+    }
   }
 
   @override

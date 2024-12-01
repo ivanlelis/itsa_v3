@@ -75,6 +75,7 @@ class MyApp extends StatelessWidget {
             latitude: args?['latitude'] ?? 0.0,
             longitude: args?['longitude'] ?? 0.0,
             imageUrl: args?['imageUrl'] ?? '',
+            branchID: args?['branchID'] ?? '',
           );
         },
         '/menu': (context) {
@@ -89,6 +90,7 @@ class MyApp extends StatelessWidget {
             latitude: args?['latitude'] ?? 0.0,
             longitude: args?['longitude'] ?? 0.0,
             imageUrl: args?['imageUrl'] ?? '',
+            branchID: args?['branchID'] ?? '',
           );
         },
         '/orderHistory': (context) {

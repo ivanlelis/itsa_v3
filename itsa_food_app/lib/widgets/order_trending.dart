@@ -15,6 +15,7 @@ class OrderTrending extends StatefulWidget {
   final String? productImageUrl; // New parameter
   final String? productType; // New parameter
   final String? productDetail; // New parameter
+  final String branchID;
 
   const OrderTrending({
     super.key,
@@ -30,6 +31,7 @@ class OrderTrending extends StatefulWidget {
     this.productImageUrl, // New parameter
     this.productType, // New parameter
     this.productDetail, // New parameter
+    required this.branchID,
   });
 
   @override
@@ -137,6 +139,7 @@ class _OrderTrendingState extends State<OrderTrending> {
                           latitude: widget.latitude,
                           longitude: widget.longitude,
                           imageUrl: widget.imageUrl,
+                          branchID: widget.branchID,
                         ),
                       ),
                     );
@@ -163,6 +166,7 @@ class _OrderTrendingState extends State<OrderTrending> {
                             latitude: widget.latitude,
                             longitude: widget.longitude,
                             imageUrl: widget.imageUrl,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );

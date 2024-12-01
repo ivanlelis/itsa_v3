@@ -15,6 +15,7 @@ class OrderFeatured extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
   final String exBundle;
+  final String branchID;
 
   const OrderFeatured({
     super.key,
@@ -30,6 +31,7 @@ class OrderFeatured extends StatefulWidget {
     required this.startDate,
     required this.endDate,
     required this.exBundle,
+    required this.branchID,
   });
 
   @override
@@ -189,6 +191,7 @@ class _OrderFeaturedState extends State<OrderFeatured> {
                           latitude: widget.latitude,
                           longitude: widget.longitude,
                           imageUrl: widget.imageUrl,
+                          branchID: widget.branchID,
                         ),
                       ),
                     );
@@ -215,6 +218,7 @@ class _OrderFeaturedState extends State<OrderFeatured> {
                             latitude: widget.latitude,
                             longitude: widget.longitude,
                             imageUrl: widget.imageUrl,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );

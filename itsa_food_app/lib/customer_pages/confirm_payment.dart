@@ -23,6 +23,7 @@ class ConfirmPayment extends StatefulWidget {
   final String email;
   final String imageUrl;
   final String? selectedItemName;
+  final String branchID;
 
   const ConfirmPayment({
     super.key,
@@ -41,6 +42,7 @@ class ConfirmPayment extends StatefulWidget {
     required this.email,
     required this.imageUrl,
     this.selectedItemName,
+    required this.branchID,
   });
 
   @override
@@ -199,7 +201,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         paymentReceiptUrl = await snapshot.ref.getDownloadURL();
       }
 
-      // Step 2: Prepare the order data with quantity
+      // Step 2: Prepare the order data with quantity and branchID
       Map<String, dynamic> orderData = {
         'deliveryType': widget.deliveryType,
         'orderID': orderID,
@@ -221,6 +223,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           'paymentReceipt': paymentReceiptUrl,
         if (widget.selectedItemName != null)
           'exBundle': widget.selectedItemName, // Use widget.selectedItemName
+        'branchID': widget.branchID, // Add branchID to the order data
       };
 
       // Step 3: Create the order in Firestore
@@ -659,6 +662,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             userAddress: widget.userAddress,
                             latitude: widget.latitude,
                             longitude: widget.longitude,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );
@@ -678,8 +682,14 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Confirm Payment'),
-        backgroundColor: Colors.orangeAccent,
+        title: Text(
+          'Confirm Payment',
+          style: TextStyle(
+            fontWeight: FontWeight.bold, // Makes the text bold
+            color: Colors.white, // Sets the text color to white
+          ),
+        ),
+        backgroundColor: Color(0xFF6E473B), // Set AppBar color to #6E473B
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -691,7 +701,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Color(0xFF6E473B), // Title color set to #6E473B
               ),
             ),
             SizedBox(height: 15),
@@ -748,7 +758,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 _onConfirmPaymentPressed();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orangeAccent,
+                backgroundColor:
+                    Color(0xFF6E473B), // Set button color to #A78D78
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -756,7 +767,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               ),
               child: Text(
                 'Confirm Payment',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // White text for button
+                ),
               ),
             )
           ],

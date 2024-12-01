@@ -12,6 +12,8 @@ class FrequentOrdersByTagsChart extends StatefulWidget {
 
 class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
   Map<String, int> tagCounts = {};
+  bool isLoading = true; // Flag to track loading state
+  int selectedTimeRange = 0; // 0: Today, 1: 3 days, 2: 1 week
 
   @override
   void initState() {
@@ -19,88 +21,132 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
     fetchTagData();
   }
 
+  // Function to fetch orders based on the selected time range
   Future<void> fetchTagData() async {
+    setState(() {
+      tagCounts.clear(); // Reset tag counts
+      isLoading = true; // Set loading to true
+    });
+
     Map<String, int> tempTagCounts = {};
+
     try {
-      // Fetch all customers concurrently
+      // Fetch all customer documents in parallel
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      // Collect all customer orders concurrently
-      List<Future<QuerySnapshot>> customerOrderFetches =
-          customerSnapshot.docs.map((customerDoc) {
-        return customerDoc.reference.collection('orders').get();
-      }).toList();
-
-      // Wait for all customer orders to load concurrently
-      List<QuerySnapshot> allOrdersSnapshots =
-          await Future.wait(customerOrderFetches);
-
-      // Process each order
-      for (var ordersSnapshot in allOrdersSnapshots) {
-        List<Future<void>> tagFetches = [];
-
-        for (var orderDoc in ordersSnapshot.docs) {
-          // Extract products array from each order
-          List<dynamic> products = orderDoc['products'] ?? [];
-
-          for (var product in products) {
-            String productName = product['productName'] ?? '';
-            int quantity = product['quantity'] ?? 0;
-
-            // Match productName with the productName field in products collection
-            tagFetches.add(FirebaseFirestore.instance
-                .collection('products')
-                .where('productName', isEqualTo: productName)
-                .get()
-                .then((productSnapshot) {
-              if (productSnapshot.docs.isNotEmpty) {
-                // Fetch tags from matched product document
-                List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
-                for (var tag in tags) {
-                  // Count tag occurrences, multiply by quantity
-                  tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + quantity;
-                }
-              }
-            }));
-          }
-        }
-
-        // Wait for all tag data to be fetched concurrently
-        await Future.wait(tagFetches);
+      // Fetch orders for all customers in parallel
+      List<Future> orderFetches = [];
+      for (var customerDoc in customerSnapshot.docs) {
+        orderFetches.add(fetchOrdersForCustomer(customerDoc, tempTagCounts));
       }
 
-      // Update state with fetched tag counts
+      // Wait for all order fetches to complete
+      await Future.wait(orderFetches);
+
+      // Update state with the computed tag counts
       setState(() {
         tagCounts = tempTagCounts;
+        isLoading = false; // Set loading to false when data is fetched
       });
     } catch (e) {
       print('Error fetching tag data: $e');
+      setState(() {
+        isLoading = false; // Stop loading in case of error
+      });
+    }
+  }
+
+  // Function to fetch orders for a specific customer and process them
+  Future<void> fetchOrdersForCustomer(
+      DocumentSnapshot customerDoc, Map<String, int> tempTagCounts) async {
+    try {
+      // Get the timestamp range based on selected time filter
+      DateTime now = DateTime.now();
+      DateTime startDate;
+      if (selectedTimeRange == 0) {
+        startDate = DateTime(now.year, now.month, now.day); // Today
+      } else if (selectedTimeRange == 1) {
+        startDate = now.subtract(Duration(days: 3)); // Last 3 days
+      } else {
+        startDate = now.subtract(Duration(days: 7)); // Last 7 days
+      }
+
+      // Fetch each customer's orders, filtered by timestamp
+      QuerySnapshot orderSnapshot = await customerDoc.reference
+          .collection('orders')
+          .where('timestamp', isGreaterThanOrEqualTo: startDate)
+          .get();
+
+      for (var orderDoc in orderSnapshot.docs) {
+        // Get the products from the order
+        List<dynamic> products = orderDoc['products'] ?? [];
+
+        for (var product in products) {
+          // Validate the product fields
+          if (product['productName'] != null && product['quantity'] != null) {
+            String productName = product['productName'];
+            int quantity = product['quantity'];
+
+            try {
+              // Match productName with products collection to fetch tags
+              QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+                  .collection('products')
+                  .where('productName', isEqualTo: productName)
+                  .get();
+
+              if (productSnapshot.docs.isNotEmpty) {
+                // Get the tags for the matched product
+                List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
+
+                for (var tag in tags) {
+                  // Increment tag counts by product quantity
+                  tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + quantity;
+                }
+              } else {
+                print('No product found for productName: $productName');
+              }
+            } catch (e) {
+              print('Error fetching tags for product: $productName. $e');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching orders for customer: ${customerDoc.id}. $e');
     }
   }
 
   List<BarChartGroupData> _buildBarChartData() {
-    return tagCounts.entries
-        .map(
-          (entry) => BarChartGroupData(
-            x: entry.key.hashCode,
-            barRods: [
-              BarChartRodData(
-                toY: entry.value.toDouble(),
-                color: Colors.orangeAccent,
-                width: 15,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-            showingTooltipIndicators: [], // Disable tooltips
+    int index = 0;
+    return tagCounts.entries.map((entry) {
+      final currentIndex = index++;
+      return BarChartGroupData(
+        x: currentIndex,
+        barRods: [
+          BarChartRodData(
+            toY: entry.value.toDouble(),
+            color: Colors.orangeAccent,
+            width: 15,
+            borderRadius: BorderRadius.circular(4),
           ),
-        )
-        .toList();
+        ],
+        showingTooltipIndicators: [],
+      );
+    }).toList();
+  }
+
+  // Function to handle time range selection
+  void onTimeRangeSelected(int index) {
+    setState(() {
+      selectedTimeRange = index;
+      fetchTagData(); // Refetch the data based on the selected range
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (tagCounts.isEmpty) {
+    if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -120,6 +166,17 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            const SizedBox(height: 20),
+            // Buttons to filter by time range
+            Row(
+              children: [
+                _buildTimeRangeButton('Today', 0),
+                const SizedBox(width: 8),
+                _buildTimeRangeButton('3 Days', 1),
+                const SizedBox(width: 8),
+                _buildTimeRangeButton('1 Week', 2),
+              ],
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -150,26 +207,25 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 40,
-                          getTitlesWidget: (value, _) {
-                            final tag = tagCounts.keys.firstWhere(
-                              (key) => key.hashCode == value.toInt(),
-                              orElse: () => '',
-                            );
-                            return Transform.rotate(
-                              angle: -45 * 3.1415927 / 180,
-                              child: Text(
-                                tag.length > 10
-                                    ? '${tag.substring(0, 10)}...'
-                                    : tag,
-                                style: const TextStyle(fontSize: 10),
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.right,
-                              ),
-                            );
-                          },
-                        ),
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, _) {
+                              if (value.toInt() >= tagCounts.length)
+                                return const SizedBox.shrink();
+                              final tag =
+                                  tagCounts.keys.elementAt(value.toInt());
+                              return Transform.rotate(
+                                angle: -45 * 3.1415927 / 180,
+                                child: Text(
+                                  tag.length > 10
+                                      ? '${tag.substring(0, 10)}...'
+                                      : tag,
+                                  style: const TextStyle(fontSize: 10),
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.right,
+                                ),
+                              );
+                            }),
                       ),
                     ),
                     gridData: FlGridData(show: true),
@@ -180,6 +236,17 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
           ],
         ),
       ),
+    );
+  }
+
+  // Helper function to build the time range button
+  Widget _buildTimeRangeButton(String label, int index) {
+    return ElevatedButton(
+      onPressed: () => onTimeRangeSelected(index),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: selectedTimeRange == index ? Colors.blue : Colors.grey,
+      ),
+      child: Text(label),
     );
   }
 }

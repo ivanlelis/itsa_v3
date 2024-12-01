@@ -36,9 +36,23 @@ class _MenuManagementState extends State<MenuManagement> {
     );
   }
 
-  // Fetch products from Firestore
+  // Fetch products from the correct collection based on the userName
   Stream<QuerySnapshot> _getProducts() {
-    return FirebaseFirestore.instance.collection('products').snapshots();
+    String collectionName = _getProductCollection();
+    return FirebaseFirestore.instance.collection(collectionName).snapshots();
+  }
+
+  // Get the correct Firestore collection based on the userName
+  String _getProductCollection() {
+    if (widget.userName == "Main Branch Admin") {
+      return 'products';
+    } else if (widget.userName == "Sta. Cruz II Admin") {
+      return 'products_branch1';
+    } else if (widget.userName == "San Dionisio Admin") {
+      return 'products_branch2';
+    } else {
+      return 'products'; // Default to 'products' collection
+    }
   }
 
   @override
@@ -46,12 +60,10 @@ class _MenuManagementState extends State<MenuManagement> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
-      // Modify this part of your code
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Categories
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -115,7 +127,6 @@ class _MenuManagementState extends State<MenuManagement> {
 
                   // Filter products based on selected category
                   final filteredProducts = products.where((product) {
-                    // Filter by category first
                     if (_selectedCategoryIndex == 0) return true; // All
                     if (_selectedCategoryIndex == 1 &&
                         product['productType'] == 'Takoyaki') return true;
@@ -123,22 +134,6 @@ class _MenuManagementState extends State<MenuManagement> {
                         product['productType'] == 'Milk Tea') return true;
                     if (_selectedCategoryIndex == 3 &&
                         product['productType'] == 'Meals') return true;
-
-                    // Filter by branchID based on user role
-                    final userName =
-                        widget.userName; // Get the logged-in user's name
-                    if (userName == 'Main Branch Admin' &&
-                        product['branchID'] == 'branch 1') {
-                      return true;
-                    }
-                    if (userName == 'Sta. Cruz II Admin' &&
-                        product['branchID'] == 'branch 2') {
-                      return true;
-                    }
-                    if (userName == 'San Dionisio Admin' &&
-                        product['branchID'] == 'branch 3') {
-                      return true;
-                    }
 
                     return false;
                   }).toList();
@@ -155,10 +150,8 @@ class _MenuManagementState extends State<MenuManagement> {
                         productName: product['productName'],
                         productType: product['productType'],
                         prices: _getProductPrices(product),
-                        imageUrl: product['imageUrl'], // Pass the imageUrl
-                        productID: product['productID'], // Pass productID
-                        branchID: product[
-                            'branchID'], // Pass branchID to the ProductCard
+                        imageUrl: product['imageUrl'],
+                        productID: product['productID'],
                         userName: widget.userName,
                       );
                     },
@@ -337,18 +330,17 @@ class _AddProductModalState extends State<AddProductModal> {
       });
     }
 
-    // Add branchID based on userName
-    if (widget.userName == "Main Branch Admin") {
-      productData['branchID'] = 'branch 1';
-    } else if (widget.userName == "Sta. Cruz II Admin") {
-      productData['branchID'] = 'branch 2';
+    // Determine the correct collection based on userName
+    String collectionName = 'products'; // Default collection
+    if (widget.userName == "Sta. Cruz II Admin") {
+      collectionName = 'products_branch1';
     } else if (widget.userName == "San Dionisio Admin") {
-      productData['branchID'] = 'branch 3';
+      collectionName = 'products_branch2';
     }
 
-    // Save product data to Firestore
+    // Save product data to Firestore in the determined collection
     await FirebaseFirestore.instance
-        .collection('products')
+        .collection(collectionName) // Use the dynamic collection
         .doc(productID)
         .set(productData);
 
@@ -588,7 +580,6 @@ class ProductCard extends StatelessWidget {
   final Map<String, String> prices;
   final String imageUrl; // Directly using the provided imageUrl
   final String productID;
-  final String branchID; // The branchID field from the product
   final String userName;
 
   const ProductCard({
@@ -598,21 +589,19 @@ class ProductCard extends StatelessWidget {
     required this.prices,
     required this.imageUrl,
     required this.productID,
-    required this.branchID, // Add branchID to constructor
     required this.userName,
   });
 
-  // Filter the products based on the user's userName
-  bool shouldDisplayProduct(String branchID) {
-    // Compare the user's name and filter by branchID
-    if (userName == 'Main Branch Admin' && branchID == 'branch 1') {
-      return true;
-    } else if (userName == 'Sta. Cruz II Admin' && branchID == 'branch 2') {
-      return true;
-    } else if (userName == 'San Dionisio Admin' && branchID == 'branch 3') {
-      return true;
+  // Get the correct Firestore collection based on the userName
+  String _getProductCollection() {
+    if (userName == "Main Branch Admin") {
+      return 'products';
+    } else if (userName == "Sta. Cruz II Admin") {
+      return 'products_branch1';
+    } else if (userName == "San Dionisio Admin") {
+      return 'products_branch2';
     } else {
-      return false;
+      return 'products'; // Default to 'products' collection
     }
   }
 
@@ -656,7 +645,8 @@ class ProductCard extends StatelessWidget {
     if (confirmed == true) {
       // Delete from Firestore using the productID
       await FirebaseFirestore.instance
-          .collection('products') // Update with your collection name
+          .collection(
+              _getProductCollection()) // Get collection based on userName
           .doc(productID) // Use productID as the document ID
           .delete();
 
@@ -688,11 +678,6 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only display the product if the user's branchID matches the product's branchID
-    if (!shouldDisplayProduct(branchID)) {
-      return Container(); // Return an empty container if the product shouldn't be displayed
-    }
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),

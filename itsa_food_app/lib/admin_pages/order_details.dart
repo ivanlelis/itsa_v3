@@ -51,7 +51,7 @@ class OrderDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Details'),
+        title: Text('Order Details'),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -96,6 +96,7 @@ class OrderDetailsScreen extends StatelessWidget {
 
               // Retrieve order details
               String paymentImage = orderData['paymentReceipt'] ?? '';
+              var exclusiveBundle = orderData['exclusiveBundle'] ?? [];
 
               return Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -273,6 +274,40 @@ class OrderDetailsScreen extends StatelessWidget {
                               ),
                             );
                     }),
+
+                    // If exclusive bundle is not empty, display its card
+                    if (exclusiveBundle.isNotEmpty) ...[
+                      const SizedBox(
+                          height: 16), // Space before exclusive bundle card
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          leading: Icon(
+                            Icons.card_giftcard, // Use a valid icon
+                            color: Colors.blue,
+                            size: 40,
+                          ),
+                          title: const Text(
+                            'Exclusive Bundle',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'This is your exclusive bundle!',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+
                     // Approve Order Button
                     ElevatedButton(
                       onPressed: _approveOrder,

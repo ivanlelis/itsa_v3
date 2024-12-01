@@ -22,6 +22,7 @@ class PickupTab extends StatefulWidget {
   final String orderType;
   final String email;
   final String? selectedItemName;
+  final String branchID;
 
   const PickupTab({
     super.key,
@@ -40,6 +41,7 @@ class PickupTab extends StatefulWidget {
     required this.orderType,
     required this.email,
     this.selectedItemName,
+    required this.branchID,
   });
 
   @override
@@ -303,6 +305,7 @@ class _PickupTabState extends State<PickupTab> {
                             email: widget.email,
                             imageUrl: widget.imageUrl,
                             selectedItemName: widget.selectedItemName,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );

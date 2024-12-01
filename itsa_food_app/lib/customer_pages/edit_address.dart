@@ -54,7 +54,7 @@ class _EditAddressState extends State<EditAddress> {
       "featureType": "road",
       "elementType": "geometry",
       "stylers": [
-        { "color": "#a1887f" }
+        { "color": "#A78D78" }
       ]
     },
     {
@@ -266,7 +266,8 @@ class _EditAddressState extends State<EditAddress> {
                       style: ElevatedButton.styleFrom(
                         padding:
                             EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                        backgroundColor: Colors.pink,
+                        backgroundColor: Color(
+                            0xFF6E473B), // Set the background color to #6E473B
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

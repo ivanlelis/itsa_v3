@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'feature_modal.dart';
 
-
 class FeatureProduct extends StatefulWidget {
   const FeatureProduct({super.key});
 
@@ -38,7 +37,7 @@ class _FeatureProductState extends State<FeatureProduct> {
             await customerDoc.reference.collection('orders').get();
 
         for (var orderDoc in orderSnapshot.docs) {
-          List<dynamic> products = orderDoc['productNames'] ?? [];
+          List<dynamic> products = orderDoc['products'] ?? [];
           for (var product in products) {
             productCount[product] = (productCount[product] ?? 0) + 1;
           }

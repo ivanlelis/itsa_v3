@@ -23,6 +23,7 @@ class ProfileView extends StatefulWidget {
   final String userAddress;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const ProfileView({
     super.key,
@@ -34,6 +35,7 @@ class ProfileView extends StatefulWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
 
   @override
@@ -75,6 +77,7 @@ class _ProfileViewState extends State<ProfileView> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -94,6 +97,7 @@ class _ProfileViewState extends State<ProfileView> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -114,6 +118,7 @@ class _ProfileViewState extends State<ProfileView> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,

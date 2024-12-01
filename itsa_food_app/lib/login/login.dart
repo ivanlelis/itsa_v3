@@ -12,6 +12,7 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
 import 'dart:math';
 import 'package:itsa_food_app/login/forgot_pass.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -132,7 +133,26 @@ class _LoginPageState extends State<LoginPage> {
             await _sendOTPEmail(email, otp);
 
             if (userType == "customer") {
-              // Customer navigation
+              // Fetch the branchID from the "customer" collection in Firestore
+              String? branchID;
+              try {
+                DocumentSnapshot customerDoc = await FirebaseFirestore.instance
+                    .collection('customer')
+                    .doc(userInfo['uid'])
+                    .get();
+                if (customerDoc.exists) {
+                  branchID = customerDoc['branchID'] ??
+                      ""; // Fetch branchID from Firestore
+                }
+              } catch (e) {
+                setState(() {
+                  _errorMessage = "Error fetching branch ID: $e";
+                  _isLoading = false;
+                });
+                return;
+              }
+
+              // Navigate to CustomerOTPPage with branchID
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -146,6 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                     latitude: userInfo['userCoordinates']?['latitude'] ?? 0.0,
                     longitude: userInfo['userCoordinates']?['longitude'] ?? 0.0,
                     otp: otp,
+                    branchID: branchID ?? "", // Pass branchID
                   ),
                 ),
               );

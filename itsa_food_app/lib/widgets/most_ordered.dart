@@ -63,50 +63,46 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
 
     productCount.clear();
 
-    // Get current date in Philippine Time (UTC+8)
+    // Get current date in UTC and adjust to Philippine Time (UTC+8)
     DateTime now = DateTime.now().toUtc().add(const Duration(hours: 8));
 
-    // Define the start and end time based on the selected filter
-    DateTime startTime;
-    DateTime endTime;
+    // Define the start and end date based on the selected filter
+    DateTime startDate;
+    DateTime endDate;
 
     if (selectedFilter == 'Today') {
-      // Start and end of the current day
-      startTime = DateTime(now.year, now.month, now.day, 0, 0, 0);
-      endTime = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      // Start and end of the current day in Philippine Time
+      startDate = DateTime(now.year, now.month, now.day);
+      endDate = DateTime(now.year, now.month, now.day);
     } else if (selectedFilter == '3 days') {
-      // Last 3 days
-      startTime = now.subtract(const Duration(days: 3));
-      startTime =
-          DateTime(startTime.year, startTime.month, startTime.day, 0, 0, 0);
-      endTime = now.subtract(const Duration(days: 1));
-      endTime = DateTime(endTime.year, endTime.month, endTime.day, 23, 59, 59);
+      // Start and end of the last 3 days in Philippine Time
+      startDate = now.subtract(const Duration(days: 3));
+      startDate = DateTime(startDate.year, startDate.month, startDate.day);
+      endDate = now.subtract(const Duration(days: 1));
+      endDate = DateTime(endDate.year, endDate.month, endDate.day);
     } else if (selectedFilter == '1 week') {
-      // Last 7 days
-      startTime = now.subtract(const Duration(days: 7));
-      startTime =
-          DateTime(startTime.year, startTime.month, startTime.day, 0, 0, 0);
-      endTime = now.subtract(const Duration(days: 1));
-      endTime = DateTime(endTime.year, endTime.month, endTime.day, 23, 59, 59);
+      // Start and end of the last 7 days in Philippine Time
+      startDate = now.subtract(const Duration(days: 7));
+      startDate = DateTime(startDate.year, startDate.month, startDate.day);
+      endDate = now.subtract(const Duration(days: 1));
+      endDate = DateTime(endDate.year, endDate.month, endDate.day);
     } else {
       // Default to Today
-      startTime = DateTime(now.year, now.month, now.day, 0, 0, 0);
-      endTime = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      startDate = DateTime(now.year, now.month, now.day);
+      endDate = DateTime(now.year, now.month, now.day);
     }
 
     try {
-      // Fetch all customers
+      // Fetch all customer documents
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      // Fetch all orders for all customers concurrently with time filtering
+      // Fetch all orders for all customers concurrently
       List<Future<QuerySnapshot>> orderFutures = customerSnapshot.docs.map(
         (customerDoc) {
           return customerDoc.reference
               .collection('orders')
-              .where('timestamp', isGreaterThanOrEqualTo: startTime)
-              .where('timestamp', isLessThanOrEqualTo: endTime)
-              .get();
+              .get(); // Fetch all orders without time range filtering
         },
       ).toList();
 
@@ -115,15 +111,25 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       // Process all orders
       for (var orderSnapshot in orderSnapshots) {
         for (var orderDoc in orderSnapshot.docs) {
-          List<dynamic> products = orderDoc['products'] ?? [];
-          for (var product in products) {
-            // Extract productName and quantity
-            String productName = product['productName'];
-            int quantity = product['quantity'] ?? 1;
+          Timestamp orderTimestamp = orderDoc['timestamp'];
+          DateTime orderDate =
+              orderTimestamp.toDate().toUtc().add(const Duration(hours: 8));
+          orderDate = DateTime(orderDate.year, orderDate.month,
+              orderDate.day); // Normalize to the start of the day
 
-            // Update product count
-            productCount[productName] =
-                (productCount[productName] ?? 0) + quantity;
+          // Check if the orderDate falls within the selected date range
+          if (orderDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
+              orderDate.isBefore(endDate.add(const Duration(days: 1)))) {
+            List<dynamic> products = orderDoc['products'] ?? [];
+            for (var product in products) {
+              // Extract productName and quantity
+              String productName = product['productName'];
+              int quantity = product['quantity'] ?? 1;
+
+              // Update product count
+              productCount[productName] =
+                  (productCount[productName] ?? 0) + quantity;
+            }
           }
         }
       }
@@ -157,6 +163,9 @@ class _MostOrderedCardState extends State<MostOrderedCard> {
       setState(() {
         mostOrderedProduct = mostOrdered;
       });
+
+      // Debugging: Log the most ordered product
+      debugPrint('Most Ordered Product: $mostOrdered');
     } catch (e) {
       setState(() {
         mostOrderedProduct = 'Error fetching data';

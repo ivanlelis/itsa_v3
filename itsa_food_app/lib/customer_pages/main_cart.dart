@@ -13,6 +13,7 @@ class MainCart extends StatefulWidget {
   final String userAddress;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const MainCart({
     super.key,
@@ -24,6 +25,7 @@ class MainCart extends StatefulWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
 
   @override
@@ -147,6 +149,7 @@ class _MainCartState extends State<MainCart> {
             longitude: widget.longitude,
             userAddress: widget.userAddress,
             cartItems: cartItems,
+            branchID: widget.branchID,
             selectedItemName:
                 selectedItemName ?? 'No item selected', // Default value if null
           ),
@@ -161,8 +164,15 @@ class _MainCartState extends State<MainCart> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Cart'),
-        backgroundColor: Colors.orangeAccent,
+        title: const Text(
+          'My Cart',
+          style: TextStyle(
+            fontWeight: FontWeight.bold, // Make the text bold
+            color: Colors.white, // Set the text color to white
+          ),
+        ),
+        backgroundColor:
+            Color(0xFF6E473B), // Use the first color in the palette
       ),
       body: Column(
         children: [
@@ -184,20 +194,16 @@ class _MainCartState extends State<MainCart> {
                             key: Key('${item['id']}-productName'),
                             background: Container(
                               color: Colors.red,
-                              alignment: Alignment.centerLeft,
+                              alignment: Alignment
+                                  .centerRight, // Align to right (red side)
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
-                              child:
-                                  const Icon(Icons.delete, color: Colors.white),
+                              child: const Icon(Icons.delete,
+                                  color: Colors
+                                      .white), // Delete icon on the right side
                             ),
-                            secondaryBackground: Container(
-                              color: Colors.red,
-                              alignment: Alignment.centerRight,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child:
-                                  const Icon(Icons.delete, color: Colors.white),
-                            ),
+                            direction: DismissDirection
+                                .endToStart, // Only allow right swipe
                             onDismissed: (direction) {
                               _deleteCartItem(item['id']);
                               setState(() {
@@ -205,23 +211,25 @@ class _MainCartState extends State<MainCart> {
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content:
-                                        Text('$productName removed from cart')),
+                                  content:
+                                      Text('$productName removed from cart'),
+                                ),
                               );
                             },
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0), // Margins around the card
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
                               child: SizedBox(
-                                width: double
-                                    .infinity, // Forces the card to take full width
+                                width: double.infinity,
                                 child: Card(
                                   elevation: 4,
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 8.0), // Spacing between cards
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
+                                  color: Color(
+                                      0xFF6E473B), // Light background color
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Column(
@@ -230,30 +238,35 @@ class _MainCartState extends State<MainCart> {
                                       children: [
                                         Text(
                                           productName,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
+                                            color: Color.fromARGB(255, 255, 255,
+                                                255), // Dark color for text
                                           ),
                                         ),
                                         const SizedBox(height: 8.0),
                                         Text(
                                           'Quantity: ${item['quantity']}',
                                           style: const TextStyle(
-                                              color: Colors.grey),
+                                              color: Color.fromARGB(
+                                                  255, 255, 255, 255)),
                                         ),
                                         const SizedBox(height: 8.0),
                                         Text(
                                           'Size: ${item['sizeQuantity']}',
                                           style: const TextStyle(
-                                              color: Colors.grey),
+                                              color: Color.fromARGB(
+                                                  255, 255, 255, 255)),
                                         ),
                                         const SizedBox(height: 8.0),
                                         Text(
                                           'Total: ₱${item['total'].toStringAsFixed(2)}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.orangeAccent,
+                                            color: Color.fromARGB(255, 255, 255,
+                                                255), // Dark color for price
                                           ),
                                         ),
                                       ],
@@ -267,8 +280,7 @@ class _MainCartState extends State<MainCart> {
                           // Card for selectedItemName (if exists)
                           if (selectedItemName != null)
                             FutureBuilder<DocumentSnapshot?>(
-                              future: _fetchProductType(
-                                  selectedItemName), // Call the fetch method
+                              future: _fetchProductType(selectedItemName),
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
@@ -285,6 +297,8 @@ class _MainCartState extends State<MainCart> {
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
+                                        color: Color(
+                                            0xFF6E473B), // Light background color
                                         child: const Padding(
                                           padding: EdgeInsets.all(16.0),
                                           child: Center(
@@ -310,11 +324,13 @@ class _MainCartState extends State<MainCart> {
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
+                                        color: Color(
+                                            0xFF6E473B), // Light background color
                                         child: Padding(
                                           padding: const EdgeInsets.all(16.0),
                                           child: Text(
                                             'Product type for "$selectedItemName" not found',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.red,
@@ -325,7 +341,6 @@ class _MainCartState extends State<MainCart> {
                                     ),
                                   );
                                 } else {
-                                  // Extract product type and determine extra details
                                   final productType =
                                       snapshot.data!['productType'] ??
                                           'Unknown';
@@ -348,18 +363,24 @@ class _MainCartState extends State<MainCart> {
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
+                                        color: Color(
+                                            0xFF6E473B), // Light background color
                                         child: Padding(
                                           padding: const EdgeInsets.all(16.0),
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              // Display the selected item name
                                               Text(
                                                 selectedItemName,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
+                                                  color: Color.fromARGB(
+                                                      255,
+                                                      255,
+                                                      255,
+                                                      255), // Dark color for text
                                                 ),
                                               ),
                                               const SizedBox(height: 8.0),
@@ -367,20 +388,22 @@ class _MainCartState extends State<MainCart> {
                                                 const SizedBox(height: 8.0),
                                                 Text(
                                                   extraInfo,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
+                                                    color: Color(
+                                                        0xFF291C0E), // Dark color for extra info
                                                   ),
                                                 ),
                                               ],
                                               const SizedBox(height: 8.0),
-                                              // Add "Total: Free" text
                                               const Text(
                                                 'Total: Free',
                                                 style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.orangeAccent,
+                                                  color: Color(
+                                                      0xFF6E473B), // Dark color for price
                                                 ),
                                               ),
                                             ],
@@ -401,8 +424,7 @@ class _MainCartState extends State<MainCart> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment
-                  .stretch, // Make the button stretch the entire width
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -417,7 +439,7 @@ class _MainCartState extends State<MainCart> {
                       style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.orangeAccent),
+                          color: Color(0xFF6E473B)), // Dark color for total
                     ),
                   ],
                 ),
@@ -426,10 +448,10 @@ class _MainCartState extends State<MainCart> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => _proceedToCheckout(
-                        selectedItemName:
-                            selectedItemName ?? ''), // Pass the argument here
+                        selectedItemName: selectedItemName ?? ''),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent,
+                      backgroundColor: Color(
+                          0xFF6E473B), // Use the first color in the palette
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -437,8 +459,10 @@ class _MainCartState extends State<MainCart> {
                     ),
                     child: const Text(
                       'Proceed to Checkout',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ),
                 ),

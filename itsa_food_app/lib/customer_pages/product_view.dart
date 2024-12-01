@@ -21,6 +21,7 @@ class ProductView extends StatefulWidget {
   final String email;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const ProductView({
     super.key,
@@ -40,6 +41,7 @@ class ProductView extends StatefulWidget {
     required this.email,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
 
   @override
@@ -171,6 +173,7 @@ class _ProductViewState extends State<ProductView> {
                           latitude: widget.latitude,
                           longitude: widget.longitude,
                           imageUrl: widget.imageUrl,
+                          branchID: widget.branchID,
                         ),
                       ),
                     );
@@ -197,6 +200,7 @@ class _ProductViewState extends State<ProductView> {
                             latitude: widget.latitude,
                             longitude: widget.longitude,
                             imageUrl: widget.imageUrl,
+                            branchID: widget.branchID,
                           ),
                         ),
                       );

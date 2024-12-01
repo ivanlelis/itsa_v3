@@ -12,6 +12,7 @@ class CustomerOTPPage extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String otp;
+  final String branchID;
 
   const CustomerOTPPage({
     super.key,
@@ -24,6 +25,7 @@ class CustomerOTPPage extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     required this.otp,
+    required this.branchID,
   });
 
   @override
@@ -70,6 +72,7 @@ class _CustomerOTPPageState extends State<CustomerOTPPage> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
           ),
         );

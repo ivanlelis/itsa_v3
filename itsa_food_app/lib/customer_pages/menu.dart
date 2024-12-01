@@ -23,6 +23,7 @@ class Menu extends StatefulWidget {
   final String userAddress;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const Menu({
     super.key,
@@ -34,6 +35,7 @@ class Menu extends StatefulWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
   @override
   _MenuState createState() => _MenuState();
@@ -65,6 +67,7 @@ class _MenuState extends State<Menu> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -84,6 +87,7 @@ class _MenuState extends State<Menu> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -104,6 +108,7 @@ class _MenuState extends State<Menu> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -124,6 +129,7 @@ class _MenuState extends State<Menu> {
               userAddress: widget.userAddress,
               latitude: widget.latitude,
               longitude: widget.longitude,
+              branchID: widget.branchID,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -142,12 +148,6 @@ class _MenuState extends State<Menu> {
           .snapshots();
     }
     return collection.snapshots();
-  }
-
-  void _handleApplyFilters(List<String> selectedTags) {
-    setState(() {
-      _selectedTags = selectedTags;
-    });
   }
 
   @override
@@ -172,6 +172,7 @@ class _MenuState extends State<Menu> {
                   latitude: widget.latitude,
                   longitude: widget.longitude,
                   userAddress: widget.userAddress,
+                  branchID: widget.branchID,
                 ),
               ),
             );
@@ -371,6 +372,7 @@ class _MenuState extends State<Menu> {
                         latitude: widget.latitude,
                         longitude: widget.longitude,
                         email: widget.email,
+                        branchID: widget.branchID,
                       );
                     },
                   );
@@ -405,6 +407,7 @@ class ProductCard extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String email;
+  final String branchID;
 
   const ProductCard({
     super.key,
@@ -424,6 +427,7 @@ class ProductCard extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     required this.email,
+    required this.branchID,
   });
 
   @override
@@ -548,6 +552,7 @@ class _ProductCardState extends State<ProductCard> {
                 email: widget.email,
                 latitude: widget.latitude,
                 longitude: widget.longitude,
+                branchID: widget.branchID,
               ),
             ),
           );

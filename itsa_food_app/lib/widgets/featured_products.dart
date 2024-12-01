@@ -14,6 +14,7 @@ class FeaturedProductWidget extends StatelessWidget {
   final String userAddress;
   final double latitude;
   final double longitude;
+  final String branchID;
 
   const FeaturedProductWidget({
     super.key,
@@ -26,6 +27,7 @@ class FeaturedProductWidget extends StatelessWidget {
     required this.userAddress,
     required this.latitude,
     required this.longitude,
+    required this.branchID,
   });
 
   @override
@@ -40,7 +42,7 @@ class FeaturedProductWidget extends StatelessWidget {
           return Text('Error: ${snapshot.error}');
         }
         if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Text('No featured product available');
+          return Text('');
         }
 
         // Extract featured product data
@@ -97,6 +99,7 @@ class FeaturedProductWidget extends StatelessWidget {
                           userAddress: userAddress,
                           latitude: latitude,
                           longitude: longitude,
+                          branchID: branchID,
                         ),
                       ),
                     );
@@ -274,6 +277,7 @@ class FeaturedProductWidget extends StatelessWidget {
                                         startDate: startDate,
                                         endDate: endDate,
                                         exBundle: exBundle,
+                                        branchID: branchID,
                                       ),
                                     ),
                                   );
