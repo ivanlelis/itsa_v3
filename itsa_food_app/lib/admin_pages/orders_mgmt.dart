@@ -10,7 +10,10 @@ import 'package:itsa_food_app/admin_pages/order_details.dart';
 
 class OrdersManagement extends StatefulWidget {
   final String userName;
-  const OrdersManagement({super.key, required this.userName,});
+  const OrdersManagement({
+    super.key,
+    required this.userName,
+  });
 
   @override
   _OrdersManagementState createState() => _OrdersManagementState();
@@ -81,15 +84,13 @@ class _OrdersManagementState extends State<OrdersManagement>
     return Scaffold(
       key: _scaffoldKey,
       appBar: AdminAppBar(scaffoldKey: _scaffoldKey),
-      drawer: AdminSidebar(onLogout: _onLogout, userName: widget.userName,),
+      drawer: AdminSidebar(
+        onLogout: _onLogout,
+        userName: widget.userName,
+      ),
       body: Column(
         children: [
-          const SizedBox(height: 20),
-          const Text(
-            'Orders Management',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 5),
           TabBar(
             controller: _tabController,
             tabs: const [

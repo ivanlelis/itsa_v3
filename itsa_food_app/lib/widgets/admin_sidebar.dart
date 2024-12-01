@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/admin_pages/inventory.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/admin_pages/create_vouchers.dart';
@@ -62,6 +63,20 @@ class AdminSidebar extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ScratchCardGrid()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.inventory), // Suitable icon for Inventory
+            title: const Text('Inventory'),
+            onTap: () {
+              // Pass the userName to the InventoryPage
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      InventoryPage(userName: userName), // Pass userName here
+                ),
               );
             },
           ),
@@ -146,3 +161,4 @@ class AdminSidebar extends StatelessWidget {
     }
   }
 }
+
