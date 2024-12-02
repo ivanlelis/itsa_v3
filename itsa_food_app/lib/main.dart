@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/edit_address.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
+import 'package:itsa_food_app/onboarding/onboarding.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/home/home.dart';
 import 'package:itsa_food_app/login/login.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/home', // Set the initial route
+      initialRoute: '/loginChecker', // Set the initial route
       routes: {
         '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
@@ -139,10 +140,11 @@ class _LoginCheckerState extends State<LoginChecker> {
     _checkLoginStatus();
   }
 
-  // Check login status and last login time
+  // Check login status and onboarding completion
   void _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final lastLoginTime = prefs.getInt('lastLoginTime');
+    final onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
 
     final currentTime = DateTime.now().millisecondsSinceEpoch;
 
@@ -160,11 +162,20 @@ class _LoginCheckerState extends State<LoginChecker> {
           MaterialPageRoute(builder: (context) => const LoginPage()),
         );
       } else {
-        // User is logged in and within 30 minutes, navigate to home screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+        // Check if onboarding is complete
+        if (!onboardingComplete) {
+          // Navigate to onboarding screen for first-time users
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
+        } else {
+          // If user has completed onboarding, navigate to home screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        }
       }
     } else {
       // If no user is logged in, navigate to login screen

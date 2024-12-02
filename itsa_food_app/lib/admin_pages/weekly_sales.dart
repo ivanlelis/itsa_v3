@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import the fl_chart package
 
 class WeeklySales extends StatefulWidget {
-  const WeeklySales({super.key});
+  final String userName;
+
+  const WeeklySales({super.key, required this.userName});
 
   @override
   _WeeklySalesState createState() => _WeeklySalesState();
@@ -13,28 +15,57 @@ class WeeklySales extends StatefulWidget {
 class _WeeklySalesState extends State<WeeklySales> {
   Future<List<Map<String, dynamic>>> fetchDailySales() async {
     List<Map<String, dynamic>> salesData = [];
+    String branchID = '';
 
     try {
+      // Determine the branchID based on the userName
+      if (widget.userName == "Main Branch Admin") {
+        branchID = "branch 1";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        branchID = "branch 2";
+      } else if (widget.userName == "San Dionisio Admin") {
+        branchID = "branch 3";
+      } else {
+        print('Invalid userName');
+        return salesData;
+      }
+
       DateTime now = DateTime.now();
 
+      // Loop through the last 7 days
       for (int i = 0; i < 7; i++) {
         DateTime date = now.subtract(Duration(days: i));
         String collectionName =
             "transactions_${date.month.toString().padLeft(2, '0')}_${date.day.toString().padLeft(2, '0')}_${date.year.toString().substring(2)}";
 
+        // Debug print to show the collection being queried
+        print('Fetching data from collection: $collectionName');
+
         var snapshot = await FirebaseFirestore.instance
             .collection('transactions')
             .doc('transactions')
             .collection(collectionName)
-            .doc('dailySales')
+            .where('branchID', isEqualTo: branchID) // Filter by branchID
             .get();
 
-        if (snapshot.exists) {
-          Map<String, dynamic> sales = snapshot.data()!;
+        // Debug print to show the document being fetched
+        print('Fetching documents with branchID: $branchID');
+
+        if (snapshot.docs.isNotEmpty) {
+          double totalProdCost = 0;
+
+          // Sum up all the prodCost values for the filtered documents
+          for (var doc in snapshot.docs) {
+            if (doc.exists) {
+              double prodCost = doc.data()['prodCost'] ?? 0.0;
+              totalProdCost += prodCost;
+            }
+          }
+
+          // Get the date for the sales data
           List<String> dateParts = collectionName.split('_');
           String formattedDate =
               '${dateParts[1]}-${dateParts[2]}-${dateParts[3]}';
-
           List<String> dateSplit = formattedDate.split('-');
           DateTime dateTime = DateTime(
             2000 + int.parse(dateSplit[2]),
@@ -42,12 +73,13 @@ class _WeeklySalesState extends State<WeeklySales> {
             int.parse(dateSplit[1]),
           );
 
-          String readableDate = DateFormat('dd/yy').format(dateTime);
+          // Format the date and add the data to the list
+          DateFormat('dd/yy').format(dateTime);
 
           // Add sales data
           salesData.add({
-            'date': readableDate,
-            'sales': sales, // Assuming sales is a number or can be parsed
+            'dateTime': dateTime, // Store the actual DateTime object
+            'sales': totalProdCost, // Sum of prodCost as the daily sales
           });
         }
       }
@@ -55,19 +87,7 @@ class _WeeklySalesState extends State<WeeklySales> {
       print("Error fetching sales data: $e");
     }
 
-    print(
-        "Fetched Sales Data: $salesData"); // Debug: Check the fetched sales data
     return salesData;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -95,9 +115,19 @@ class _WeeklySalesState extends State<WeeklySales> {
             final salesData = snapshot.data!;
 
             // Reverse the data to have the oldest date first
-            salesData.sort((a, b) => DateFormat('dd/yy')
-                .parse(a['date']!)
-                .compareTo(DateFormat('dd/yy').parse(b['date']!)));
+            salesData.sort((a, b) => a['dateTime'].compareTo(b['dateTime']));
+
+            // Calculate max sales value to avoid bars going beyond the chart's roof
+            double maxSales = 0;
+            for (var sales in salesData) {
+              double dailySales = sales['sales'];
+              if (dailySales > maxSales) {
+                maxSales = dailySales;
+              }
+            }
+
+            // Set a reasonable margin above the max sales value
+            double adjustedMaxY = maxSales * 1.2;
 
             // Prepare data for the Bar Chart
             return CustomScrollView(
@@ -110,86 +140,80 @@ class _WeeklySalesState extends State<WeeklySales> {
                         const Text(
                           'Sales Data for the Week',
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blueGrey,
                           ),
                         ),
                         const SizedBox(height: 20),
                         Container(
-                          height: 300, // Set a height for the chart
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0), // Add horizontal padding
-                          child: Center(
-                            // Wrap the chart in a Center widget
-                            child: BarChart(
-                              BarChartData(
-                                maxY:
-                                    1000, // Set the maximum value of the y-axis to 1000
-                                alignment: BarChartAlignment.spaceAround,
-                                barGroups: salesData.map((sales) {
-                                  double dailySales = sales['sales'] is Map
-                                      ? (sales['sales']['sales']?.toDouble() ??
-                                          0.0)
-                                      : 0.0;
+                          height: 320, // Increased height for better visibility
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: BarChart(
+                            BarChartData(
+                              maxY:
+                                  adjustedMaxY, // Dynamically calculated max Y value
+                              alignment: BarChartAlignment.spaceAround,
+                              barGroups: salesData.map((sales) {
+                                double dailySales = sales['sales'];
 
-                                  return BarChartGroupData(
-                                    x: salesData.indexOf(sales),
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: dailySales,
-                                        color: Colors.blueAccent,
-                                        width: 10,
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
-                                gridData: FlGridData(
-                                  drawVerticalLine:
-                                      false, // Optional, for cleaner visualization
+                                return BarChartGroupData(
+                                  x: salesData.indexOf(sales),
+                                  barRods: [
+                                    BarChartRodData(
+                                      toY: dailySales,
+                                      color: Colors.blueAccent,
+                                      width:
+                                          16, // Adjusted width for better look
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                              gridData: FlGridData(
+                                drawVerticalLine: false,
+                              ),
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  axisNameWidget: const Text('Sales'),
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 200,
+                                    reservedSize: 40,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        value.toStringAsFixed(0),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blueGrey,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
-                                titlesData: FlTitlesData(
-                                  leftTitles: AxisTitles(
-                                    axisNameWidget: const Text('Sales'),
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      interval:
-                                          200, // Maintain an interval of 200 between y-axis labels
-                                      reservedSize:
-                                          35, // Increase reserved space for y-axis labels
-                                      getTitlesWidget: (value, meta) {
-                                        return Text(
-                                          value.toStringAsFixed(0),
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                bottomTitles: AxisTitles(
+                                  axisNameWidget: const Text('Date'),
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        DateFormat('dd MMM').format(
+                                            salesData[value.toInt()]
+                                                ['dateTime']),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blueGrey,
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  bottomTitles: AxisTitles(
-                                    axisNameWidget: const Text('Date'),
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (value, meta) {
-                                        return Text(
-                                          salesData[value.toInt()]['date'],
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  rightTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                  topTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
                                 ),
                               ),
                             ),
@@ -203,15 +227,39 @@ class _WeeklySalesState extends State<WeeklySales> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final sales = salesData[index];
-                      // Accessing sales value correctly
-                      final salesValue = sales['sales'] is Map
-                          ? sales['sales']['sales']
-                          : sales[
-                              'sales']; // Handles both Map and direct values
+                      final salesValue = sales['sales'];
 
-                      return ListTile(
-                        title: Text('Date: ${sales['date']}'),
-                        subtitle: Text('Sales: ₱$salesValue'),
+                      // Format the date for display
+                      String fullDate =
+                          DateFormat('dd MMMM yyyy').format(sales['dateTime']);
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            title: Text(
+                              'Date: $fullDate', // Full date is now displayed
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueGrey,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Sales: ₱$salesValue',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.blueGrey,
+                              ),
+                            ),
+                          ),
+                        ),
                       );
                     },
                     childCount: salesData.length,

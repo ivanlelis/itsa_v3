@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/admin_pages/offer_forecast.dart';
 import 'package:itsa_food_app/widgets/admin_appbar.dart';
 import 'package:itsa_food_app/widgets/admin_navbar.dart';
 import 'package:itsa_food_app/widgets/admin_sidebar.dart';
@@ -240,7 +241,9 @@ class _AdminHomeState extends State<AdminHome> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ForecastingPage(userName: widget.userName),
+                                  builder: (context) => ForecastingPage(
+                                    userName: widget.userName,
+                                  ),
                                 ),
                               );
                             },
@@ -251,7 +254,7 @@ class _AdminHomeState extends State<AdminHome> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               backgroundColor: Colors
-                                  .blue, // Use backgroundColor instead of primary
+                                  .blue, // Use backgroundColor for button color
                             ),
                             child: const Text(
                               'Go to Forecasting',
@@ -260,7 +263,37 @@ class _AdminHomeState extends State<AdminHome> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          )
+                          ),
+                          const SizedBox(height: 10), // Spacing between buttons
+                          ElevatedButton(
+                            onPressed: () {
+                              // Navigate to OffersForecast page
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OffersForecast(
+                                    userName: widget.userName,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14.0, horizontal: 30.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              backgroundColor: Colors
+                                  .green, // Different color for distinction
+                            ),
+                            child: const Text(
+                              'Go to Offers Forecast',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
