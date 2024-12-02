@@ -124,116 +124,124 @@ class _SelectCustomState extends State<SelectCustom> {
         userName: widget.userName,
         uid: widget.uid,
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 120, // Fixed height for both buttons
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ComboOrder(
-                              userName: widget.userName,
-                              emailAddress: widget.emailAddress,
-                              imageUrl: widget.imageUrl,
-                              uid: widget.uid,
-                              email: widget.email,
-                              userAddress: widget.userAddress,
-                              latitude: widget.latitude,
-                              longitude: widget.longitude,
-                              branchID: widget.branchID,
+      body: Column(
+        children: [
+          // Row with buttons just below the appBar
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 120, // Fixed height for both buttons
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ComboOrder(
+                                userName: widget.userName,
+                                emailAddress: widget.emailAddress,
+                                imageUrl: widget.imageUrl,
+                                uid: widget.uid,
+                                email: widget.email,
+                                userAddress: widget.userAddress,
+                                latitude: widget.latitude,
+                                longitude: widget.longitude,
+                                branchID: widget.branchID,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
-                            Icons.fastfood,
-                            size: 40,
-                            color: Colors.brown,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Create Combo',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          );
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.fastfood,
+                              size: 40,
+                              color: Colors.brown,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                            SizedBox(height: 8),
+                            Text(
+                              'Create Combo',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: SizedBox(
-                  height: 120, // Fixed height for both buttons
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        print("Personalize Order tapped");
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PersonalizeOrder(
-                              userName: widget.userName,
-                              emailAddress: widget.emailAddress,
-                              imageUrl: widget.imageUrl,
-                              uid: widget.uid,
-                              email: widget.email,
-                              userAddress: widget.userAddress,
-                              latitude: widget.latitude,
-                              longitude: widget.longitude,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: SizedBox(
+                    height: 120, // Fixed height for both buttons
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          print("Personalize Order tapped");
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PersonalizeOrder(
+                                userName: widget.userName,
+                                emailAddress: widget.emailAddress,
+                                imageUrl: widget.imageUrl,
+                                uid: widget.uid,
+                                email: widget.email,
+                                userAddress: widget.userAddress,
+                                latitude: widget.latitude,
+                                longitude: widget.longitude,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
-                            Icons.edit,
-                            size: 40,
-                            color: Colors.brown,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Personalize Order',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          );
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.edit,
+                              size: 40,
+                              color: Colors.brown,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                            SizedBox(height: 8),
+                            Text(
+                              'Personalize Order',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          // Add additional content to the body if needed, below the buttons
+          Expanded(
+            child: Center(),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,

@@ -506,13 +506,24 @@ class _ComboOrderState extends State<ComboOrder> with TickerProviderStateMixin {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => SaveCombo(
-                                                  selectedProductID:
-                                                      selectedProductID,
-                                                  selectedMilkTeaID:
-                                                      selectedMilkTeaID,
-                                                  branchID: widget.branchID),
-                                            ),
+                                                builder: (context) => SaveCombo(
+                                                      selectedProductID:
+                                                          selectedProductID,
+                                                      selectedMilkTeaID:
+                                                          selectedMilkTeaID,
+                                                      branchID: widget.branchID,
+                                                      latitude: widget.latitude,
+                                                      longitude:
+                                                          widget.longitude,
+                                                      userAddress:
+                                                          widget.userAddress,
+                                                      userName: widget.userName,
+                                                      uid: widget.uid,
+                                                      imageUrl: widget.imageUrl,
+                                                      email: widget.email,
+                                                      emailAddress:
+                                                          widget.emailAddress,
+                                                    )),
                                           );
                                         },
                                         child: const Text(
