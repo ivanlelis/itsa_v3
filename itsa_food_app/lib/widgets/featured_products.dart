@@ -6,15 +6,15 @@ import 'package:itsa_food_app/customer_pages/order_featured.dart';
 
 class FeaturedProductWidget extends StatelessWidget {
   final Future<DocumentSnapshot> featuredProduct;
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const FeaturedProductWidget({
     super.key,

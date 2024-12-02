@@ -9,18 +9,18 @@ import 'package:itsa_food_app/widgets/pickuptab.dart';
 import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
 
 class Checkout extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
+  final String? userName;
+  final String? emailAddress;
   final double totalAmount;
-  final String uid;
-  final String email;
-  final String imageUrl;
+  final String? uid;
+  final String? email;
+  final String? imageUrl;
   final double latitude;
   final double longitude;
-  final String userAddress;
+  final String? userAddress;
   final List<Map<String, dynamic>> cartItems;
   final String selectedItemName;
-  final String branchID;
+  final String? branchID;
 
   const Checkout({
     super.key,
@@ -283,7 +283,7 @@ class _CheckoutState extends State<Checkout>
                   padding: const EdgeInsets.all(16.0),
                   child: ListView(
                     children: [
-                      AddressSection(userAddress: widget.userAddress),
+                      AddressSection(userAddress: widget.userAddress ?? ''),
                       const SizedBox(height: 16),
                       DeliveryTypeSection(
                         deliveryType: deliveryType ?? 'Standard',

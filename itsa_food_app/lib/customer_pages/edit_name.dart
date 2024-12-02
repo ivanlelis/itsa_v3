@@ -7,23 +7,23 @@ import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:itsa_food_app/user_model/user_model.dart';
 
 class EditName extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
 
   const EditName({
     super.key,
-    required this.userName,
-    required this.emailAddress,
-    required this.email,
-    required this.imageUrl,
-    required this.uid,
-    required this.userAddress,
+    this.userName,
+    this.emailAddress,
+    this.email,
+    this.imageUrl,
+    this.uid,
+    this.userAddress,
     required this.latitude,
     required this.longitude,
   });
@@ -42,8 +42,8 @@ class _EditNameState extends State<EditName> {
     super.initState();
     final user = Provider.of<UserProvider>(context, listen: false).currentUser;
     if (user != null) {
-      _firstNameController.text = user.firstName;
-      _lastNameController.text = user.lastName;
+      _firstNameController.text = user.firstName ?? 'Guest';
+      _lastNameController.text = user.lastName ?? '';
     }
   }
 

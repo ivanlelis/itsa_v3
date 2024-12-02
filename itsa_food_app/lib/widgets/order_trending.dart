@@ -3,19 +3,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
 
 class OrderTrending extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
   final String productName;
   final String? productImageUrl; // New parameter
   final String? productType; // New parameter
   final String? productDetail; // New parameter
-  final String branchID;
+  final String? branchID;
 
   const OrderTrending({
     super.key,
@@ -288,7 +288,7 @@ class _OrderTrendingState extends State<OrderTrending> {
                       ElevatedButton(
                         onPressed: () {
                           addToCart(
-                            userName: widget.userName,
+                            userName: widget.userName ?? 'Guest',
                             productName: widget.productName,
                             productType: widget.productType ?? 'Unknown',
                             sizeQuantity:

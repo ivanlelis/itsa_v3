@@ -7,16 +7,17 @@ import 'package:provider/provider.dart'; // Ensure you have the provider package
 import 'package:itsa_food_app/user_provider/user_provider.dart';
 
 class EditEmail extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String imageUrl;
-  final String uid;
+  final String? userName;
+  final String? emailAddress;
+  final String? imageUrl;
+  final String? uid;
 
-  const EditEmail({super.key, 
-    required this.userName,
-    required this.emailAddress,
-    required this.imageUrl,
-    required this.uid,
+  const EditEmail({
+    super.key,
+    this.userName,
+    this.emailAddress,
+    this.imageUrl,
+    this.uid,
   });
 
   @override
@@ -36,7 +37,7 @@ class _EditEmailState extends State<EditEmail> {
     final user = Provider.of<UserProvider>(context, listen: false).currentUser;
     if (user != null) {
       _emailController.text =
-          user.emailAddress; // Initialize the email controller
+          user.emailAddress ?? ''; // Initialize the email controller
     }
   }
 

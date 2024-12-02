@@ -15,27 +15,27 @@ import 'package:itsa_food_app/customer_pages/edit_name.dart';
 import 'package:itsa_food_app/customer_pages/edit_email.dart';
 
 class ProfileView extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const ProfileView({
     super.key,
-    required this.userName,
-    required this.emailAddress,
-    required this.email,
-    required this.imageUrl,
-    required this.uid,
-    required this.userAddress,
+    this.userName,
+    this.emailAddress,
+    this.email,
+    this.imageUrl,
+    this.uid,
+    this.userAddress,
     required this.latitude,
     required this.longitude,
-    required this.branchID,
+    this.branchID,
   });
 
   @override
@@ -250,7 +250,9 @@ class _ProfileViewState extends State<ProfileView> {
                     radius: 50,
                     backgroundImage: _pickedImage != null
                         ? FileImage(_pickedImage!)
-                        : NetworkImage(currentUser?.imageUrl ?? widget.imageUrl)
+                        : NetworkImage(currentUser?.imageUrl ??
+                                widget.imageUrl ??
+                                'https://example.com/placeholder.png') // Provide a default image URL
                             as ImageProvider,
                   ),
                   Positioned(
@@ -267,20 +269,41 @@ class _ProfileViewState extends State<ProfileView> {
 
               SizedBox(height: 8),
               Text(
-                currentUser?.userName ?? widget.userName,
+                currentUser?.userName ??
+                    widget.userName ??
+                    'Guest', // Default to 'Guest' if both are null
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text(
-                currentUser?.emailAddress ?? widget.emailAddress,
+                currentUser?.emailAddress ??
+                    widget.emailAddress ??
+                    'No Email', // Provide a default value
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
+
               SizedBox(height: 24),
+
               _buildEditableField(
-                  'Name', currentUser?.userName ?? widget.userName, context),
-              _buildEditableField('Email',
-                  currentUser?.emailAddress ?? widget.emailAddress, context),
-              _buildEditableField('Mobile Number', '0912345678',
-                  context), // Replace with actual mobile number if available
+                  'Name',
+                  currentUser?.userName ??
+                      widget.userName ??
+                      'Guest'
+                          'No Name', // Default to 'No Name' if both are null
+                  context),
+
+              _buildEditableField(
+                  'Email',
+                  currentUser?.emailAddress ??
+                      widget.emailAddress ??
+                      'sample@email.com'
+                          'No Email', // Default to 'No Email' if both are null
+                  context),
+
+              _buildEditableField(
+                  'Mobile Number',
+                  '0912345678', // You can customize this as needed
+                  context),
+              // Replace with actual mobile number if available
               SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () async {

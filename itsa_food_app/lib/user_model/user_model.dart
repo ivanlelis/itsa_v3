@@ -1,26 +1,26 @@
 class UserModel {
-  String uid;
-  String firstName;
-  String lastName;
-  String userName;
-  String imageUrl;
-  String email;
-  String userAddress;
-  String emailAddress;
+  String? uid;
+  String? firstName;
+  String? lastName;
+  String? userName;
+  String? imageUrl;
+  String? email;
+  String? userAddress;
+  String? emailAddress;
 
   // Latitude and Longitude fields
   double latitude;
   double longitude;
 
   UserModel({
-    required this.uid,
-    required this.firstName,
-    required this.lastName,
-    required this.userName,
-    required this.emailAddress,
-    required this.imageUrl,
-    required this.email,
-    required this.userAddress,
+    this.uid,
+    this.firstName,
+    this.lastName,
+    this.userName,
+    this.emailAddress,
+    this.imageUrl,
+    this.email,
+    this.userAddress,
     required this.latitude,
     required this.longitude,
   });

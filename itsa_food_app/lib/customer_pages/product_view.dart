@@ -13,15 +13,15 @@ class ProductView extends StatefulWidget {
   final String? milkTeaRegular;
   final String? milkTeaLarge;
   final String? mealsPrice;
-  final String userName; // Non-nullable
-  final String emailAddress; // Non-nullable
-  final String productType; // Non-nullable
-  final String uid;
-  final String userAddress;
-  final String email;
+  final String? userName; // Non-nullable
+  final String? emailAddress; // Non-nullable
+  final String? productType; // Non-nullable
+  final String? uid;
+  final String? userAddress;
+  final String? email;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const ProductView({
     super.key,

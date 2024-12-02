@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/pre_sign_up/segmentation.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/login/login.dart';
+import 'package:itsa_food_app/main_home/customer_home.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -43,7 +44,8 @@ class _HomePageState extends State<HomePage> {
                     width: 250,
                     height: 250,
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 30),
+                  // Login Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -68,7 +70,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
+                  // Sign Up Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -94,6 +97,36 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 5),
+                  // Browse as Guest Button
+                  TextButton(
+  onPressed: () {
+    // Navigate to CustomerMainHome with null or default values for guest browsing
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CustomerMainHome(
+          userName: null,
+          emailAddress: null,
+          email: null,
+          imageUrl: null,
+          uid: null,
+          userAddress: null,
+          latitude: null,
+          longitude: null,
+          branchID: '', // Provide a default or empty value
+        ),
+      ),
+    );
+  },
+  child: const Text(
+    'Browse as Guest',
+    style: TextStyle(
+      fontSize: 16,
+      color: Colors.white,
+    ),
+  ),
+),
                   const SizedBox(height: 20),
                 ],
               ),

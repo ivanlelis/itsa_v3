@@ -4,15 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'order_trending.dart'; // Import the OrderTrending widget
 
 class TrendProduct extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const TrendProduct({
     super.key,

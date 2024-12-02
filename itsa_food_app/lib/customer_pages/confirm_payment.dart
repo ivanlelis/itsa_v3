@@ -13,17 +13,17 @@ class ConfirmPayment extends StatefulWidget {
   final String paymentMethod;
   final String voucherCode;
   final double totalAmount;
-  final String uid;
-  final String userName;
-  final String userAddress;
-  final String emailAddress;
+  final String? uid;
+  final String? userName;
+  final String? userAddress;
+  final String? emailAddress;
   final double latitude;
   final double longitude;
   final String orderType;
-  final String email;
-  final String imageUrl;
+  final String? email;
+  final String? imageUrl;
   final String? selectedItemName;
-  final String branchID;
+  final String? branchID;
 
   const ConfirmPayment({
     super.key,
@@ -185,7 +185,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           widget.paymentMethod.toLowerCase() == 'gcash' &&
           paymentReceiptImage != null) {
         // Step 1: Upload the payment receipt to Firebase Storage
-        String userName = widget.userName; // Assuming user's name is available
+        String userName = widget.userName ?? 'Guest'; // Assuming user's name is available
         String fileName =
             '$userName-${DateFormat('yyyyMMdd_HHmmss').format(now)}.png';
 
@@ -720,7 +720,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             // Cart Items
             _buildSectionTitle('Cart Items'),
             _buildCartItems(widget.selectedItemName ?? '',
-                widget.branchID), // Pass selectedItemName here
+                widget.branchID ?? ''), // Pass selectedItemName here
 
             SizedBox(height: 20),
 
@@ -738,9 +738,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // User Information
             _buildSectionTitle('User Information'),
-            _buildDetailsRow('Name:', widget.userName),
-            _buildDetailsRow('Address:', widget.userAddress),
-            _buildDetailsRow('Email:', widget.emailAddress),
+            _buildDetailsRow('Name:', widget.userName ?? ''),
+            _buildDetailsRow('Address:', widget.userAddress ?? ''),
+            _buildDetailsRow('Email:', widget.emailAddress ?? ''),
             _buildDetailsRow(
                 'Selected Item:', widget.selectedItemName ?? 'none'),
 

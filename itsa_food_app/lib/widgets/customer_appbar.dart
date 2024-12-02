@@ -5,15 +5,15 @@ import 'dart:async';
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final VoidCallback onCartPressed;
-  final String userName;
-  final String uid;
+  final String? userName;
+  final String? uid;
 
   const CustomAppBar({
     super.key,
     required this.scaffoldKey,
     required this.onCartPressed,
-    required this.userName,
-    required this.uid,
+    this.userName,
+    this.uid,
   });
 
   @override

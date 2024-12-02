@@ -3,19 +3,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
 
 class OrderFeatured extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
   final String productName;
   final DateTime startDate;
   final DateTime endDate;
   final String exBundle;
-  final String branchID;
+  final String? branchID;
 
   const OrderFeatured({
     super.key,
@@ -259,7 +259,7 @@ class _OrderFeaturedState extends State<OrderFeatured> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.network(
-              widget.imageUrl,
+              widget.imageUrl ?? '',
               height: 250,
               width: double.infinity,
               fit: BoxFit.cover,

@@ -12,6 +12,8 @@ import 'package:itsa_food_app/customer_pages/order_history.dart'; // Import Orde
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/customer_pages/claim_vouchers.dart';
+import 'package:itsa_food_app/main_home/customer_home.dart';
+import 'package:itsa_food_app/main_home/rider_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +26,6 @@ void main() async {
     print("Firebase initialized successfully");
   } catch (e) {
     print("Error initializing Firebase: $e");
-    // You can choose to return or exit the app if Firebase fails to initialize
     return;
   }
 
@@ -36,18 +37,100 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  // Change _initialScreen to be nullable to avoid LateInitializationError
+  Widget? _initialScreen;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboardingStatus();
+  }
+
+  void _checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Check if the onboarding has been completed
+    final onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (!onboardingComplete) {
+      // If onboarding is not complete, show the onboarding screen
+      setState(() {
+        _initialScreen = const OnboardingScreen();
+      });
+    } else if (user == null) {
+      // If no user is logged in, navigate directly to login page (show Onboarding if necessary)
+      setState(() {
+        _initialScreen = const HomePage();
+      });
+    } else {
+      // If user is logged in, check their onboarding status
+      String userType = prefs.getString('userType') ??
+          ''; // Retrieve user type from SharedPreferences
+
+      // Retrieve user details from SharedPreferences (or wherever they are stored)
+      String userName = prefs.getString('userName') ?? '';
+      String emailAddress = prefs.getString('emailAddress') ?? '';
+      String email = prefs.getString('email') ?? '';
+      String imageUrl = prefs.getString('imageUrl') ?? '';
+      String uid = user.uid; // Firebase user UID
+      String userAddress = prefs.getString('userAddress') ?? '';
+      double latitude = prefs.getDouble('latitude') ?? 0.0;
+      double longitude = prefs.getDouble('longitude') ?? 0.0;
+      String branchID = prefs.getString('branchID') ?? '';
+
+      if (userType == 'customer') {
+        // Redirect to CustomerMainHome if customer
+        setState(() {
+          _initialScreen = CustomerMainHome(
+            userName: userName,
+            emailAddress: emailAddress,
+            email: email,
+            imageUrl: imageUrl,
+            uid: uid,
+            userAddress: userAddress,
+            latitude: latitude,
+            longitude: longitude,
+            branchID: branchID,
+          );
+        });
+      } else if (userType == 'rider') {
+        // Redirect to RiderDashboard if rider
+        setState(() {
+          _initialScreen = RiderDashboard(
+            userName: userName,
+            email: email,
+            imageUrl: imageUrl,
+          );
+        });
+      } else {
+        // If user type is unknown, show a default screen or handle it
+        setState(() {
+          _initialScreen = const HomePage();
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Food App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/loginChecker', // Set the initial route
+      // If _initialScreen is null, fallback to a default screen
+      home: _initialScreen ??
+          const OnboardingScreen(), // Fallback to OnboardingScreen
       routes: {
         '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
@@ -122,74 +205,6 @@ class MyApp extends StatelessWidget {
           builder: (context) => const HomePage(),
         );
       },
-    );
-  }
-}
-
-class LoginChecker extends StatefulWidget {
-  const LoginChecker({super.key});
-
-  @override
-  _LoginCheckerState createState() => _LoginCheckerState();
-}
-
-class _LoginCheckerState extends State<LoginChecker> {
-  @override
-  void initState() {
-    super.initState();
-    _checkLoginStatus();
-  }
-
-  // Check login status and onboarding completion
-  void _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastLoginTime = prefs.getInt('lastLoginTime');
-    final onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
-
-    final currentTime = DateTime.now().millisecondsSinceEpoch;
-
-    // If the user is logged in
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user != null) {
-      // If more than 30 minutes have passed since the last login, log the user out
-      if (lastLoginTime == null ||
-          currentTime - lastLoginTime > 30 * 60 * 1000) {
-        FirebaseAuth.instance.signOut(); // Log the user out
-        prefs.remove('lastLoginTime'); // Remove the saved login time
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      } else {
-        // Check if onboarding is complete
-        if (!onboardingComplete) {
-          // Navigate to onboarding screen for first-time users
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-          );
-        } else {
-          // If user has completed onboarding, navigate to home screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-          );
-        }
-      }
-    } else {
-      // If no user is logged in, navigate to login screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

@@ -15,27 +15,27 @@ import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_sidebar.dart';
 
 class CustomerMainHome extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
-  final double latitude;
-  final double longitude;
-  final String branchID;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
+  final double? latitude;
+  final double? longitude;
+  final String? branchID;
 
   const CustomerMainHome({
     super.key,
-    required this.userName,
-    required this.emailAddress,
-    required this.email,
-    required this.imageUrl,
-    required this.uid,
-    required this.userAddress,
-    required this.latitude,
-    required this.longitude,
-    required this.branchID,
+    this.userName,
+    this.emailAddress,
+    this.email,
+    this.imageUrl,
+    this.uid,
+    this.userAddress,
+    this.latitude,
+    this.longitude,
+    this.branchID,
   });
 
   @override
@@ -53,6 +53,8 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
   final Color highlightColor = const Color(0xFFA78D78);
   final Color inputBackgroundColor = const Color(0xFFBEB5A9);
   final Color lightTextColor = const Color(0xFFE1D4C2);
+
+  late bool showLoginButton;
 
   @override
   void initState() {
@@ -156,6 +158,11 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.currentUser;
 
+    showLoginButton = user?.userName == null || user?.emailAddress == null;
+
+    // Get screen height and width for responsive layout
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: backgroundColor,
@@ -188,17 +195,87 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         userName: user?.userName ?? '',
         uid: user?.uid ?? '',
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          child: Center(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
                   SizedBox(height: 10),
-                  GameCard(),
+                  GestureDetector(
+                    onTap: () {
+                      if (user?.userName == null) {
+                        showDialog(
+                          context: context,
+                          barrierDismissible:
+                              true, // Allows dismissing by tapping outside
+                          builder: (BuildContext context) {
+                            return Dialog(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize
+                                      .min, // Adjusts to the content's size
+                                  children: [
+                                    // Display the image at the top of the modal
+                                    Image.asset(
+                                      'assets/images/invite.png',
+                                      height: 180, // Adjust height as needed
+                                      width: 180, // Adjust width as needed
+                                    ),
+
+                                    SizedBox(height: 10),
+                                    Text(
+                                      "Enjoy amazing deals and vouchers so sign up now!",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    SizedBox(height: 30),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(
+                                            context); // Close the modal
+                                        Navigator.pushNamed(context,
+                                            '/login'); // Navigate to login
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 30, vertical: 15),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        backgroundColor: Colors.blueAccent,
+                                      ),
+                                      child: Text(
+                                        "Log In / Sign Up",
+                                        style: TextStyle(
+                                            fontSize: 16, color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        // Proceed with Scratch and Win functionality
+                        print("Scratch and Win clicked");
+                      }
+                    },
+                    child: AbsorbPointer(
+                      absorbing: user?.userName ==
+                          null, // Disable interaction if user is not logged in
+                      child: GameCard(),
+                    ),
+                  ),
                   SizedBox(height: 20),
                   FutureBuilder<DocumentSnapshot>(
                     future: _featuredProduct,
@@ -250,7 +327,51 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
               ),
             ),
           ),
-        ),
+          if (showLoginButton)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom +
+                  1, // Small gap from BottomNavBar
+              left: screenWidth * 0.05, // 5% padding from the left
+              right: screenWidth * 0.05, // 5% padding from the right
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius:
+                      BorderRadius.circular(8), // Same radius as button
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.8), // Glow color
+                      blurRadius: 20, // Spread of the glow
+                      spreadRadius: 2, // Intensity of the glow
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Navigate to login/sign-up screen
+                    Navigator.pushNamed(context, '/login');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    backgroundColor: primaryAccentColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(8), // Reduced border radius
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Log In or Sign Up to Start Ordering!',
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.05,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,

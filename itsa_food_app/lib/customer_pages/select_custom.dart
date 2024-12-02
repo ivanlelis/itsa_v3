@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/customer_pages/create_combo.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/customer_pages/menu.dart';
@@ -7,27 +8,27 @@ import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/customer_pages/personalize_order.dart'; // Import the new file
 
 class SelectCustom extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String imageUrl;
-  final String uid;
-  final String email;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? imageUrl;
+  final String? uid;
+  final String? email;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const SelectCustom({
     super.key,
-    required this.userName,
-    required this.emailAddress,
-    required this.imageUrl,
-    required this.uid,
-    required this.email,
-    required this.userAddress,
+    this.userName,
+    this.emailAddress,
+    this.imageUrl,
+    this.uid,
+    this.email,
+    this.userAddress,
     required this.latitude,
     required this.longitude,
-    required this.branchID,
+    this.branchID,
   });
 
   @override
@@ -139,9 +140,22 @@ class _SelectCustomState extends State<SelectCustom> {
                     ),
                     child: InkWell(
                       onTap: () {
-                        print("Create Combo tapped");
-                        print(
-                            'User Info: ${widget.userName}, ${widget.emailAddress}');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ComboOrder(
+                              userName: widget.userName,
+                              emailAddress: widget.emailAddress,
+                              imageUrl: widget.imageUrl,
+                              uid: widget.uid,
+                              email: widget.email,
+                              userAddress: widget.userAddress,
+                              latitude: widget.latitude,
+                              longitude: widget.longitude,
+                              branchID: widget.branchID,
+                            ),
+                          ),
+                        );
                       },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

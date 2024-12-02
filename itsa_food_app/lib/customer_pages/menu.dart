@@ -15,15 +15,15 @@ import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/widgets/tag_filtering.dart';
 
 class Menu extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String email;
-  final String imageUrl;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? imageUrl;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const Menu({
     super.key,
@@ -413,14 +413,14 @@ class ProductCard extends StatefulWidget {
   final String? milkTeaRegular;
   final String? milkTeaLarge;
   final String? mealsPrice;
-  final String userName;
-  final String emailAddress;
-  final String uid;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? uid;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String email;
-  final String branchID;
+  final String? email;
+  final String? branchID;
 
   const ProductCard({
     super.key,

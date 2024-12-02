@@ -2,23 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class PersonalizeOrder extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String imageUrl;
-  final String uid;
-  final String email;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? imageUrl;
+  final String? uid;
+  final String? email;
+  final String? userAddress;
   final double latitude;
   final double longitude;
 
   const PersonalizeOrder({
     super.key,
-    required this.userName,
-    required this.emailAddress,
-    required this.imageUrl,
-    required this.uid,
-    required this.email,
-    required this.userAddress,
+    this.userName,
+    this.emailAddress,
+    this.imageUrl,
+    this.uid,
+    this.email,
+    this.userAddress,
     required this.latitude,
     required this.longitude,
   });

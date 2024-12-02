@@ -7,22 +7,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
 
 class PickupTab extends StatefulWidget {
-  final String userAddress;
+  final String? userAddress;
   final String paymentMethod;
   final Function(String) onPaymentMethodChange;
   final VoidCallback onGcashSelected;
   final List<Map<String, dynamic>> cartItems;
   final double originalTotalAmount;
-  final String userName;
-  final String emailAddress;
-  final String uid;
+  final String? userName;
+  final String? emailAddress;
+  final String? uid;
   final double latitude;
   final double longitude;
-  final String imageUrl;
+  final String? imageUrl;
   final String orderType;
-  final String email;
+  final String? email;
   final String? selectedItemName;
-  final String branchID;
+  final String? branchID;
 
   const PickupTab({
     super.key,
@@ -171,7 +171,7 @@ class _PickupTabState extends State<PickupTab> {
               padding: const EdgeInsets.all(16.0),
               child: ListView(
                 children: [
-                  AddressSection(userAddress: widget.userAddress),
+                  AddressSection(userAddress: widget.userAddress ?? ''),
                   const SizedBox(height: 16),
                   PaymentMethodSection(
                     paymentMethod: paymentMethod,

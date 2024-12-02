@@ -5,15 +5,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/checkout.dart';
 
 class MainCart extends StatefulWidget {
-  final String userName;
-  final String emailAddress;
-  final String uid;
-  final String email;
-  final String imageUrl;
-  final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? uid;
+  final String? email;
+  final String? imageUrl;
+  final String? userAddress;
   final double latitude;
   final double longitude;
-  final String branchID;
+  final String? branchID;
 
   const MainCart({
     super.key,
