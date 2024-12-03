@@ -3,7 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/admin_pages/order_details.dart';
 
 class PendingOrderNotifications extends StatefulWidget {
-  const PendingOrderNotifications({super.key});
+  final String userName;
+
+  const PendingOrderNotifications({super.key, required this.userName});
 
   @override
   _PendingOrderNotificationsState createState() =>
@@ -22,6 +24,16 @@ class _PendingOrderNotificationsState extends State<PendingOrderNotifications> {
   Future<List<OrderCard>> fetchPendingOrders() async {
     List<OrderCard> orderCards = [];
 
+    // Determine branchID based on the userName
+    String branchID = '';
+    if (widget.userName == "Main Branch Admin") {
+      branchID = "branch 1";
+    } else if (widget.userName == "Sta. Cruz II Admin") {
+      branchID = "branch 2";
+    } else if (widget.userName == "San Dionisio Admin") {
+      branchID = "branch 3";
+    }
+
     // Fetch all customers
     QuerySnapshot customersSnapshot =
         await FirebaseFirestore.instance.collection('customer').get();
@@ -32,7 +44,7 @@ class _PendingOrderNotificationsState extends State<PendingOrderNotifications> {
       customersMap[customerDoc.id] = customerDoc.data() as Map<String, dynamic>;
     }
 
-    // Batch fetch all orders for all customers in parallel
+    // Batch fetch all orders for all customers in parallel, filtering by branchID and pending status
     List<Future<QuerySnapshot>> orderFutures = [];
     for (var customerDoc in customersSnapshot.docs) {
       orderFutures.add(FirebaseFirestore.instance
@@ -40,6 +52,8 @@ class _PendingOrderNotificationsState extends State<PendingOrderNotifications> {
           .doc(customerDoc.id)
           .collection('orders')
           .where('status', isEqualTo: 'pending') // Filter for pending orders
+          .where('branchID',
+              isEqualTo: branchID) // Filter for the correct branch
           .get());
     }
 

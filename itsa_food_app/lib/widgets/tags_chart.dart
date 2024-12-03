@@ -20,14 +20,14 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
   @override
   void initState() {
     super.initState();
-    fetchTagData();
+    fetchTagData(); // Initial fetch when the widget is first created
   }
 
   // Function to fetch orders based on the selected time range
   Future<void> fetchTagData() async {
     setState(() {
       tagCounts.clear(); // Reset tag counts
-      isLoading = true; // Set loading to true
+      isLoading = true; // Set loading to true while data is being fetched
     });
 
     Map<String, int> tempTagCounts = {};
@@ -37,7 +37,6 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
       QuerySnapshot customerSnapshot =
           await FirebaseFirestore.instance.collection('customer').get();
 
-      // Determine the branchID based on the userName
       String branchID;
       if (widget.userName == "Main Branch Admin") {
         branchID = "branch 1";
@@ -72,13 +71,14 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
     }
   }
 
-// Function to fetch orders for a specific customer and process them
+  // Function to fetch orders for a specific customer and process them
   Future<void> fetchOrdersForCustomer(DocumentSnapshot customerDoc,
       Map<String, int> tempTagCounts, String branchID) async {
     try {
-      // Get the timestamp range based on selected time filter
       DateTime now = DateTime.now();
       DateTime startDate;
+
+      // Set start date based on selected time range
       if (selectedTimeRange == 0) {
         startDate = DateTime(now.year, now.month, now.day); // Today
       } else if (selectedTimeRange == 1) {
@@ -95,32 +95,26 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
           .get();
 
       for (var orderDoc in orderSnapshot.docs) {
-        // Get the products from the order
         List<dynamic> products = orderDoc['products'] ?? [];
-
         for (var product in products) {
-          // Validate the product fields
           if (product['productName'] != null && product['quantity'] != null) {
             String productName = product['productName'];
             int quantity = product['quantity'];
 
+            // Fetch tags for each product
             try {
-              // Match productName with products collection to fetch tags
               QuerySnapshot productSnapshot = await FirebaseFirestore.instance
                   .collection('products')
                   .where('productName', isEqualTo: productName)
                   .get();
 
               if (productSnapshot.docs.isNotEmpty) {
-                // Get the tags for the matched product
                 List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
-
                 for (var tag in tags) {
-                  // Increment tag counts by product quantity
                   tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + quantity;
                 }
-              } else {
-                print('No product found for productName: $productName');
+                print(
+                    'Fetching orders for customer: ${customerDoc.id} with branchID: $branchID and startDate: $startDate');
               }
             } catch (e) {
               print('Error fetching tags for product: $productName. $e');
@@ -135,14 +129,15 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
 
   List<BarChartGroupData> _buildBarChartData() {
     if (tagCounts.isEmpty) {
-      return []; // Return empty list when no data
+      return [
+        BarChartGroupData(x: 0, barRods: []),
+      ]; // Empty bar when no data is available
     }
 
     int index = 0;
     return tagCounts.entries.map((entry) {
-      final currentIndex = index++;
       return BarChartGroupData(
-        x: currentIndex,
+        x: index++,
         barRods: [
           BarChartRodData(
             toY: entry.value.toDouble(),
@@ -167,9 +162,7 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Card(
@@ -188,7 +181,6 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
               ),
             ),
             const SizedBox(height: 20),
-            // Buttons to filter by time range
             Row(
               children: [
                 _buildTimeRangeButton('Today', 0),
@@ -205,10 +197,12 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: tagCounts.isNotEmpty
-                      ? tagCounts.values
-                              .reduce((a, b) => a > b ? a : b)
-                              .toDouble() +
-                          5
+                      ? tagCounts.values.isNotEmpty
+                          ? tagCounts.values
+                                  .reduce((a, b) => a > b ? a : b)
+                                  .toDouble() +
+                              5
+                          : 5
                       : 5, // Ensure maxY is set even with empty data
                   barGroups: _buildBarChartData(),
                   titlesData: FlTitlesData(
@@ -221,12 +215,10 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                         ),
                       ),
                     ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -253,7 +245,7 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
                   ),
                   gridData: FlGridData(show: true),
                   borderData: FlBorderData(show: true),
-                  barTouchData: BarTouchData(enabled: false),
+                  barTouchData: BarTouchData(),
                 ),
               ),
             ),
@@ -263,12 +255,13 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
     );
   }
 
-  // Helper function to build the time range button
+  // Button for time range selection
   Widget _buildTimeRangeButton(String label, int index) {
     return ElevatedButton(
       onPressed: () => onTimeRangeSelected(index),
       style: ElevatedButton.styleFrom(
-        backgroundColor: selectedTimeRange == index ? Colors.blue : Colors.grey,
+        backgroundColor:
+            selectedTimeRange == index ? Colors.orange : Colors.grey,
       ),
       child: Text(label),
     );

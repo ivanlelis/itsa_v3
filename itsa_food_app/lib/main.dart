@@ -118,6 +118,7 @@ class _MyAppState extends State<MyApp> {
             userName: userName,
             email: email,
             imageUrl: imageUrl,
+            branchID: branchID,
           );
         });
       } else {

@@ -13,6 +13,7 @@ import 'package:itsa_food_app/widgets/trend_product.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
 import 'package:itsa_food_app/widgets/customer_sidebar.dart';
+import 'package:itsa_food_app/customer_pages/order_tracking.dart';
 
 class CustomerMainHome extends StatefulWidget {
   final String? userName;
@@ -53,7 +54,7 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
   final Color highlightColor = const Color(0xFFA78D78);
   final Color inputBackgroundColor = const Color(0xFFBEB5A9);
   final Color lightTextColor = const Color(0xFFE1D4C2);
-
+  late Future<bool> _hasOrderOnTheWay;
   late bool showLoginButton;
 
   @override
@@ -65,6 +66,23 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
         .doc('featured')
         .get(); // Initialize once
     _fetchDataAndUpdateUI();
+    _hasOrderOnTheWay = _checkOrderStatus();
+  }
+
+  Future<bool> _checkOrderStatus() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.currentUser?.uid;
+    if (userId != null) {
+      final orderSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('orders')
+          .where('status', isEqualTo: 'on the way')
+          .get();
+
+      return orderSnapshot.docs.isNotEmpty;
+    }
+    return false;
   }
 
   Future<void> _fetchDataAndUpdateUI() async {
@@ -203,6 +221,50 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+                  if (user?.userName != null)
+                    FutureBuilder<bool>(
+                      future: _hasOrderOnTheWay,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Container();
+                        }
+                        if (snapshot.hasData && snapshot.data == true) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OrderTracking(
+                                    orderID: '',
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: screenWidth * 0.9,
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.local_shipping,
+                                      color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Your order is on the way!',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        return Container();
+                      },
+                    ),
                   SizedBox(height: 10),
                   GestureDetector(
                     onTap: () {

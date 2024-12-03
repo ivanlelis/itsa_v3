@@ -536,7 +536,8 @@ class _AdminHomeState extends State<AdminHome> {
                     builder: (context) {
                       return SizedBox(
                         height: MediaQuery.of(context).size.height * 0.95,
-                        child: const PendingOrderNotifications(),
+                        child: PendingOrderNotifications(
+                            userName: widget.userName),
                       );
                     },
                   );
@@ -556,7 +557,8 @@ class _AdminHomeState extends State<AdminHome> {
                     builder: (context) {
                       return SizedBox(
                         height: MediaQuery.of(context).size.height * 0.95,
-                        child: const PendingOrderNotifications(),
+                        child: PendingOrderNotifications(
+                            userName: widget.userName),
                       );
                     },
                   );

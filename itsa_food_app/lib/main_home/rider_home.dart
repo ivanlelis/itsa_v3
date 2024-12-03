@@ -8,18 +8,22 @@ import 'package:http/http.dart' as http;
 import 'dart:async'; // For debouncing
 import 'package:geolocator/geolocator.dart' hide LocationAccuracy;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/widgets/notification_dialog.dart';
+import 'package:itsa_food_app/widgets/rider_topbar.dart';
+import 'package:itsa_food_app/widgets/map_style.dart';
 
 class RiderDashboard extends StatefulWidget {
   final String userName;
   final String email;
   final String imageUrl;
+  final String branchID;
 
   const RiderDashboard({
     super.key,
     required this.userName,
     required this.email,
     required this.imageUrl,
+    required this.branchID,
   });
 
   @override
@@ -37,17 +41,14 @@ class _RiderDashboardState extends State<RiderDashboard> {
   List<LatLng> _routePoints = [];
   final String _apiKey =
       "AIzaSyAvT85VgPqti1JQEr_ca4cV4bZ8xuKrnXA"; // Add your API key here
-  final TextEditingController _searchController = TextEditingController();
-  List<dynamic> _placeSuggestions = [];
   late Timer _debounce; // Timer for debouncing
-  late LatLng _routeMidpoint;
   StreamSubscription<Position>? _positionStreamSubscription;
-  List<Map<String, dynamic>> _routeSteps = [];
+  final List<Map<String, dynamic>> _routeSteps = [];
   int _currentStepIndex = 0;
-  final GlobalKey _orderDetailCardKey = GlobalKey();
-  bool _showSearchOverlay = false;
+  final bool _showSearchOverlay = false;
   final List<String> _recentSearches = [];
   final Set<Polyline> _polylines = {};
+  Map<String, String>? selectedOrder;
 
   @override
   void initState() {
@@ -197,30 +198,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
       final polyline = route['overview_polyline']['points'];
       _routePoints = _decodePolyline(polyline);
 
-      // Parse each step in the new route
-      final steps = route['legs'][0]['steps'];
-      _routeSteps = steps.map<Map<String, dynamic>>((step) {
-        return {
-          'instruction':
-              step['html_instructions'] ?? 'No instruction available',
-          'distance': step['distance']['text'],
-        };
-      }).toList();
-
-      // Calculate new route midpoint for displaying duration
-      if (_routePoints.isNotEmpty) {
-        final firstPoint = _routePoints.first;
-        final lastPoint = _routePoints.last;
-        _routeMidpoint = LatLng(
-          (firstPoint.latitude + lastPoint.latitude) / 2,
-          (firstPoint.longitude + lastPoint.longitude) / 2,
-        );
-
-        // Update map with the new midpoint and adjust camera position
-        mapController.animateCamera(CameraUpdate.newLatLngZoom(
-            _routeMidpoint, 14)); // Adjust zoom level as needed
-      }
-
       // Update polyline on map
       _updatePolyline();
     } else {
@@ -278,38 +255,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
     return points;
   }
 
-  Future<void> _searchLocation(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        _placeSuggestions = [];
-      });
-      return;
-    }
-
-    final String searchUrl =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&components=country:PH&key=$_apiKey';
-
-    try {
-      final response = await http.get(Uri.parse(searchUrl));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print("API Response: $data"); // Debugging API response
-        if (data['status'] == 'OK') {
-          setState(() {
-            _placeSuggestions = data['predictions'];
-          });
-        } else {
-          print("Error: ${data['status']}"); // Show error if status is not OK
-        }
-      } else {
-        print(
-            "Failed to fetch suggestions. Status code: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error: $e");
-    }
-  }
-
   void _addToRecentSearches(String search) {
     if (!_recentSearches.contains(search)) {
       setState(() {
@@ -319,36 +264,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
         }
       });
       // Save to persistent storage if needed (e.g., SharedPreferences)
-    }
-  }
-
-  Future<void> _selectPlace(String placeId) async {
-    final String detailsUrl =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
-    final response = await http.get(Uri.parse(detailsUrl));
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final location = data['result']['geometry']['location'];
-      final lat = location['lat'];
-      final lng = location['lng'];
-      final placeName = data['result']['name']; // Extract place name
-
-      final newLocation = LatLng(lat, lng);
-
-      // Move the map to the selected location
-      mapController.animateCamera(CameraUpdate.newLatLng(newLocation));
-      _setPinnedLocation(newLocation);
-
-      // Add the place name to recent searches
-      _addToRecentSearches(placeName);
-
-      // Close the suggestions after a place is selected
-      setState(() {
-        _placeSuggestions = [];
-      });
-    } else {
-      // Handle error
-      print('Failed to load place details');
     }
   }
 
@@ -363,24 +278,6 @@ class _RiderDashboardState extends State<RiderDashboard> {
   Widget build(BuildContext context) {
     double navigateButtonBottom = 120;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final orderDetailHeight =
-          (_orderDetailCardKey.currentContext?.findRenderObject() as RenderBox?)
-                  ?.size
-                  .height ??
-              0;
-
-      if (orderDetailHeight > 0) {
-        if (orderDetailHeight > 80) {
-          navigateButtonBottom = 130;
-        } else {
-          navigateButtonBottom = 98;
-        }
-      }
-
-      setState(() {});
-    });
-
     return Scaffold(
       backgroundColor: Colors.grey[200],
       drawer: RiderDrawer(
@@ -393,17 +290,16 @@ class _RiderDashboardState extends State<RiderDashboard> {
           return Stack(
             children: [
               _buildMapView(),
-              _buildTopBar(context), // Pass context here
-              _buildSearchBar(),
+              buildTopBar(context),
 
-              // Show the search overlay if activated
-              if (_showSearchOverlay) _buildSearchOverlay(),
+              // Ensure selectedOrder is not null and handle 'userAddress' nullability
+              if (!_showSearchOverlay && selectedOrder != null)
+                _buildNavigateButton(
+                  navigateButtonBottom,
+                  selectedOrder?['userAddress'] ??
+                      'No address provided', // Use fallback if null
+                ),
 
-              // Only show the following widgets if the search overlay is not active
-              if (!_showSearchOverlay)
-                _buildNavigateButton(navigateButtonBottom),
-
-              // Notification Card at the bottom of the screen with GestureDetector for upward drag
               Positioned(
                 bottom: 16,
                 left: 16,
@@ -411,9 +307,20 @@ class _RiderDashboardState extends State<RiderDashboard> {
                 child: GestureDetector(
                   onVerticalDragUpdate: (details) {
                     if (details.primaryDelta! < 0) {
-                      // Dragging upwards
-                      _showNotificationDialog(
-                          context); // Open notification dialog
+                      showNotificationDialog(
+                        context,
+                        widget.branchID,
+                        setState,
+                        selectedOrder,
+                        (newSelectedOrder) {
+                          setState(() {
+                            selectedOrder =
+                                newSelectedOrder; // Update the selected order immediately
+                          });
+                          print(
+                              'Updated Order: $selectedOrder'); // Debugging log to check if it's updated
+                        },
+                      );
                     }
                   },
                   child: Card(
@@ -423,8 +330,19 @@ class _RiderDashboardState extends State<RiderDashboard> {
                     ),
                     child: InkWell(
                       onTap: () {
-                        _showNotificationDialog(
-                            context); // Show notifications when tapped
+                        showNotificationDialog(
+                          context,
+                          widget.branchID,
+                          setState,
+                          selectedOrder,
+                          (newSelectedOrder) {
+                            setState(() {
+                              selectedOrder = newSelectedOrder;
+                            });
+                            print(
+                                'Updated Order: $selectedOrder'); // Debugging log to check if it's updated
+                          },
+                        );
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -446,6 +364,40 @@ class _RiderDashboardState extends State<RiderDashboard> {
                   ),
                 ),
               ),
+
+              // Display selected order details in a card
+              if (selectedOrder != null && selectedOrder!.isNotEmpty)
+                Positioned(
+                  bottom: navigateButtonBottom + 110, // Adjusted position
+                  left: 16,
+                  right: 16,
+                  child: Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Delivery Details",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text("Order ID: ${selectedOrder!['orderID']}"),
+                          Text(
+                              "Customer: ${selectedOrder!['firstName']} ${selectedOrder!['lastName']}"),
+                          Text("Address: ${selectedOrder!['userAddress']}"),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -453,207 +405,38 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  void _showNotificationDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // Ensures the content takes full height
-      backgroundColor: Colors.transparent, // Makes the background transparent
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                "Orders",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              Expanded(
-                child: StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                      .collection('customer')
-                      .snapshots(),
-                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
+  Future<void> _startNavigation(LatLng pinnedLocation) async {
+    // Construct the navigation URL for Google Maps
+    final googleMapsUrl =
+        'google.navigation:q=${pinnedLocation.latitude},${pinnedLocation.longitude}&mode=d';
 
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-
-                    final customerDocs = snapshot.data?.docs ?? [];
-
-                    if (customerDocs.isEmpty) {
-                      return Center(child: Text("No notifications available"));
-                    }
-
-                    return ListView(
-                      children: customerDocs.map((doc) {
-                        final userName =
-                            doc['userName']; // Extract the userName
-                        final customerUid = doc.id; // Document ID is the UID
-
-                        return FutureBuilder(
-                          future: FirebaseFirestore.instance
-                              .collection('customer')
-                              .doc(customerUid)
-                              .collection(
-                                  'orders') // Fetch orders subcollection
-                              .where('status',
-                                  isEqualTo:
-                                      'approved') // Filter orders with status 'approved'
-                              .get(),
-                          builder: (context,
-                              AsyncSnapshot<QuerySnapshot> orderSnapshot) {
-                            if (orderSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            }
-
-                            if (orderSnapshot.hasError) {
-                              return Center(
-                                  child: Text('Error: ${orderSnapshot.error}'));
-                            }
-
-                            final orders = orderSnapshot.data?.docs ?? [];
-
-                            return Column(
-                              children: orders.map((orderDoc) {
-                                final orderID = orderDoc.id;
-                                final total = orderDoc['total'];
-                                final productNames = List<String>.from(
-                                    orderDoc['productNames'] ?? []);
-
-                                return SizedBox(
-                                  width: MediaQuery.of(context).size.width *
-                                      0.9, // Set the width to 90% of the screen width
-                                  child: Card(
-                                    elevation:
-                                        8, // Increased elevation for a stronger shadow
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: 10, horizontal: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          16), // More rounded corners
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(
-                                          20), // More padding for a spacious look
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Order ID and customer info section
-                                          Text(
-                                            "Order ID: $orderID",
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            "Customer: $userName",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            "Total: ₱${total.toString()}",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.green[
-                                                  700], // Green to highlight total price
-                                            ),
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            "Products: ${productNames.join(', ')}",
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                          SizedBox(height: 16),
-
-                                          // Button to start delivery
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors
-                                                  .green, // Green background color
-                                              foregroundColor: Colors
-                                                  .white, // White text color
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 14, horizontal: 24),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(
-                                                    8), // Slightly smaller radius
-                                              ),
-                                            ),
-                                            onPressed: () {
-                                              // Code to start delivery goes here
-                                              FirebaseFirestore.instance
-                                                  .collection('customer')
-                                                  .doc(customerUid)
-                                                  .collection('orders')
-                                                  .doc(orderID)
-                                                  .update(
-                                                      {'status': 'on the way'});
-
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content: Text(
-                                                        'Started delivery for Order ID: $orderID')),
-                                              );
-                                            },
-                                            child: Text(
-                                              "Start Delivery",
-                                              style: TextStyle(
-                                                fontSize:
-                                                    16, // Larger text for emphasis
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            );
-                          },
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    // Launch Google Maps navigation using the URL
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      throw 'Could not launch $googleMapsUrl';
+    }
   }
 
-// Helper function to remove HTML tags from instructions
+  Future<LatLng?> _getCoordinates(String address) async {
+    if (address == 'No address provided') return null;
+    try {
+      final response = await http.get(Uri.parse(
+          'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$_apiKey'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['results'].isNotEmpty) {
+          final location = data['results'][0]['geometry']['location'];
+          return LatLng(location['lat'], location['lng']);
+        }
+      }
+    } catch (e) {
+      print('Error fetching coordinates: $e');
+    }
+    return null;
+  }
+
   String _stripHtmlTags(String htmlText) {
     return RegExp(r'<[^>]*>').hasMatch(htmlText)
         ? htmlText.replaceAll(RegExp(r'<[^>]*>'), '')
@@ -669,7 +452,7 @@ class _RiderDashboardState extends State<RiderDashboard> {
         ),
         onMapCreated: (controller) {
           mapController = controller;
-          mapController.setMapStyle(_mapStyle);
+          mapController.setMapStyle(mapStyle);
         },
         markers: _markers,
         polylines: {
@@ -688,406 +471,45 @@ class _RiderDashboardState extends State<RiderDashboard> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
-    return Positioned(
-      top: 40,
-      left: 16,
-      right: 16,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Smaller Menu Icon in White Rounded Square Container
-          Container(
-            width: 40, // Set a smaller fixed width and height
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 6,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.menu,
-                  color: Colors.deepOrangeAccent,
-                  size: 20), // Reduced icon size
-              onPressed: () {
-                // Open the drawer (sidebar)
-                Scaffold.of(context).openDrawer();
-              },
-            ),
-          ),
-          Stack(
-            children: [
-              Container(
-                width: 40, // Reduced width
-                height: 40, // Reduced height
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12), // Rounded corners
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.notifications,
-                      color: Colors.deepOrangeAccent, size: 20),
-                  onPressed: () {},
-                ),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: Container(
-                  width:
-                      15, // Adjust width and height to make the badge a circle
-                  height: 15,
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(10), // Circular badge
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '3',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 7,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: GestureDetector(
-        onTap: () {
-          // Set state to show overlay
-          setState(() {
-            _showSearchOverlay = true;
-          });
-
-          // Add delay to trigger fade-in animation properly
-          Future.delayed(Duration(milliseconds: 100), () {
-            setState(() {
-              _showSearchOverlay = true;
-            });
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.search, color: Colors.grey[600]),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  "Search location...",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchOverlay() {
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _showSearchOverlay = false; // Close overlay with fade-out effect
-          });
-        },
-        child: AnimatedOpacity(
-          opacity:
-              _showSearchOverlay ? 1.0 : 0.0, // Animate opacity between 0 and 1
-          duration: Duration(milliseconds: 300), // Set the fade-in/out duration
-          child: Material(
-            color: Colors.grey[900]?.withOpacity(1), // Greyish overlay
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(
-                      top: 100.0, left: 16.0, right: 16.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, color: Colors.grey[600]),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration.collapsed(
-                              hintText: "Search location...",
-                              hintStyle: TextStyle(color: Colors.grey[600]),
-                            ),
-                            onChanged: _searchLocation,
-                            style: TextStyle(
-                                color:
-                                    Colors.black), // Text color in search bar
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close, color: Colors.grey[600]),
-                          onPressed: () {
-                            setState(() {
-                              _showSearchOverlay =
-                                  false; // Close overlay with fade-out effect
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (_searchController.text.isEmpty &&
-                    _recentSearches.isNotEmpty)
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _recentSearches.length,
-                      itemBuilder: (context, index) {
-                        final recentSearch = _recentSearches[index];
-                        return ListTile(
-                          leading: Icon(Icons.history, color: Colors.white),
-                          title: Text(
-                            recentSearch,
-                            style: TextStyle(fontSize: 16, color: Colors.white),
-                          ),
-                          onTap: () {
-                            _searchController.text = recentSearch;
-                            _searchLocation(recentSearch);
-                          },
-                        );
-                      },
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _placeSuggestions.length,
-                      itemBuilder: (context, index) {
-                        var suggestion = _placeSuggestions[index];
-                        return ListTile(
-                          leading:
-                              Icon(Icons.location_on, color: Colors.blue[300]),
-                          title: Text(
-                            suggestion['description'],
-                            style: TextStyle(fontSize: 16, color: Colors.white),
-                          ),
-                          onTap: () {
-                            _selectPlace(suggestion['place_id']);
-                            setState(() {
-                              _showSearchOverlay =
-                                  false; // Close overlay after selecting
-                            });
-                          },
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavigateButton(double bottom) {
+  Widget _buildNavigateButton(double bottom, String address) {
     return Positioned(
       bottom: bottom + 15, // Adjust the position to move the button higher
       right: 16, // Position the button at the right-most side
       child: ElevatedButton(
         onPressed: () async {
-          // First, calculate the route
-          await _calculateRoute();
+          // Convert the address to latitude and longitude
+          LatLng? coordinates = await _getCoordinates(address);
+
+          if (coordinates != null) {
+            // Pin the location on the map
+            _setPinnedLocation(coordinates);
+
+            // Recalculate the route to the new location
+            await _calculateRoute();
+
+            // Start the navigation to the pinned location
+            _startNavigation(coordinates);
+          } else {
+            // Handle the case where coordinates could not be obtained
+            print("Failed to get coordinates for address: $address");
+          }
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              Colors.orangeAccent, // Modern accent color for visibility
+          backgroundColor: Colors.orangeAccent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-                12), // Slightly rounded corners for modern look
+            borderRadius: BorderRadius.circular(12),
           ),
-          padding: EdgeInsets.all(16), // Padding for square shape
-          minimumSize: Size(56, 56), // Square size
+          padding: EdgeInsets.all(16),
+          minimumSize: Size(56, 56),
           maximumSize: Size(56, 56),
-          elevation: 4, // Shadow for floating effect
+          elevation: 4,
         ),
         child: Icon(
-          Icons.navigation, // Navigation icon
+          Icons.navigation,
           color: Colors.white,
           size: 24,
         ),
       ),
     );
   }
-
-// New method to start the navigation after the route is calculated
-  Future<void> _startNavigation() async {
-    // Check if route steps exist
-    if (_routeSteps.isNotEmpty) {}
-
-    // Replace this with actual code to launch navigation in Google Maps
-    final destinationLatitude = 14.6339; // Example latitude
-    final destinationLongitude = 120.9772; // Example longitude
-
-    // Construct the navigation URL for Google Maps
-    final googleMapsUrl =
-        'google.navigation:q=$destinationLatitude,$destinationLongitude&mode=d';
-
-    // Launch Google Maps navigation using the URL
-    if (await canLaunch(googleMapsUrl)) {
-      await launch(googleMapsUrl);
-    } else {
-      throw 'Could not launch $googleMapsUrl';
-    }
-  }
-
-  Widget _buildResponsiveLayout() {
-    return Stack(
-      children: [
-        _buildMapView(),
-        _buildTopBar(context), // Pass context here
-        _buildSearchBar(),
-        _buildNavigateButton(150), // Adjust position as needed
-      ],
-    );
-  }
-
-  // Map style for the Google Map
-  final String _mapStyle = '''[
-    {
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#ffffff" // White background
-        }
-      ]
-    },
-    {
-      "elementType": "labels.icon",
-      "stylers": [
-        {
-          "visibility": "on" // Hide icons to keep it clean
-        }
-      ]
-    },
-    {
-      "elementType": "labels.text.fill",
-      "stylers": [
-        {
-          "color": "#000000" // Dark text for contrast
-        }
-      ]
-    },
-    {
-      "elementType": "labels.text.stroke",
-      "stylers": [
-        {
-          "color": "#ffffff" // White text stroke
-        }
-      ]
-    },
-    {
-      "featureType": "administrative",
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#cfcfcf" // Light gray for administrative borders
-        }
-      ]
-    },
-    {
-      "featureType": "road",
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#c0c0c0" // Light gray for roads
-        }
-      ]
-    },
-    {
-      "featureType": "road.highway",
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#8bc34a" // Green for highways
-        }
-      ]
-    },
-    {
-      "featureType": "road.local",
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#d0d0d0" // Very light gray for local roads
-        }
-      ]
-    },
-    {
-      "featureType": "water",
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#a1e8e8" // Light blue for water
-        }
-      ]
-    },
-    {
-      "featureType": "poi",
-      "elementType": "geometry",
-      "stylers": [
-        {
-          "color": "#e0f7fa" // Light teal for points of interest
-        }
-      ]
-    }
-  ]''';
 }

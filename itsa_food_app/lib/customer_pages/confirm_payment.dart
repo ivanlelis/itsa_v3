@@ -128,7 +128,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-  void _onConfirmPaymentPressed() {
+  void _onConfirmPaymentPressed() async {
     if ((widget.orderType.toLowerCase() == 'delivery' ||
             widget.orderType.toLowerCase() == 'pickup') &&
         widget.paymentMethod.toLowerCase() == 'gcash' &&
@@ -136,6 +136,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       // If order type is delivery or pickup, payment method is GCash, and no receipt is attached, show an error
       _showErrorDialog(
           'Please attach your payment receipt before confirming the payment.');
+      await _onPaymentSuccess();
     } else {
       // No need to pass selectedItemName anymore, use the class-level variable directly
       _createOrder(_receiptImage);
@@ -165,9 +166,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _createOrder(File? paymentReceiptImage) async {
     String orderID = _generateOrderID();
-    String documentName = widget.selectedItemName == null
-        ? orderID
-        : "exBundle-$orderID"; // Access widget.selectedItemName
+    String documentName = orderID;
 
     // Use the current date and time in the Philippines
     DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
@@ -226,6 +225,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         if (widget.selectedItemName != null)
           'exBundle': widget.selectedItemName, // Use widget.selectedItemName
         'branchID': widget.branchID, // Add branchID to the order data
+        'userAddress': widget.userAddress,
       };
 
       // Step 3: Create the order in Firestore
@@ -629,6 +629,16 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     await batch.commit();
   }
 
+  Future<void> _onPaymentSuccess() async {
+    try {
+      await _deleteCart(); // Deletes the cart
+
+      _showPaymentSuccessModal();
+    } catch (e) {
+      _showErrorDialog("message");
+    }
+  }
+
   void _showPaymentSuccessModal() {
     if (!mounted) return; // Check if the widget is still mounted
     showModalBottomSheet(
@@ -721,8 +731,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Cart Items
             _buildSectionTitle('Cart Items'),
-            _buildCartItems(widget.selectedItemName ?? '',
-                widget.branchID ?? ''), // Pass selectedItemName here
+            _buildCartItems(
+                widget.selectedItemName ?? '', widget.branchID ?? ''),
 
             SizedBox(height: 20),
 
@@ -764,21 +774,42 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             SizedBox(height: 30),
 
-            // Confirm Payment Button
+            // Confirm Payment Button (always visible)
             ElevatedButton(
-              onPressed: () {
-                // Check if the payment method is PayPal
-                if (widget.paymentMethod == 'PayPal') {
-                  // Call Stripe payment if it's PayPal
-                  StripeService.instance.makePayment();
-                } else {
-                  // Use the existing payment logic for other methods
-                  _onConfirmPaymentPressed();
+              onPressed: () async {
+                try {
+                  if (widget.paymentMethod.toLowerCase() == 'paypal') {
+                    // PayPal Payment Logic
+                    print("Processing payment via PayPal...");
+                    final paymentResult =
+                        await StripeService.instance.makePayment();
+
+                    if (paymentResult['status'] == 'succeeded') {
+                      print("Payment succeeded!");
+                      _onPaymentSuccess();
+                    } else {
+                      print("Payment failed: ${paymentResult['message']}");
+                    }
+                  } else if (widget.paymentMethod.toLowerCase() == 'gcash') {
+                    // Ensure receipt is attached for GCash
+                    if (_receiptImage == null) {
+                      _showErrorDialog(
+                          'Please attach your payment receipt before confirming the payment.');
+                      return;
+                    }
+                    print("Processing payment via GCash...");
+                    await _createOrder(_receiptImage);
+                  } else if (widget.paymentMethod.toLowerCase() == 'cash') {
+                    // Handle cash payment
+                    print("Processing payment via Cash...");
+                    await _createOrder(null);
+                  }
+                } catch (e) {
+                  print("Error during payment process: $e");
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Color(0xFF6E473B), // Set button color to #A78D78
+                backgroundColor: Color(0xFF6E473B),
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -789,10 +820,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white, // White text for button
+                  color: Colors.white,
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

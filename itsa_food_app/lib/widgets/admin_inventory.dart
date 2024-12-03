@@ -192,7 +192,18 @@ class _AdminInventoryState extends State<AdminInventory> {
   }
 
   void showViewItemModal(
-      String name, int quantity, String unit, double lowStockAlert) {
+      String name, double quantity, String unit, double lowStockAlert) {
+    // Initialize controllers with existing values
+    final quantityController =
+        TextEditingController(text: quantity.toStringAsFixed(2));
+    final unitController = TextEditingController(text: unit);
+    final lowStockAlertController =
+        TextEditingController(text: lowStockAlert.toStringAsFixed(2));
+
+    // Allowed units for validation
+    final List<String> allowedUnits = ['kg', 'ml', 'pcs', 'grams', 'liters'];
+
+    // Show modal
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -203,67 +214,111 @@ class _AdminInventoryState extends State<AdminInventory> {
             right: 16,
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 16),
-              Text(
-                'Raw Material Details',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Divider(),
-              ListTile(
-                title: Text('Name: $name'),
-              ),
-              ListTile(
-                title: Text('Quantity: $quantity'),
-              ),
-              ListTile(
-                title: Text('Unit: $unit'),
-              ),
-              ListTile(
-                title: Text('Low Stock Alert: $lowStockAlert'),
-              ),
-              SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              String? unitError;
+              String? quantityError;
+              String? lowStockAlertError;
+
+              void saveChanges() async {
+                // Validate inputs
+                double? newQuantity = double.tryParse(quantityController.text);
+                String newUnit = unitController.text;
+                double? newLowStockAlert =
+                    double.tryParse(lowStockAlertController.text);
+
+                setState(() {
+                  quantityError = newQuantity == null || newQuantity <= 0
+                      ? 'Quantity must be greater than 0'
+                      : null;
+                  unitError = !allowedUnits.contains(newUnit)
+                      ? 'Unit must be one of: ${allowedUnits.join(', ')}'
+                      : null;
+                  lowStockAlertError =
+                      newLowStockAlert == null || newLowStockAlert <= 0
+                          ? 'Low Stock Alert must be greater than 0'
+                          : null;
+                });
+
+                // If no errors, update Firestore
+                if (quantityError == null &&
+                    unitError == null &&
+                    lowStockAlertError == null) {
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('rawStock')
+                        .doc(name)
+                        .update({
+                      'quantity': newQuantity,
+                      'unit': newUnit,
+                      'stockAlert': newLowStockAlert,
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Material updated successfully')),
+                    );
+                    Navigator.pop(context); // Close the modal
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error updating material: $e')),
+                    );
+                  }
+                }
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Delete functionality: delete the material from Firestore using the document ID (name)
-                      try {
-                        await FirebaseFirestore.instance
-                            .collection('rawStock')
-                            .doc(
-                                name) // Assuming 'name' is the identifier for the document
-                            .delete();
-
-                        // Show a confirmation message or perform any other actions as needed
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('Material deleted successfully')),
-                        );
-
-                        Navigator.pop(
-                            context); // Close the modal after deletion
-                      } catch (e) {
-                        // Handle any errors
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('Error deleting material: $e')),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.red, // Set the button background color to red
-                    ),
-                    child: Text('Delete'),
+                  SizedBox(height: 16),
+                  Text(
+                    'Edit Raw Material Details',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
+                  Divider(),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: InputDecoration(
+                      labelText: 'Quantity',
+                      errorText: quantityError,
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextFormField(
+                    controller: unitController,
+                    decoration: InputDecoration(
+                      labelText: 'Unit',
+                      errorText: unitError,
+                    ),
+                  ),
+                  TextFormField(
+                    controller: lowStockAlertController,
+                    decoration: InputDecoration(
+                      labelText: 'Low Stock Alert',
+                      errorText: lowStockAlertError,
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: saveChanges,
+                        child: Text('Save'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        child: Text('Cancel'),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
                 ],
-              ),
-              SizedBox(height: 16),
-            ],
+              );
+            },
           ),
         );
       },
@@ -409,10 +464,12 @@ class _AdminInventoryState extends State<AdminInventory> {
                         itemBuilder: (context, index) {
                           final rawMaterial = rawMaterials[index];
                           final name = rawMaterial['matName'];
-                          final quantity = rawMaterial['quantity'];
+                          final quantity = (rawMaterial['quantity'] as num)
+                              .toDouble(); // Safely treat as double
                           final unit = rawMaterial['unit'];
                           final lowStockAlert =
-                              (rawMaterial['stockAlert'] as num).toDouble();
+                              (rawMaterial['stockAlert'] as num)
+                                  .toDouble(); // Explicitly double
                           final status =
                               determineStockStatus(quantity, lowStockAlert);
 
@@ -425,7 +482,7 @@ class _AdminInventoryState extends State<AdminInventory> {
                             child: ListTile(
                               title: Text(name),
                               subtitle: Text(
-                                  'Quantity: ${quantity.toStringAsFixed(2)} $unit'),
+                                  'Quantity: ${quantity.toStringAsFixed(2)} $unit'), // Consistent decimal format
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -439,12 +496,9 @@ class _AdminInventoryState extends State<AdminInventory> {
                                               : Colors.green),
                                     ),
                                   ),
-                                  SizedBox(
-                                      width:
-                                          8), // Space between the status and the button
+                                  SizedBox(width: 8),
                                   ElevatedButton(
                                     onPressed: () {
-                                      // Open the modal when "View" button is pressed
                                       showViewItemModal(
                                         name,
                                         quantity,

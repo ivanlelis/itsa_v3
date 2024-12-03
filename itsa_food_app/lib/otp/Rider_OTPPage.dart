@@ -7,6 +7,7 @@ class RiderOTPPage extends StatefulWidget {
   final String email;
   final String imageUrl;
   final String otp;
+  final String branchID;
 
   const RiderOTPPage({
     super.key,
@@ -14,6 +15,7 @@ class RiderOTPPage extends StatefulWidget {
     required this.email,
     required this.imageUrl,
     required this.otp,
+    required this.branchID,
   });
 
   @override
@@ -55,6 +57,7 @@ class _RiderOTPPageState extends State<RiderOTPPage> {
               userName: widget.userName,
               email: widget.email,
               imageUrl: widget.imageUrl,
+              branchID: widget.branchID,
             ),
           ),
         );

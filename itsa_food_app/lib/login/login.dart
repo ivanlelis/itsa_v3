@@ -140,8 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                   .doc(userInfo['uid'])
                   .get();
               if (customerDoc.exists) {
-                branchID = customerDoc['branchID'] ??
-                    ""; // Fetch branchID from Firestore
+                branchID = customerDoc['branchID'] ?? "";
               }
             } catch (e) {
               setState(() {
@@ -170,6 +169,24 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           } else if (userType == "rider") {
+            // Fetch the branchID from the "rider" collection in Firestore
+            String? branchID;
+            try {
+              DocumentSnapshot riderDoc = await FirebaseFirestore.instance
+                  .collection('rider')
+                  .doc(userInfo['uid'])
+                  .get();
+              if (riderDoc.exists) {
+                branchID = riderDoc['branchID'] ?? "";
+              }
+            } catch (e) {
+              setState(() {
+                _errorMessage = "Error fetching branch ID: $e";
+                _isLoading = false;
+              });
+              return;
+            }
+
             // Rider navigation
             Navigator.pushReplacement(
               context,
@@ -179,6 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                   otp: otp,
                   userName: userInfo['userName'] ?? "Rider",
                   imageUrl: userInfo['imageUrl'] ?? "",
+                  branchID: branchID ?? "", // Pass branchID
                 ),
               ),
             );
