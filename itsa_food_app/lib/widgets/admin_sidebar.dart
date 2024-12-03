@@ -152,13 +152,18 @@ class AdminSidebar extends StatelessWidget {
   Future<void> _logout(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      // Optional: You can trigger any additional logout action using onLogout
+      onLogout(); // Call the provided onLogout callback if needed
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false, // This removes all previous routes
       );
     } catch (e) {
+      // Show error message if logout fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error logging out. Please try again.')),
+      );
       print("Error logging out: $e");
     }
   }
 }
-

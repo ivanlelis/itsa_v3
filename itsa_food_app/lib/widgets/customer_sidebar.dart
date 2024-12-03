@@ -152,6 +152,13 @@ class _SidebarState extends State<Sidebar> {
                       }
                     : () async {
                         await FirebaseAuth.instance.signOut();
+
+                        // Clear the current user in the UserProvider
+                        final userProvider =
+                            Provider.of<UserProvider>(context, listen: false);
+                        userProvider.clearCurrentUser();
+
+                        // Redirect to home and remove all previous routes
                         Navigator.of(context)
                             .pushNamedAndRemoveUntil('/home', (route) => false);
                       },

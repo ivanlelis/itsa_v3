@@ -14,6 +14,11 @@ class UserProvider with ChangeNotifier {
   String? get adminEmail => _adminEmail; // Getter for admin email
   String? get superadEmail => _superadEmail;
 
+  void clearCurrentUser() {
+    _currentUser = null;
+    notifyListeners();
+  }
+
   // Method to fetch the current user from Firestore
   Future<void> fetchCurrentUser() async {
     try {

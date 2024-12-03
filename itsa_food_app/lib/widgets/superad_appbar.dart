@@ -11,8 +11,6 @@ class SuperAdminAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _SuperAdminAppBarState extends State<SuperAdminAppBar> {
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -22,26 +20,6 @@ class _SuperAdminAppBarState extends State<SuperAdminAppBar> {
         onPressed: () {
           Scaffold.of(context).openDrawer();
         },
-      ),
-      elevation: 0,
-      title: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        child: TextField(
-          controller: _searchController,
-          decoration: const InputDecoration(
-            hintText: 'Search',
-            border: InputBorder.none,
-            prefixIcon: Icon(Icons.search),
-          ),
-          onChanged: (value) {
-            // Implement your search logic here
-          },
-        ),
       ),
     );
   }

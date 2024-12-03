@@ -20,7 +20,7 @@ class SuperAdNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.bar_chart),
-          label: 'Analytics',
+          label: 'Charts',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.inventory),
