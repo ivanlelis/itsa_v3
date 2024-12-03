@@ -71,7 +71,6 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
     }
   }
 
-  // Function to fetch orders for a specific customer and process them
   Future<void> fetchOrdersForCustomer(DocumentSnapshot customerDoc,
       Map<String, int> tempTagCounts, String branchID) async {
     try {
@@ -87,37 +86,41 @@ class _FrequentOrdersByTagsChartState extends State<FrequentOrdersByTagsChart> {
         startDate = now.subtract(Duration(days: 7)); // Last 7 days
       }
 
-      // Fetch each customer's orders, filtered by timestamp and branchID
-      QuerySnapshot orderSnapshot = await customerDoc.reference
-          .collection('orders')
-          .where('timestamp', isGreaterThanOrEqualTo: startDate)
-          .where('branchID', isEqualTo: branchID) // Filter by branchID
-          .get();
+      // Fetch each customer's orders, without filtering by timestamp and branchID
+      QuerySnapshot orderSnapshot =
+          await customerDoc.reference.collection('orders').get();
 
+      // Now filter orders locally based on timestamp and branchID
       for (var orderDoc in orderSnapshot.docs) {
-        List<dynamic> products = orderDoc['products'] ?? [];
-        for (var product in products) {
-          if (product['productName'] != null && product['quantity'] != null) {
-            String productName = product['productName'];
-            int quantity = product['quantity'];
+        DateTime orderTimestamp = orderDoc['timestamp'].toDate();
+        String orderBranchID = orderDoc['branchID'];
 
-            // Fetch tags for each product
-            try {
-              QuerySnapshot productSnapshot = await FirebaseFirestore.instance
-                  .collection('products')
-                  .where('productName', isEqualTo: productName)
-                  .get();
+        // Apply filters here
+        if (orderTimestamp.isAfter(startDate) && orderBranchID == branchID) {
+          List<dynamic> products = orderDoc['products'] ?? [];
+          for (var product in products) {
+            if (product['productName'] != null && product['quantity'] != null) {
+              String productName = product['productName'];
+              int quantity = product['quantity'];
 
-              if (productSnapshot.docs.isNotEmpty) {
-                List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
-                for (var tag in tags) {
-                  tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + quantity;
+              // Fetch tags for each product
+              try {
+                QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+                    .collection('products')
+                    .where('productName', isEqualTo: productName)
+                    .get();
+
+                if (productSnapshot.docs.isNotEmpty) {
+                  List<dynamic> tags = productSnapshot.docs.first['tags'] ?? [];
+                  for (var tag in tags) {
+                    tempTagCounts[tag] = (tempTagCounts[tag] ?? 0) + quantity;
+                  }
+                  print(
+                      'Fetching orders for customer: ${customerDoc.id} with branchID: $branchID and startDate: $startDate');
                 }
-                print(
-                    'Fetching orders for customer: ${customerDoc.id} with branchID: $branchID and startDate: $startDate');
+              } catch (e) {
+                print('Error fetching tags for product: $productName. $e');
               }
-            } catch (e) {
-              print('Error fetching tags for product: $productName. $e');
             }
           }
         }
