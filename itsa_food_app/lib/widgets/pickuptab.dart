@@ -181,6 +181,7 @@ class _PickupTabState extends State<PickupTab> {
                         _showVoucherModal();
                       }
                     },
+                    onPaypalSelected: () {},
                   ),
                   if (isVoucherVisible) ...[
                     const SizedBox(height: 16),

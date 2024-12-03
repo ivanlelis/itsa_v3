@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:itsa_food_app/stripe/stripe_service.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<dynamic> cartItems;
@@ -185,7 +186,8 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           widget.paymentMethod.toLowerCase() == 'gcash' &&
           paymentReceiptImage != null) {
         // Step 1: Upload the payment receipt to Firebase Storage
-        String userName = widget.userName ?? 'Guest'; // Assuming user's name is available
+        String userName =
+            widget.userName ?? 'Guest'; // Assuming user's name is available
         String fileName =
             '$userName-${DateFormat('yyyyMMdd_HHmmss').format(now)}.png';
 
@@ -765,8 +767,14 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             // Confirm Payment Button
             ElevatedButton(
               onPressed: () {
-                // No need to pass selectedItemName anymore
-                _onConfirmPaymentPressed();
+                // Check if the payment method is PayPal
+                if (widget.paymentMethod == 'PayPal') {
+                  // Call Stripe payment if it's PayPal
+                  StripeService.instance.makePayment();
+                } else {
+                  // Use the existing payment logic for other methods
+                  _onConfirmPaymentPressed();
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor:

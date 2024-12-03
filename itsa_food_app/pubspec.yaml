@@ -65,6 +65,8 @@ dependencies:
   mailer: ^6.2.0
   flutter_launcher_icons: ^0.14.1
   font_awesome_flutter: ^10.8.0
+  flutter_stripe: ^11.3.0
+  dio: ^5.7.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

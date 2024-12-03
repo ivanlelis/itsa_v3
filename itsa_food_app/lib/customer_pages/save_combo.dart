@@ -16,7 +16,7 @@ class SaveCombo extends StatefulWidget {
   final double longitude;
 
   const SaveCombo({
-    Key? key,
+    super.key,
     this.selectedProductID,
     this.selectedMilkTeaID,
     this.branchID,
@@ -28,7 +28,7 @@ class SaveCombo extends StatefulWidget {
     this.imageUrl,
     required this.latitude,
     required this.longitude,
-  }) : super(key: key);
+  });
 
   @override
   _SaveComboState createState() => _SaveComboState();
@@ -326,7 +326,7 @@ class _SaveComboState extends State<SaveCombo> {
                     )
                     .toList(),
               ),
-              Container(
+              SizedBox(
                 width: double
                     .infinity, // Make the dropdown as wide as the other fields
                 child: InputDecorator(

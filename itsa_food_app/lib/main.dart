@@ -14,27 +14,36 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/customer_pages/claim_vouchers.dart';
 import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:itsa_food_app/main_home/rider_home.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:itsa_food_app/stripe/const.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize FirebaseService
-  final firebaseService = FirebaseService();
+  // Initialize Stripe and Firebase
+  await _setup();
 
+  // Start the Flutter app
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => UserProvider(),
+      child: const MyApp(),
+    ),
+  );
+}
+
+Future<void> _setup() async {
+  // Set Stripe Publishable Key
+  Stripe.publishableKey = stripePublishableKey;
+
+  // Initialize Firebase
+  final firebaseService = FirebaseService();
   try {
     await firebaseService.initializeFirebase();
     print("Firebase initialized successfully");
   } catch (e) {
     print("Error initializing Firebase: $e");
-    return;
   }
-
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => UserProvider(), // Create an instance of UserProvider
-      child: const MyApp(),
-    ),
-  );
 }
 
 class MyApp extends StatefulWidget {

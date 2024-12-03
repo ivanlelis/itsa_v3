@@ -252,16 +252,6 @@ class _ProductViewState extends State<ProductView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Displaying branch ID
-                  Text(
-                    'Branch: ${widget.branchID}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
                   Text(
                     widget.productName,
                     style: const TextStyle(

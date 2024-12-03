@@ -4,12 +4,14 @@ class PaymentMethodSection extends StatefulWidget {
   final String paymentMethod;
   final Function(String) onPaymentMethodChange;
   final VoidCallback onGcashSelected;
+  final VoidCallback onPaypalSelected; // Add callback for PayPal
 
   const PaymentMethodSection({
     super.key,
     required this.paymentMethod,
     required this.onPaymentMethodChange,
     required this.onGcashSelected,
+    required this.onPaypalSelected, // Required parameter for PayPal callback
   });
 
   @override
@@ -22,6 +24,8 @@ class _PaymentMethodSectionState extends State<PaymentMethodSection> {
 
     if (method == 'GCash') {
       widget.onGcashSelected();
+    } else if (method == 'PayPal') {
+      widget.onPaypalSelected(); // Trigger the PayPal selected callback
     }
   }
 
@@ -69,6 +73,22 @@ class _PaymentMethodSectionState extends State<PaymentMethodSection> {
               onPressed: () => _handlePaymentMethodChange('GCash'),
               child: Text(
                 widget.paymentMethod == 'GCash' ? 'Selected' : 'Select',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('PayPal'), // Added PayPal option
+            trailing: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: widget.paymentMethod == 'PayPal'
+                    ? Colors.green
+                    : Colors.grey,
+              ),
+              onPressed: () => _handlePaymentMethodChange('PayPal'),
+              child: Text(
+                widget.paymentMethod == 'PayPal' ? 'Selected' : 'Select',
                 style: TextStyle(color: Colors.white),
               ),
             ),
