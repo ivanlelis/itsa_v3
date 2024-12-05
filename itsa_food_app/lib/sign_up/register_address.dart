@@ -21,6 +21,7 @@ class _RegisterAddressState extends State<RegisterAddress> {
   List<dynamic> _suggestions = [];
   Timer? _debounceTimer;
   String _nearestBranch = '';
+  bool _isInsideDasmarinas = false;
 
   // Branch Plus Codes
   final List<String> branchPlusCodes = [
@@ -120,18 +121,21 @@ class _RegisterAddressState extends State<RegisterAddress> {
       final lat = location['lat'];
       final lng = location['lng'];
 
+      String formattedAddress =
+          place['formatted_address'] as String; // Explicit cast
+
       setState(() {
         _selectedLocation = LatLng(lat, lng);
-        _selectedAddress = place['formatted_address'];
+        _selectedAddress = formattedAddress;
         _addressController.text = _selectedAddress!;
         _suggestions = []; // Clear suggestions after selection
+        _isInsideDasmarinas = _selectedAddress!.contains("Dasmariñas");
       });
 
-      // Find the nearest branch
-      String nearestBranch = await _findNearestBranch(LatLng(lat, lng));
-      setState(() {
-        _nearestBranch = nearestBranch;
-      });
+      // Only call _findNearestBranch if the location is inside Dasmariñas
+      if (_isInsideDasmarinas) {
+        _nearestBranch = await _findNearestBranch(LatLng(lat, lng));
+      }
 
       _mapController.moveCamera(CameraUpdate.newLatLng(_selectedLocation!));
       _addMarker(_selectedLocation!);
@@ -144,7 +148,6 @@ class _RegisterAddressState extends State<RegisterAddress> {
     double minDistance = double.infinity;
     String nearestBranch = '';
 
-    // Define the mapping of plus codes to branch names
     final Map<String, String> branchNames = {
       '8XQ2+94H, Dasmariñas, Cavite': 'Sta. Lucia',
       '8X85+44, Dasmariñas, Cavite': 'Sta. Cruz II',
@@ -165,19 +168,19 @@ class _RegisterAddressState extends State<RegisterAddress> {
   }
 
   double _getDistance(LatLng start, LatLng end) {
-    const double earthRadius = 6371; // in kilometers
+    const double earthRadius = 6371;
 
-    double dLat = (end.latitude - start.latitude) * (3.141592653589793 / 180);
-    double dLon = (end.longitude - start.longitude) * (3.141592653589793 / 180);
+    double dLat = (end.latitude - start.latitude) * (pi / 180);
+    double dLon = (end.longitude - start.longitude) * (pi / 180);
 
-    double a = (0.5 - (1 - cos(dLat)) / 2) +
-        cos(start.latitude * (3.141592653589793 / 180)) *
-            cos(end.latitude * (3.141592653589793 / 180)) *
-            (1 - cos(dLon)) /
-            2;
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(start.latitude * (pi / 180)) *
+            cos(end.latitude * (pi / 180)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
 
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c; // returns the distance in kilometers
+    return earthRadius * c;
   }
 
   void _addMarker(LatLng location) {
@@ -191,16 +194,30 @@ class _RegisterAddressState extends State<RegisterAddress> {
   }
 
   void _confirmAddress() {
-    final selectedAddress = _addressController.text;
-    final nearestBranch =
-        _nearestBranch; // Compute this based on the user's location
+    if (!_isInsideDasmarinas) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Service Unavailable"),
+          content: const Text(
+              "Sorry, the app doesn't currently offer services in that area."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      final selectedAddress = _addressController.text;
 
-    Navigator.pop(context, {
-      'selectedAddress': selectedAddress,
-      'nearestBranch': nearestBranch,
-    });
+      Navigator.pop(context, {
+        'selectedAddress': selectedAddress,
+        'nearestBranch': _nearestBranch,
+      });
+    }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -222,12 +239,11 @@ class _RegisterAddressState extends State<RegisterAddress> {
                       _getSuggestions(input);
                     } else {
                       setState(() {
-                        _suggestions =
-                            []; // Clear suggestions if input is empty
+                        _suggestions = [];
                       });
                     }
                   },
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Search Address',
                     hintText: 'Enter address',
                     suffixIcon: Icon(Icons.search),
@@ -254,7 +270,7 @@ class _RegisterAddressState extends State<RegisterAddress> {
                   const SizedBox(height: 10),
                   Text('Selected Address: $_selectedAddress'),
                 ],
-                if (_nearestBranch.isNotEmpty) ...[
+                if (_nearestBranch.isNotEmpty && _isInsideDasmarinas) ...[
                   const SizedBox(height: 10),
                   Text('Nearest Branch: $_nearestBranch'),
                 ],
@@ -266,24 +282,27 @@ class _RegisterAddressState extends State<RegisterAddress> {
               onMapCreated: (controller) {
                 _mapController = controller;
               },
-              initialCameraPosition: CameraPosition(
-                target: LatLng(12.8797, 121.7740), // Default to center of PH
-                zoom: 6,
-              ),
               markers: _markers,
-              zoomControlsEnabled: false, // Disable zoom controls
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(14.3295, 120.9367), // Dasmariñas Coordinates
+                zoom: 12,
+              ),
+              onTap: (location) async {
+                _selectedAddress = null; // Clear the selected address
+                setState(() {
+                  _selectedLocation = location;
+                  _isInsideDasmarinas = false; // Assume outside initially
+                  _nearestBranch = ''; // Reset nearest branch
+                });
+                _addMarker(location);
+              },
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: _confirmAddress,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 18),
-                minimumSize: Size(double.infinity, 50),
-              ),
-              child: const Text('Save This Address'),
+              child: const Text("Save Address"),
             ),
           ),
         ],

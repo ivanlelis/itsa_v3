@@ -528,7 +528,7 @@ class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
     String productType;
-    String startingPriceText = "Starts at ₱";
+    String startingPriceText = "Starts at PHP ";
 
     if (widget.takoyakiPrices != null) {
       productType = 'takoyaki';

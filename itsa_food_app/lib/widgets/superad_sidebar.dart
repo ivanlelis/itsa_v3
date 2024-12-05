@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication package
 
 class SuperAdSidebar extends StatelessWidget {
-  const SuperAdSidebar({Key? key}) : super(key: key);
+  const SuperAdSidebar({super.key});
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(

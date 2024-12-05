@@ -6,7 +6,7 @@ import 'package:fl_chart/fl_chart.dart'; // Importing the chart package
 class OffersForecast extends StatefulWidget {
   final String userName;
 
-  OffersForecast({super.key, required this.userName});
+  const OffersForecast({super.key, required this.userName});
 
   @override
   _OffersForecastState createState() => _OffersForecastState();

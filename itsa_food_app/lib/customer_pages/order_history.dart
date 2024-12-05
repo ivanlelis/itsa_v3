@@ -9,7 +9,8 @@ class OrderHistory extends StatefulWidget {
   final double latitude;
   final double longitude;
 
-  const OrderHistory({super.key, 
+  const OrderHistory({
+    super.key,
     required this.emailAddress,
     required this.userName,
     required this.uid,
@@ -66,7 +67,7 @@ class _OrderHistoryState extends State<OrderHistory> {
             children: snapshot.data!.docs.map((doc) {
               String orderId = doc.id;
               Timestamp timestamp = doc['timestamp'];
-              List<dynamic> productNames = doc['productNames'];
+              List<dynamic> productName = doc['products'];
 
               // Format timestamp to a readable date and time
               String formattedDate = DateFormat('MMM dd, yyyy – hh:mm a')
@@ -119,23 +120,41 @@ class _OrderHistoryState extends State<OrderHistory> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.restaurant_menu,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: Text(
-                              "Items: ${productNames.join(', ')}",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.restaurant_menu,
+                                size: 16,
+                                color: Colors.grey[600],
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  "Items: ${productName.map((product) => '${product['productName']} 1 x ${product['quantity']}').join(', ')}",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Text(
+                                "Total: PHP ${doc['total'].toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

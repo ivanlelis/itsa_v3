@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/superad_pages/totalsales.dart'; // Adjust the import path as needed.
+import 'package:itsa_food_app/superad_pages/totalorders.dart'; // Import the TotalOrders widget.
+import 'package:itsa_food_app/superad_pages/mostpopular.dart'; // Import the MostPopular widget.
 
 class SuperAdDashboard extends StatelessWidget {
   final String userName;
@@ -6,11 +9,11 @@ class SuperAdDashboard extends StatelessWidget {
   final String imageUrl;
 
   const SuperAdDashboard({
-    Key? key,
+    super.key,
     this.userName = "Admin",
     required this.email,
     this.imageUrl = '',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +34,6 @@ class SuperAdDashboard extends StatelessWidget {
               // Header Section
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage: imageUrl.isNotEmpty
-                        ? NetworkImage(imageUrl)
-                        : const AssetImage('assets/default_avatar.png')
-                            as ImageProvider,
-                  ),
-                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,27 +65,14 @@ class SuperAdDashboard extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
-                  _buildDashboardCard(
-                    title: 'Total Sales',
-                    value: '₱129124',
-                    subtitle: 'Total sales amount',
-                    color: Colors.brown.shade200,
-                    width: _getCardWidth(screenWidth),
-                  ),
-                  _buildDashboardCard(
-                    title: 'Number of Orders',
-                    value: '1325',
-                    subtitle: 'Total number of orders',
-                    color: Colors.brown.shade300,
-                    width: _getCardWidth(screenWidth),
-                  ),
-                  _buildDashboardCard(
-                    title: 'Popular Items',
-                    value: 'Original/Spicy I-Tsa Takoyaki',
-                    subtitle: 'Most popular item',
-                    color: Colors.brown.shade400,
-                    width: _getCardWidth(screenWidth),
-                  ),
+                  // Display TotalSales widget with the dynamic width based on screen size
+                  TotalSales(width: _getCardWidth(screenWidth)),
+
+                  // Replace the "Number of Orders" card with the TotalOrders widget
+                  TotalOrders(width: _getCardWidth(screenWidth)),
+
+                  // Add the new MostPopular widget here
+                  MostPopular(width: _getCardWidth(screenWidth)),
                 ],
               ),
             ],
@@ -111,57 +93,5 @@ class SuperAdDashboard extends StatelessWidget {
     } else {
       return double.infinity; // Single column layout
     }
-  }
-
-  // Helper to build responsive dashboard cards
-  Widget _buildDashboardCard({
-    required String title,
-    required String value,
-    required String subtitle,
-    required Color color,
-    required double width,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

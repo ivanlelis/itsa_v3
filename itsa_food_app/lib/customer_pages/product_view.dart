@@ -237,185 +237,378 @@ class _ProductViewState extends State<ProductView> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(
-              widget.imageUrl,
-              height: 250,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.productName,
-                    style: const TextStyle(
-                        fontSize: 24, fontWeight: FontWeight.bold),
+                  Image.network(
+                    widget.imageUrl,
+                    height: 250,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    '₱${prices[_selectedQuantityIndex]}',
-                    style: const TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Text('Choose Quantity/Size:',
-                      style: const TextStyle(fontSize: 16)),
-                  ...List.generate(quantityOptions.length, (index) {
-                    return RadioListTile<int>(
-                      value: index,
-                      groupValue: _selectedQuantityIndex,
-                      title:
-                          Text('${quantityOptions[index]} - ₱${prices[index]}'),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedQuantityIndex = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    );
-                  }),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.remove),
-                        onPressed: _quantity > 1
-                            ? () {
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.productName,
+                          style: const TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          'PHP ${prices[_selectedQuantityIndex]}.00',
+                          style: const TextStyle(
+                              fontSize: 18,
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16.0),
+                        // Quantity Options with styled container
+                        ...List.generate(quantityOptions.length, (index) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                                vertical:
+                                    5.0), // Added vertical margin for space between containers
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 2.0,
+                                horizontal:
+                                    4.0), // Smaller padding for smaller container height
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(
+                                  12.0), // Smaller border radius
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: RadioListTile<int>(
+                              value: index,
+                              groupValue: _selectedQuantityIndex,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 0.0,
+                                  horizontal:
+                                      4.0), // Minimal padding for a compact layout
+                              title: Text(
+                                '${quantityOptions[index]} - PHP ${prices[index]}.00',
+                                style: const TextStyle(
+                                    fontSize: 15), // Smaller font size
+                              ),
+                              onChanged: (value) {
                                 setState(() {
-                                  _quantity--;
+                                  _selectedQuantityIndex = value!;
                                   _updateTotalPrice();
                                 });
-                              }
-                            : null,
-                      ),
-                      Text('$_quantity', style: TextStyle(fontSize: 18)),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
-                            _quantity++;
-                            _updateTotalPrice();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  if (widget.takoyakiPrices != null) ...[
-                    const SizedBox(height: 16.0),
-                    Text('Add-ons:', style: const TextStyle(fontSize: 16)),
-                    CheckboxListTile(
-                      title:
-                          const Text('Takoyaki Sauce (Original/Spicy) (₱15)'),
-                      value: _takoyakiSauce,
-                      onChanged: (value) {
-                        setState(() {
-                          _takoyakiSauce = value!;
-                          _updateTotalPrice();
-                        });
-                      },
+                              },
+                            ),
+                          );
+                        }),
+                        const SizedBox(
+                            height:
+                                10.0), // Added space between quantity options and next section
+                        if (widget.takoyakiPrices != null) ...[
+                          const SizedBox(height: 10.0), // Reduced space
+                          Text('Add-ons:',
+                              style: const TextStyle(
+                                  fontSize: 16)), // Smaller font size
+                          ...[
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text(
+                                    'Takoyaki Sauce (Original/Spicy) (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _takoyakiSauce,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _takoyakiSauce = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Bonito Flakes (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _bonitoFlakes,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _bonitoFlakes = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Mayonnaise (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _mayonnaise,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _mayonnaise = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
+                        if (widget.milkTeaRegular != null) ...[
+                          const SizedBox(height: 10.0), // Reduced space
+                          Text('Add-ons:',
+                              style: const TextStyle(
+                                  fontSize: 14)), // Smaller font size
+                          ...[
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Black Pearls (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _pearls,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _pearls = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Cream Puff (PHP 20)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _creampuff,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _creampuff = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Nata (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _nata,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _nata = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Oreo Crushed (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _oreo,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _oreo = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 1.0, horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: CheckboxListTile(
+                                title: const Text('Coffee Jelly (PHP 15)',
+                                    style: TextStyle(
+                                        fontSize: 15)), // Smaller font size
+                                value: _jelly,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _jelly = value!;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
+
+                        const SizedBox(height: 16.0),
+                      ],
                     ),
-                    CheckboxListTile(
-                      title: const Text('Bonito Flakes (₱15)'),
-                      value: _bonitoFlakes,
-                      onChanged: (value) {
-                        setState(() {
-                          _bonitoFlakes = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Mayonnaise (₱15)'),
-                      value: _mayonnaise,
-                      onChanged: (value) {
-                        setState(() {
-                          _mayonnaise = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                  ],
-                  if (widget.milkTeaRegular != null) ...[
-                    const SizedBox(height: 16.0),
-                    Text('Add-ons:', style: const TextStyle(fontSize: 16)),
-                    CheckboxListTile(
-                      title: const Text('Black Pearls (₱15)'),
-                      value: _pearls,
-                      onChanged: (value) {
-                        setState(() {
-                          _pearls = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Cream Puff (₱20)'),
-                      value: _creampuff,
-                      onChanged: (value) {
-                        setState(() {
-                          _creampuff = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Nata (₱15)'),
-                      value: _nata,
-                      onChanged: (value) {
-                        setState(() {
-                          _nata = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Oreo Crushed (₱15)'),
-                      value: _oreo,
-                      onChanged: (value) {
-                        setState(() {
-                          _oreo = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Coffee Jelly (₱15)'),
-                      value: _jelly,
-                      onChanged: (value) {
-                        setState(() {
-                          _jelly = value!;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '₱${_totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          _addToCart(); // Call the function to add to cart
-                        },
-                        child: const Text('Add to Cart'),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.brown, // Background color ng buong container
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Total Price
+                Text(
+                  '₱${_totalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.white, // Text color
+                    fontSize: 18, // Font size for total
+                    fontWeight: FontWeight.bold, // Bold text
+                  ),
+                ),
+                // Quantity Selector
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _quantity > 1
+                          ? () {
+                              setState(() {
+                                _quantity--;
+                                _updateTotalPrice();
+                              });
+                            }
+                          : null,
+                      child: CircleAvatar(
+                        radius: 15, // Circle size
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.remove,
+                          color: Colors.green, // Icon color
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        '$_quantity',
+                        style: const TextStyle(
+                          color: Colors.white, // Quantity text color
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _quantity++;
+                          _updateTotalPrice();
+                        });
+                      },
+                      child: CircleAvatar(
+                        radius: 15,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.green,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // Add to Cart Button
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 16),
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white, // Button background color
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        _addToCart(); // Call the function to add to cart
+                      },
+                      child: const Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          color: Colors.brown, // Text color to match design
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
