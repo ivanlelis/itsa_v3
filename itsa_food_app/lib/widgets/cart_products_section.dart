@@ -27,11 +27,12 @@ class CartProductsSection extends StatelessWidget {
               trailing: Text('₱${item['total'].toStringAsFixed(2)}'),
             ),
           );
-        }),
-        SizedBox(
+        }).toList(), // Ensure `toList()` is called for safe mapping
+        const SizedBox(
           height: 5,
         ),
-        if (selectedItemName != null)
+        // Display Exclusive Bundle only if selectedItemName has a value
+        if (selectedItemName != null && selectedItemName!.isNotEmpty)
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             elevation: 2,

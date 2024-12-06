@@ -36,7 +36,7 @@ class DeliveryTypeSection extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Standard (₱20)'),
+                    const Text('Standard (PHP 20.00)'),
                     Radio<String>(
                       value: 'Standard',
                       groupValue: deliveryType,
@@ -55,7 +55,7 @@ class DeliveryTypeSection extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Fast (₱50)'),
+                    const Text('Fast (PHP 20.00)'),
                     Radio<String>(
                       value: 'Fast',
                       groupValue: deliveryType,

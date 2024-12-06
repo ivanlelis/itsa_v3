@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:itsa_food_app/widgets/address_section.dart';
 import 'package:itsa_food_app/widgets/payment_method_section.dart';
 import 'package:itsa_food_app/widgets/voucher_section_pickup.dart';
 import 'package:itsa_food_app/widgets/cart_products_section.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:itsa_food_app/customer_pages/confirm_payment.dart';
+import 'package:itsa_food_app/widgets/pickup_add_section.dart';
 
 class PickupTab extends StatefulWidget {
   final String? userAddress;
@@ -171,7 +171,16 @@ class _PickupTabState extends State<PickupTab> {
               padding: const EdgeInsets.all(16.0),
               child: ListView(
                 children: [
-                  AddressSection(userAddress: widget.userAddress ?? ''),
+                  PickupAddress(
+                    userAddress: widget.userAddress ?? '',
+                    userName: widget.userName,
+                    emailAddress: widget.emailAddress,
+                    email: widget.email,
+                    uid: widget.uid,
+                    latitude: widget.latitude,
+                    longitude: widget.longitude,
+                    branchID: widget.branchID ?? '',
+                  ),
                   const SizedBox(height: 16),
                   PaymentMethodSection(
                     paymentMethod: paymentMethod,
@@ -277,7 +286,7 @@ class _PickupTabState extends State<PickupTab> {
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                     Text(
-                      '₱${finalTotal.toStringAsFixed(2)}',
+                      'PHP ${finalTotal.toStringAsFixed(2)}',
                       style: const TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ],

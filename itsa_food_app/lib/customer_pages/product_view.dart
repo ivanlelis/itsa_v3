@@ -512,95 +512,105 @@ class _ProductViewState extends State<ProductView> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.brown, // Background color ng buong container
+              color: Colors.brown, // Background color of the container
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(25), // Rounded top corners
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Total Price
-                Text(
-                  '₱${_totalPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white, // Text color
-                    fontSize: 18, // Font size for total
-                    fontWeight: FontWeight.bold, // Bold text
-                  ),
-                ),
-                // Quantity Selector
+                // Total Price and Quantity Selector
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: _quantity > 1
-                          ? () {
-                              setState(() {
-                                _quantity--;
-                                _updateTotalPrice();
-                              });
-                            }
-                          : null,
-                      child: CircleAvatar(
-                        radius: 15, // Circle size
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.remove,
-                          color: Colors.green, // Icon color
-                          size: 20,
-                        ),
+                    // Total Price
+                    Text(
+                      'PHP ${_totalPrice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Colors.white, // Text color
+                        fontSize: 20, // Font size for total
+                        fontWeight: FontWeight.bold, // Bold text
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '$_quantity',
-                        style: const TextStyle(
-                          color: Colors.white, // Quantity text color
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    // Quantity Selector
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _quantity > 1
+                              ? () {
+                                  setState(() {
+                                    _quantity--;
+                                    _updateTotalPrice();
+                                  });
+                                }
+                              : null,
+                          child: CircleAvatar(
+                            radius: 12, // Circle size
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.remove,
+                              color: Colors.green, // Icon color
+                              size: 16,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _quantity++;
-                          _updateTotalPrice();
-                        });
-                      },
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.green,
-                          size: 20,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            '$_quantity',
+                            style: const TextStyle(
+                              color: Colors.white, // Quantity text color
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _quantity++;
+                              _updateTotalPrice();
+                            });
+                          },
+                          child: CircleAvatar(
+                            radius: 12,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.add,
+                              color: Colors.green,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
+                const SizedBox(height: 16), // Spacing between rows
                 // Add to Cart Button
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 16),
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white, // Button background color
-                      borderRadius: BorderRadius.circular(25),
+                SizedBox(
+                  width: double.infinity, // Make the button full width
+                  height: 50, // Adjust height as needed
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white, // Button background color
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(25), // Rounded button
+                      ),
                     ),
-                    child: TextButton(
-                      onPressed: () {
-                        _addToCart(); // Call the function to add to cart
-                      },
-                      child: const Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          color: Colors.brown, // Text color to match design
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    onPressed: () {
+                      _addToCart(); // Call the function to add to cart
+                    },
+                    child: const Text(
+                      'Add to Cart',
+                      style: TextStyle(
+                        color: Colors.brown, // Text color
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

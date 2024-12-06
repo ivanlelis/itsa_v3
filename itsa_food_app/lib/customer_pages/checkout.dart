@@ -244,7 +244,7 @@ class _CheckoutState extends State<Checkout>
           Stack(
             children: [
               AppBar(
-                backgroundColor: Colors.transparent,
+                backgroundColor: Colors.brown,
                 elevation: 0,
                 title: const Text('Order Details',
                     style: TextStyle(color: Colors.white)),
@@ -275,7 +275,15 @@ class _CheckoutState extends State<Checkout>
                   padding: const EdgeInsets.all(16.0),
                   child: ListView(
                     children: [
-                      AddressSection(userAddress: widget.userAddress ?? ''),
+                      AddressSection(
+                        userAddress: widget.userAddress ?? '',
+                        userName: widget.userName,
+                        emailAddress: widget.emailAddress,
+                        email: widget.email,
+                        uid: widget.uid,
+                        latitude: widget.latitude,
+                        longitude: widget.longitude,
+                      ),
                       const SizedBox(height: 16),
                       DeliveryTypeSection(
                         deliveryType: deliveryType ?? 'Standard',
@@ -469,7 +477,7 @@ class _CheckoutState extends State<Checkout>
                     children: [
                       const Text('Total',
                           style: TextStyle(color: Colors.white, fontSize: 18)),
-                      Text('₱${totalAmount.toStringAsFixed(2)}',
+                      Text('PHP ${totalAmount.toStringAsFixed(2)}',
                           style: const TextStyle(
                               color: Colors.white, fontSize: 18)),
                     ],

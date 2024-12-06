@@ -738,13 +738,13 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Delivery and Payment Details
             _buildSectionTitle('Order & Payment Details'),
-            _buildDetailsRow('Order Type:', widget.deliveryType),
+            _buildDetailsRow('Delivery Type:', widget.deliveryType),
             _buildDetailsRow('Payment Method:', widget.paymentMethod),
             if (widget.voucherCode.isNotEmpty) ...[
               _buildDetailsRow('Voucher Code:', widget.voucherCode),
             ],
-            _buildDetailsRow(
-                'Total Amount:', '₱${widget.totalAmount.toStringAsFixed(2)}'),
+            _buildDetailsRow('Total Amount:',
+                'PHP ${widget.totalAmount.toStringAsFixed(2)}'),
 
             SizedBox(height: 20),
 
@@ -760,7 +760,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Order Information
             _buildSectionTitle('Order Information'),
-            _buildDetailsRow('Order Type:', widget.orderType),
+            _buildDetailsRow('Order Method:', widget.orderType),
 
             SizedBox(height: 30),
 
@@ -1000,36 +1000,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             ),
                           ),
                         ),
-                        if (ingredients.isNotEmpty)
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Ingredients:',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  ...ingredients.map<Widget>((ingredient) {
-                                    final ingredientName =
-                                        ingredient['name'] ?? 'Unknown';
-                                    final ingredientQuantity =
-                                        ingredient['quantity'] ?? 'N/A';
-                                    return Text(
-                                      '- $ingredientName: $ingredientQuantity',
-                                      style: const TextStyle(fontSize: 14),
-                                    );
-                                  }),
-                                ],
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ],

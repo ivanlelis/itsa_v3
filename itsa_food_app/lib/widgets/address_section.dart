@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:itsa_food_app/customer_pages/edit_address.dart';
 
 class AddressSection extends StatelessWidget {
   final String userAddress;
+  final String? userName;
+  final String? emailAddress;
+  final String? email;
+  final String? uid;
+  final double latitude;
+  final double longitude;
 
   const AddressSection({
     super.key,
     required this.userAddress,
+    required this.userName,
+    required this.emailAddress,
+    required this.email,
+    required this.uid,
+    required this.latitude,
+    required this.longitude,
   });
 
   @override
@@ -26,9 +39,26 @@ class AddressSection extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Navigate to address edit screen
+                // Navigate to EditAddress screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditAddress(
+                      userName: userName ?? '',
+                      userAddress: userAddress,
+                      email: email ?? '',
+                      emailAddress: emailAddress ?? '',
+                      uid: uid ?? '',
+                      latitude: latitude,
+                      longitude: longitude,
+                    ), // Navigate to EditAddress
+                  ),
+                );
               },
-              child: const Text('Edit', style: TextStyle(color: Colors.green)),
+              child: const Text(
+                'Edit',
+                style: TextStyle(color: Colors.green),
+              ),
             ),
           ],
         ),
