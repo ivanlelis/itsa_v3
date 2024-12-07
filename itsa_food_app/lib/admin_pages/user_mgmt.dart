@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:itsa_food_app/widgets/admin_appbar.dart'; // Import AdminAppBar
-import 'package:itsa_food_app/widgets/admin_navbar.dart'; // Import AdminBottomNavBar
-import 'package:itsa_food_app/widgets/admin_sidebar.dart'; // Import AdminSidebar
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for logout
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:itsa_food_app/widgets/admin_appbar.dart';
+import 'package:itsa_food_app/widgets/admin_navbar.dart';
+import 'package:itsa_food_app/widgets/admin_sidebar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:itsa_food_app/admin_pages/view_user.dart';
 
 class UserManagement extends StatefulWidget {
   final String userName;
@@ -27,16 +28,13 @@ class _UserManagementState extends State<UserManagement> {
     _userListFuture = _loadUsers('customer');
   }
 
-  // Handle tapping on the bottom nav bar items
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // Function to load users based on the userType
   Future<List<Map<String, dynamic>>> _loadUsers(String userType) async {
-    // Define branchID based on userName
     String branchID = "";
     if (widget.userName == "Main Branch Admin") {
       branchID = "branch 1";
@@ -46,10 +44,9 @@ class _UserManagementState extends State<UserManagement> {
       branchID = "branch 3";
     }
 
-    // Fetch customers from Firestore and filter by branchID
     final QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection(userType)
-        .where('branchID', isEqualTo: branchID) // Filter by branchID
+        .where('branchID', isEqualTo: branchID)
         .get();
 
     return snapshot.docs
@@ -57,11 +54,9 @@ class _UserManagementState extends State<UserManagement> {
         .toList();
   }
 
-  // Function to handle logout
   void _onLogout() async {
     await FirebaseAuth.instance.signOut();
-    Navigator.of(context)
-        .pushReplacementNamed('/home'); // Redirect to home.dart after logout
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override
@@ -84,8 +79,7 @@ class _UserManagementState extends State<UserManagement> {
                   child: ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _userListFuture =
-                            _loadUsers('customer'); // Load customers
+                        _userListFuture = _loadUsers('customer');
                       });
                     },
                     child: const Text('Customers'),
@@ -96,7 +90,7 @@ class _UserManagementState extends State<UserManagement> {
                   child: ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _userListFuture = _loadUsers('rider'); // Load riders
+                        _userListFuture = _loadUsers('rider');
                       });
                     },
                     child: const Text('Riders'),
@@ -107,7 +101,7 @@ class _UserManagementState extends State<UserManagement> {
             const SizedBox(height: 20),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _userListFuture, // Use the Future variable for the list
+                future: _userListFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -128,10 +122,14 @@ class _UserManagementState extends State<UserManagement> {
                             title: Text(user['userName'] ?? 'No Name'),
                             trailing: ElevatedButton(
                               onPressed: () {
-                                // Placeholder for view action
-                                // You can define a function or display a message for now
-                                print(
-                                    "View button clicked for ${user['userName']}");
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ViewUser(
+                                      userName: user['userName'] ?? 'No Name',
+                                    ),
+                                  ),
+                                );
                               },
                               child: const Text("View"),
                             ),

@@ -27,7 +27,7 @@ class CartProductsSection extends StatelessWidget {
               trailing: Text('₱${item['total'].toStringAsFixed(2)}'),
             ),
           );
-        }).toList(), // Ensure `toList()` is called for safe mapping
+        }), // Ensure `toList()` is called for safe mapping
         const SizedBox(
           height: 5,
         ),
