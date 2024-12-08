@@ -778,19 +778,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  if (widget.paymentMethod.toLowerCase() == 'paypal') {
-                    // PayPal Payment Logic
-                    print("Processing payment via PayPal...");
-                    final paymentResult =
-                        await StripeService.instance.makePayment();
-
-                    if (paymentResult['status'] == 'succeeded') {
-                      print("Payment succeeded!");
-                      _onPaymentSuccess();
-                    } else {
-                      print("Payment failed: ${paymentResult['message']}");
-                    }
-                  } else if (widget.paymentMethod.toLowerCase() == 'gcash') {
+                  if (widget.paymentMethod.toLowerCase() == 'gcash') {
                     // Ensure receipt is attached for GCash
                     if (_receiptImage == null) {
                       _showErrorDialog(

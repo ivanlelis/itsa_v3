@@ -14,8 +14,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:itsa_food_app/customer_pages/claim_vouchers.dart';
 import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:itsa_food_app/main_home/rider_home.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
-import 'package:itsa_food_app/stripe/const.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +31,6 @@ void main() async {
 }
 
 Future<void> _setup() async {
-  // Set Stripe Publishable Key
-  Stripe.publishableKey = stripePublishableKey;
-
   // Initialize Firebase
   final firebaseService = FirebaseService();
   try {

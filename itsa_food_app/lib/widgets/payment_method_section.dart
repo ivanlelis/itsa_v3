@@ -4,14 +4,12 @@ class PaymentMethodSection extends StatefulWidget {
   final String paymentMethod;
   final Function(String) onPaymentMethodChange;
   final VoidCallback onGcashSelected;
-  final VoidCallback onPaypalSelected; // Add callback for PayPal
 
   const PaymentMethodSection({
     super.key,
     required this.paymentMethod,
     required this.onPaymentMethodChange,
     required this.onGcashSelected,
-    required this.onPaypalSelected, // Required parameter for PayPal callback
   });
 
   @override
@@ -24,8 +22,6 @@ class _PaymentMethodSectionState extends State<PaymentMethodSection> {
 
     if (method == 'GCash') {
       widget.onGcashSelected();
-    } else if (method == 'PayPal') {
-      widget.onPaypalSelected(); // Trigger the PayPal selected callback
     }
   }
 

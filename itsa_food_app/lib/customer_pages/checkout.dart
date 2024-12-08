@@ -307,28 +307,11 @@ class _CheckoutState extends State<Checkout>
                                 ''; // Reset voucher when "Cash" is selected
                             totalAmount =
                                 originalTotalAmount; // Reset total amount
-                          } else if (method == 'PayPal') {
-                            // PayPal specific logic if needed (e.g., no voucher)
-                            isVoucherButtonVisible = false;
-                            selectedVoucher = ''; // Reset voucher for PayPal
-                            totalAmount =
-                                originalTotalAmount; // Reset total amount for PayPal
                           }
                         }),
                         onGcashSelected: () {
                           setState(() {
                             isVoucherButtonVisible = true;
-                          });
-                        },
-                        onPaypalSelected: () {
-                          setState(() {
-                            selectedPaymentMethod = 'PayPal';
-                            isVoucherButtonVisible =
-                                false; // Hide voucher button for PayPal
-                            selectedVoucher =
-                                ''; // Reset voucher when PayPal is selected
-                            totalAmount =
-                                originalTotalAmount; // Reset total amount for PayPal
                           });
                         },
                       ),
@@ -444,12 +427,6 @@ class _CheckoutState extends State<Checkout>
                       isVoucherButtonVisible = false;
                       selectedVoucher =
                           ''; // Reset voucher when "Cash" is selected
-                    } else if (method == 'PayPal') {
-                      // PayPal specific logic (no voucher for PayPal)
-                      isVoucherButtonVisible =
-                          false; // Hide voucher button for PayPal
-                      selectedVoucher =
-                          ''; // Reset voucher when PayPal is selected
                     }
                   }),
                   onGcashSelected: () {
