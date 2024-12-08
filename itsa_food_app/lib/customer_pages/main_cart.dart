@@ -14,6 +14,15 @@ class MainCart extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String? branchID;
+  final bool? takoyakiSauce;
+  final bool? bonitoFlakes;
+  final bool? mayonnaise;
+  final bool? pearls;
+  final bool? creampuff;
+  final bool? nata;
+  final bool? oreo;
+  final bool? jelly;
+  final int? selectedQuantityIndex; // Nullable parameter
 
   const MainCart({
     super.key,
@@ -26,6 +35,15 @@ class MainCart extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     required this.branchID,
+    this.takoyakiSauce,
+    this.bonitoFlakes,
+    this.mayonnaise,
+    this.pearls,
+    this.creampuff,
+    this.nata,
+    this.oreo,
+    this.jelly,
+    this.selectedQuantityIndex,
   });
 
   @override
@@ -35,6 +53,27 @@ class MainCart extends StatefulWidget {
 class _MainCartState extends State<MainCart> {
   List<Map<String, dynamic>> cartItems = [];
   String? selectedItemName;
+  final Map<String, String> addOnFieldMapping = {
+    'Bonito Flakes': 'bonitoFlakes',
+    'Coffee Jelly': 'coffeeJelly',
+    'Creampuff': 'creampuff',
+    'Mayonnaise': 'mayonnaise',
+    'Nata': 'nata',
+    'Oreo': 'oreo',
+    'Pearls': 'pearls',
+    'Takoyaki Sauce': 'takoyakiSauce',
+  };
+
+  final Map<String, double> addOnPrices = {
+    'Bonito Flakes': 15.0,
+    'Coffee Jelly': 15.0,
+    'Creampuff': 20.0,
+    'Mayonnaise': 15.0,
+    'Nata': 15.0,
+    'Oreo': 15.0,
+    'Pearls': 15.0,
+    'Takoyaki Sauce': 15.0,
+  };
 
   @override
   void initState() {
@@ -79,6 +118,7 @@ class _MainCartState extends State<MainCart> {
             selectedItemName = null; // No item selected, set to null
           }
 
+          // Fetch add-on fields from the cart document
           return {
             'id': doc.id, // Store document ID for deletion
             'productName': data.containsKey('productName')
@@ -92,6 +132,14 @@ class _MainCartState extends State<MainCart> {
                 : 'Unknown',
             'quantity': data.containsKey('quantity') ? data['quantity'] : 1,
             'total': data.containsKey('total') ? data['total'] : 0.0,
+            'bonitoFlakes': data['bonitoFlakes'] ?? false,
+            'coffeeJelly': data['coffeeJelly'] ?? false,
+            'creampuff': data['creampuff'] ?? false,
+            'mayonnaise': data['mayonnaise'] ?? false,
+            'nata': data['nata'] ?? false,
+            'oreo': data['oreo'] ?? false,
+            'pearls': data['pearls'] ?? false,
+            'takoyakiSauce': data['takoyakiSauce'] ?? false,
           };
         }).toList();
       });
@@ -166,13 +214,9 @@ class _MainCartState extends State<MainCart> {
       appBar: AppBar(
         title: const Text(
           'My Cart',
-          style: TextStyle(
-            fontWeight: FontWeight.bold, // Make the text bold
-            color: Colors.white, // Set the text color to white
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        backgroundColor:
-            Color(0xFF6E473B), // Use the first color in the palette
+        backgroundColor: const Color(0xFF6E473B),
       ),
       body: Column(
         children: [
@@ -185,291 +229,406 @@ class _MainCartState extends State<MainCart> {
                       final item = cartItems[index];
                       final productName =
                           item['productName'] ?? 'Unnamed Product';
-                      final selectedItemName = item['selectedItemName'];
-
                       return Column(
                         children: [
-                          // Card for productName
-                          Dismissible(
-                            key: Key('${item['id']}-productName'),
-                            background: Container(
-                              color: Colors.red,
-                              alignment: Alignment
-                                  .centerRight, // Align to right (red side)
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: const Icon(Icons.delete,
-                                  color: Colors
-                                      .white), // Delete icon on the right side
-                            ),
-                            direction: DismissDirection
-                                .endToStart, // Only allow right swipe
-                            onDismissed: (direction) {
-                              _deleteCartItem(item['id']);
-                              setState(() {
-                                cartItems.removeAt(index);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                      Text('$productName removed from cart'),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: Card(
-                                  elevation: 4,
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  color: Color(
-                                      0xFF6E473B), // Light background color
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          productName,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color.fromARGB(255, 255, 255,
-                                                255), // Dark color for text
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          'Quantity: ${item['quantity']}',
-                                          style: const TextStyle(
-                                              color: Color.fromARGB(
-                                                  255, 255, 255, 255)),
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          'Size: ${item['sizeQuantity']}',
-                                          style: const TextStyle(
-                                              color: Color.fromARGB(
-                                                  255, 255, 255, 255)),
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          'Total: ₱${item['total'].toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color.fromARGB(255, 255, 255,
-                                                255), // Dark color for price
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Card for selectedItemName (if exists)
-                          if (selectedItemName != null)
-                            FutureBuilder<DocumentSnapshot?>(
-                              future: _fetchProductType(selectedItemName),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: Card(
-                                        elevation: 4,
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        color: Color(
-                                            0xFF6E473B), // Light background color
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(16.0),
-                                          child: Center(
-                                              child:
-                                                  CircularProgressIndicator()),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError ||
-                                    !snapshot.hasData ||
-                                    !snapshot.data!.exists) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: Card(
-                                        elevation: 4,
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        color: Color(
-                                            0xFF6E473B), // Light background color
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Text(
-                                            'Product type for "$selectedItemName" not found',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.red,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  final productType =
-                                      snapshot.data!['productType'] ??
-                                          'Unknown';
-                                  final extraInfo = productType == 'Milk Tea'
-                                      ? 'Size: Regular'
-                                      : productType == 'Takoyaki'
-                                          ? 'Quantity: 4 pc'
-                                          : null;
-
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: Card(
-                                        elevation: 4,
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        color: Color(
-                                            0xFF6E473B), // Light background color
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                selectedItemName,
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color.fromARGB(
-                                                      255,
-                                                      255,
-                                                      255,
-                                                      255), // Dark color for text
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8.0),
-                                              if (extraInfo != null) ...[
-                                                const SizedBox(height: 8.0),
-                                                Text(
-                                                  extraInfo,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Color(
-                                                        0xFF291C0E), // Dark color for extra info
-                                                  ),
-                                                ),
-                                              ],
-                                              const SizedBox(height: 8.0),
-                                              const Text(
-                                                'Total: Free',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(
-                                                      0xFF6E473B), // Dark color for price
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
+                          _buildCartItemCard(item, index, productName),
+                          if (item['selectedItemName'] != null)
+                            _buildSelectedItemCard(item['selectedItemName']),
                         ],
                       );
                     },
                   ),
           ),
           const Divider(height: 1, thickness: 1, color: Colors.grey),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Amount',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '₱${cartItems.fold(0.0, (sum, item) => sum + (item['total'] ?? 0)).toStringAsFixed(2)}',
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF6E473B)), // Dark color for total
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _proceedToCheckout(
-                        selectedItemName: selectedItemName ?? ''),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(
-                          0xFF6E473B), // Use the first color in the palette
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Proceed to Checkout',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
+          _buildTotalAmount(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCartItemCard(
+      Map<String, dynamic> item, int index, String productName) {
+    return Dismissible(
+      key: Key('${item['id']}-productName'),
+      background: _buildDismissBackground(),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        _deleteCartItem(item['id']);
+        setState(() => cartItems.removeAt(index));
+      },
+      child: _buildCardContent(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(productName,
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
+            _buildInfoText('Size: ${item['sizeQuantity']}'),
+            _buildQuantityControl(item, index),
+            _buildInfoText(
+              'Total: ₱${item['total'].toStringAsFixed(2)}',
+              isBold: true,
             ),
+            const SizedBox(height: 8),
+            _buildAddOnsList(item),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuantityControl(Map<String, dynamic> item, int index) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.remove_circle, color: Colors.white),
+          onPressed: () {
+            if (item['quantity'] > 1) {
+              _updateQuantity(item, index, item['quantity'] - 1);
+            }
+          },
+        ),
+        Text(
+          '${item['quantity']}',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.add_circle, color: Colors.white),
+          onPressed: () {
+            _updateQuantity(item, index, item['quantity'] + 1);
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _updateQuantity(
+      Map<String, dynamic> item, int index, int newQuantity) async {
+    try {
+      // Update the quantity in Firestore
+      final cartDocRef = FirebaseFirestore.instance
+          .collection('customer')
+          .doc(widget.uid)
+          .collection('cart')
+          .doc(item['id']);
+
+      final newTotal = item['total'] / item['quantity'] * newQuantity;
+
+      await cartDocRef.update({
+        'quantity': newQuantity,
+        'total': newTotal,
+      });
+
+      // Update the local state
+      setState(() {
+        cartItems[index]['quantity'] = newQuantity;
+        cartItems[index]['total'] = newTotal;
+      });
+    } catch (e) {
+      print('Error updating quantity: $e');
+    }
+  }
+
+  Widget _buildAddOnsList(Map<String, dynamic> item) {
+    // Add-ons fields to check
+    final addOnFields = {
+      'Bonito Flakes': item['bonitoFlakes'],
+      'Coffee Jelly': item['coffeeJelly'],
+      'Creampuff': item['creampuff'],
+      'Mayonnaise': item['mayonnaise'],
+      'Nata': item['nata'],
+      'Oreo': item['oreo'],
+      'Pearls': item['pearls'],
+      'Takoyaki Sauce': item['takoyakiSauce'],
+    };
+
+    // Filter selected add-ons
+    final selectedAddOns =
+        addOnFields.entries.where((addOn) => addOn.value == true).toList();
+
+    if (selectedAddOns.isEmpty) {
+      return const SizedBox(); // No add-ons to display
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Add-ons:',
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white)),
+        const SizedBox(height: 4),
+        ...selectedAddOns.map((addOn) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('- ${addOn.key}',
+                  style: const TextStyle(fontSize: 14, color: Colors.white70)),
+              IconButton(
+                icon: const Icon(Icons.remove_circle, color: Colors.red),
+                onPressed: () {
+                  _showRemoveConfirmationDialog(
+                    addOnKey: addOn.key,
+                    itemId: item['id'],
+                  );
+                },
+              ),
+            ],
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  void _showRemoveConfirmationDialog(
+      {required String addOnKey, required String itemId}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Add-on'),
+          content:
+              Text('Are you sure you want to remove $addOnKey from this item?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _removeAddOnFromFirestore(addOnKey: addOnKey, itemId: itemId);
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _removeAddOnFromFirestore({
+    required String addOnKey,
+    required String itemId,
+  }) async {
+    try {
+      final firestoreFieldKey = addOnFieldMapping[addOnKey];
+
+      if (firestoreFieldKey == null) {
+        print('Error: No Firestore key found for add-on "$addOnKey"');
+        return;
+      }
+
+      // Fetch the current total from Firestore before removing the add-on
+      final cartDocRef = FirebaseFirestore.instance
+          .collection('customer')
+          .doc(widget.uid)
+          .collection('cart')
+          .doc(itemId);
+
+      final cartDoc = await cartDocRef.get();
+      if (cartDoc.exists) {
+        double currentTotal = cartDoc['total'] ?? 0.0;
+
+        // Subtract the price of the add-on from the total
+        double addOnPrice = addOnPrices[addOnKey] ?? 0.0;
+        double newTotal = currentTotal - addOnPrice;
+
+        // Update the Firestore field to false (remove the add-on)
+        await cartDocRef.update({firestoreFieldKey: false, 'total': newTotal});
+
+        // Update the local state
+        setState(() {
+          final itemIndex =
+              cartItems.indexWhere((item) => item['id'] == itemId);
+          if (itemIndex != -1) {
+            cartItems[itemIndex][firestoreFieldKey] =
+                false; // Modify the field locally
+            cartItems[itemIndex]['total'] = newTotal; // Update total locally
+          }
+        });
+
+        print('Add-on "$addOnKey" removed successfully!');
+      }
+    } catch (e) {
+      print('Error removing add-on "$addOnKey": $e');
+    }
+  }
+
+  Widget _buildDismissBackground() {
+    return Container(
+      color: Colors.red,
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: const Icon(Icons.delete, color: Colors.white),
+    );
+  }
+
+  Widget _buildSelectedItemCard(String selectedItemName) {
+    return FutureBuilder<DocumentSnapshot?>(
+      future: _fetchProductType(selectedItemName),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingCard();
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return _buildErrorCard(selectedItemName);
+        }
+
+        final document = snapshot.data!;
+        final productType = document['productType'] ?? 'Unknown';
+        final extraInfo = productType == 'Milk Tea'
+            ? 'Size: Regular'
+            : productType == 'Takoyaki'
+                ? 'Quantity: 4 pcs'
+                : 'No extra info available';
+
+        return _buildCardContent(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(selectedItemName,
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+              const SizedBox(height: 4),
+              Text(extraInfo,
+                  style: const TextStyle(fontSize: 16, color: Colors.white70)),
+              const SizedBox(height: 8),
+              Text('Add-on Price: Free',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6E473B))),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return _buildCardContent(const Center(child: CircularProgressIndicator()));
+  }
+
+  Widget _buildErrorCard(String selectedItemName) {
+    return _buildCardContent(
+      Text('Product type for "$selectedItemName" not found',
+          style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
+    );
+  }
+
+  Widget _buildProductInfoCard(
+      DocumentSnapshot snapshot, String selectedItemName) {
+    final productType = snapshot['productType'] ?? 'Unknown';
+    final extraInfo = productType == 'Milk Tea'
+        ? 'Size: Regular'
+        : (productType == 'Takoyaki' ? 'Quantity: 4 pc' : null);
+    return _buildCardContent(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(selectedItemName,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+          if (extraInfo != null) _buildInfoText(extraInfo, isBold: true),
+          _buildInfoText('Total: Free',
+              isBold: true, color: const Color(0xFF6E473B)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardContent(Widget content) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Card(
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: const Color(0xFF6E473B),
+        child: SizedBox(
+          width: double.infinity, // Ensures the card takes the full width
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: content,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoText(String text,
+      {bool isBold = false, Color color = Colors.white}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Text(
+        text,
+        style: TextStyle(
+            fontSize: 16,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: color),
+      ),
+    );
+  }
+
+  Widget _buildTotalAmount() {
+    final totalAmount =
+        cartItems.fold(0.0, (sum, item) => sum + (item['total'] ?? 0));
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total Amount',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('₱${totalAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6E473B))),
+            ],
           ),
           const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () =>
+                  _proceedToCheckout(selectedItemName: selectedItemName ?? ''),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Color(0xFF6E473B), // Use the first color in the palette
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Proceed to Checkout',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+            ),
+          ),
         ],
       ),
     );

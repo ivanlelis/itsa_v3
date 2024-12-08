@@ -73,22 +73,6 @@ class _PaymentMethodSectionState extends State<PaymentMethodSection> {
               ),
             ),
           ),
-          const Divider(),
-          ListTile(
-            title: const Text('PayPal'), // Added PayPal option
-            trailing: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.paymentMethod == 'PayPal'
-                    ? Colors.green
-                    : Colors.grey,
-              ),
-              onPressed: () => _handlePaymentMethodChange('PayPal'),
-              child: Text(
-                widget.paymentMethod == 'PayPal' ? 'Selected' : 'Select',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
         ],
       ),
     );

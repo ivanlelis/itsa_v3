@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:itsa_food_app/stripe/stripe_service.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<dynamic> cartItems;
@@ -128,7 +127,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     }
   }
 
-  void _onConfirmPaymentPressed() async {
+  void _onConfirmPaymentPressed() {
     if ((widget.orderType.toLowerCase() == 'delivery' ||
             widget.orderType.toLowerCase() == 'pickup') &&
         widget.paymentMethod.toLowerCase() == 'gcash' &&
@@ -136,7 +135,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       // If order type is delivery or pickup, payment method is GCash, and no receipt is attached, show an error
       _showErrorDialog(
           'Please attach your payment receipt before confirming the payment.');
-      await _onPaymentSuccess();
     } else {
       // No need to pass selectedItemName anymore, use the class-level variable directly
       _createOrder(_receiptImage);
@@ -166,7 +164,9 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
   Future<void> _createOrder(File? paymentReceiptImage) async {
     String orderID = _generateOrderID();
-    String documentName = orderID;
+    String documentName = widget.selectedItemName == null
+        ? orderID
+        : "$orderID"; // Access widget.selectedItemName
 
     // Use the current date and time in the Philippines
     DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));
@@ -225,7 +225,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         if (widget.selectedItemName != null)
           'exBundle': widget.selectedItemName, // Use widget.selectedItemName
         'branchID': widget.branchID, // Add branchID to the order data
-        'userAddress': widget.userAddress,
       };
 
       // Step 3: Create the order in Firestore
@@ -629,16 +628,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     await batch.commit();
   }
 
-  Future<void> _onPaymentSuccess() async {
-    try {
-      await _deleteCart(); // Deletes the cart
-
-      _showPaymentSuccessModal();
-    } catch (e) {
-      _showErrorDialog("message");
-    }
-  }
-
   void _showPaymentSuccessModal() {
     if (!mounted) return; // Check if the widget is still mounted
     showModalBottomSheet(
@@ -731,20 +720,20 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Cart Items
             _buildSectionTitle('Cart Items'),
-            _buildCartItems(
-                widget.selectedItemName ?? '', widget.branchID ?? ''),
+            _buildCartItems(widget.selectedItemName ?? '',
+                widget.branchID ?? ''), // Pass selectedItemName here
 
             SizedBox(height: 20),
 
             // Delivery and Payment Details
             _buildSectionTitle('Order & Payment Details'),
-            _buildDetailsRow('Delivery Type:', widget.deliveryType),
+            _buildDetailsRow('Order Type:', widget.deliveryType),
             _buildDetailsRow('Payment Method:', widget.paymentMethod),
             if (widget.voucherCode.isNotEmpty) ...[
               _buildDetailsRow('Voucher Code:', widget.voucherCode),
             ],
-            _buildDetailsRow('Total Amount:',
-                'PHP ${widget.totalAmount.toStringAsFixed(2)}'),
+            _buildDetailsRow(
+                'Total Amount:', '₱${widget.totalAmount.toStringAsFixed(2)}'),
 
             SizedBox(height: 20),
 
@@ -760,7 +749,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Order Information
             _buildSectionTitle('Order Information'),
-            _buildDetailsRow('Order Method:', widget.orderType),
+            _buildDetailsRow('Order Type:', widget.orderType),
 
             SizedBox(height: 30),
 
@@ -774,30 +763,15 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             SizedBox(height: 30),
 
-            // Confirm Payment Button (always visible)
+            // Confirm Payment Button
             ElevatedButton(
-              onPressed: () async {
-                try {
-                  if (widget.paymentMethod.toLowerCase() == 'gcash') {
-                    // Ensure receipt is attached for GCash
-                    if (_receiptImage == null) {
-                      _showErrorDialog(
-                          'Please attach your payment receipt before confirming the payment.');
-                      return;
-                    }
-                    print("Processing payment via GCash...");
-                    await _createOrder(_receiptImage);
-                  } else if (widget.paymentMethod.toLowerCase() == 'cash') {
-                    // Handle cash payment
-                    print("Processing payment via Cash...");
-                    await _createOrder(null);
-                  }
-                } catch (e) {
-                  print("Error during payment process: $e");
-                }
+              onPressed: () {
+                // No need to pass selectedItemName anymore
+                _onConfirmPaymentPressed();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF6E473B),
+                backgroundColor:
+                    Color(0xFF6E473B), // Set button color to #A78D78
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -808,10 +782,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.white, // White text for button
                 ),
               ),
-            ),
+            )
           ],
         ),
       ),
@@ -988,6 +962,36 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             ),
                           ),
                         ),
+                        if (ingredients.isNotEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Ingredients:',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  ...ingredients.map<Widget>((ingredient) {
+                                    final ingredientName =
+                                        ingredient['name'] ?? 'Unknown';
+                                    final ingredientQuantity =
+                                        ingredient['quantity'] ?? 'N/A';
+                                    return Text(
+                                      '- $ingredientName: $ingredientQuantity',
+                                      style: const TextStyle(fontSize: 14),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ],

@@ -202,10 +202,55 @@ class _CustomAppBarState extends State<CustomAppBar> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.shopping_cart,
-              color: Colors.white), // White cart icon
-          onPressed: widget.onCartPressed,
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('customer')
+              .doc(widget.uid)
+              .collection('cart')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return IconButton(
+                icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                onPressed: widget.onCartPressed,
+              );
+            }
+
+            int itemCount = snapshot.data!.docs.length;
+
+            return Stack(
+              children: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                  onPressed: widget.onCartPressed,
+                ),
+                if (itemCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$itemCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
