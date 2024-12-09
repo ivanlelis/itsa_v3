@@ -382,7 +382,7 @@ class _MainCartState extends State<MainCart> {
               ),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }

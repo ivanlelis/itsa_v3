@@ -130,17 +130,62 @@ class _RiderDashboardState extends State<RiderDashboard> {
     final permissionGranted = await _locationService.requestPermission();
     if (permissionGranted == PermissionStatus.granted) {
       _locationService.changeSettings(
-        accuracy: LocationAccuracy.high, // Use high accuracy
-        interval: 1000, // Update location every 1 second
+        accuracy: LocationAccuracy.high, // High accuracy for better results
+        interval: 1000, // Location updates every 1 second
       );
 
       _locationService.onLocationChanged.listen((locationData) {
         setState(() {
           _currentLocation = locationData;
-          _updateCurrentLocationMarker();
+          _updateCurrentLocationMarker(); // Update marker on the map
         });
+
+        // Check if the user is within the allowed area (Dasmariñas)
+        if (_currentLocation != null) {
+          _checkIfInAllowedArea(_currentLocation!);
+        }
       });
     }
+  }
+
+  void _checkIfInAllowedArea(LocationData location) {
+    // Define the latitude and longitude boundaries of Dasmariñas
+    const double dasmarinasMinLat = 14.2853;
+    const double dasmarinasMaxLat = 14.3581;
+    const double dasmarinasMinLng = 120.9203;
+    const double dasmarinasMaxLng = 120.9917;
+
+    // Check if the user is outside the allowed area
+    if (location.latitude! < dasmarinasMinLat ||
+        location.latitude! > dasmarinasMaxLat ||
+        location.longitude! < dasmarinasMinLng ||
+        location.longitude! > dasmarinasMaxLng) {
+      _showUnavailableDialog();
+    }
+  }
+
+  void _showUnavailableDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissal by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Service Unavailable"),
+          content: Text(
+              "Orders are currently unavailable in your area. Please log in again in your designated area to view orders."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushReplacementNamed(
+                    context, '/login'); // Redirect to login
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _updateCurrentLocationMarker() {

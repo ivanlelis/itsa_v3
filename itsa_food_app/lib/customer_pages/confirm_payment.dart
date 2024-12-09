@@ -166,7 +166,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     String orderID = _generateOrderID();
     String documentName = widget.selectedItemName == null
         ? orderID
-        : "$orderID"; // Access widget.selectedItemName
+        : orderID; // Access widget.selectedItemName
 
     // Use the current date and time in the Philippines
     DateTime now = DateTime.now().toUtc().add(Duration(hours: 8));

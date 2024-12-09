@@ -5,7 +5,7 @@ import 'package:itsa_food_app/admin_pages/view_user_ui.dart';
 class ViewUser extends StatelessWidget {
   final String userName;
 
-  const ViewUser({Key? key, required this.userName}) : super(key: key);
+  const ViewUser({super.key, required this.userName});
 
   Future<Map<String, dynamic>?> getUserData(String userName) async {
     try {

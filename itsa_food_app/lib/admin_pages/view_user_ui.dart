@@ -5,10 +5,10 @@ class UserDetailsUI extends StatelessWidget {
   final Map<String, dynamic> userData;
 
   const UserDetailsUI({
-    Key? key,
+    super.key,
     required this.userName,
     required this.userData,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

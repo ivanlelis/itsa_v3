@@ -351,7 +351,7 @@ class _ProductViewState extends State<ProductView> {
             },
           ),
         );
-      }).toList()
+      })
     ];
   }
 
