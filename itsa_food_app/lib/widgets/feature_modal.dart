@@ -4,7 +4,7 @@ import 'modify_feature.dart';
 
 class FeatureProductModal {
   // Static method to show the feature product modal
-  static void showFeatureModal(BuildContext context) {
+  static void showFeatureModal(BuildContext context, String userName) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -12,7 +12,8 @@ class FeatureProductModal {
       builder: (context) {
         return GestureDetector(
           onVerticalDragUpdate: (_) {}, // Preventing the modal from closing
-          child: _FeatureProductModalContent(),
+          child: _FeatureProductModalContent(
+              userName: userName), // Pass userName here
         );
       },
     );
@@ -20,6 +21,10 @@ class FeatureProductModal {
 }
 
 class _FeatureProductModalContent extends StatefulWidget {
+  final String userName;
+
+  _FeatureProductModalContent({required this.userName});
+
   @override
   _FeatureProductModalContentState createState() =>
       _FeatureProductModalContentState();
@@ -67,7 +72,7 @@ class _FeatureProductModalContentState
                   "",
                   "By modifying the parameters here, you can change the recommended parameters to your liking",
                 ),
-                FeatureConfigPage(),
+                FeatureConfigPage(userName: widget.userName),
               ],
             ),
           ),
@@ -132,7 +137,6 @@ class _FeatureProductModalContentState
       ),
     );
   }
-
 
   Widget _buildPageContent(String title, String description) {
     return Padding(

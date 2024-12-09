@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FeatureConfigPage extends StatefulWidget {
-  const FeatureConfigPage({super.key});
+  final String userName;
+
+  const FeatureConfigPage({super.key, required this.userName});
 
   @override
   _FeatureConfigPageState createState() => _FeatureConfigPageState();
@@ -139,25 +141,66 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
   }
 
   Future<void> fetchMostOrderedProduct() async {
-    productCount.clear(); // Clear existing data before fetching
-    QuerySnapshot customerSnapshot =
-        await FirebaseFirestore.instance.collection('customer').get();
+    productCount.clear(); // Clear the product count map before fetching
+    print("Starting to fetch customers and their orders...");
+
+    // Determine the branch based on the widget.userName (from FeatureConfigPage)
+    String branchID = '';
+    if (widget.userName == "Main Branch Admin") {
+      branchID = "branch 1";
+    } else if (widget.userName == "Sta. Cruz II Admin") {
+      branchID = "branch 2";
+    } else if (widget.userName == "San Dionisio Admin") {
+      branchID = "branch 3";
+    } else {
+      print("Unknown user name: ${widget.userName}");
+      return;
+    }
+
+    // Fetch customers from the relevant branch
+    QuerySnapshot customerSnapshot = await FirebaseFirestore.instance
+        .collection('customer')
+        .where('branchID', isEqualTo: branchID) // Filter by branchID
+        .get();
+
+    if (customerSnapshot.docs.isEmpty) {
+      print("No customers found for $branchID.");
+      return;
+    }
 
     for (var customerDoc in customerSnapshot.docs) {
+      print("Fetching orders for customer: ${customerDoc.id}");
+
+      // Fetch all orders for the current customer
       QuerySnapshot orderSnapshot =
           await customerDoc.reference.collection('orders').get();
 
       for (var orderDoc in orderSnapshot.docs) {
-        List<dynamic> products = orderDoc['productNames'] ?? [];
+        print("Processing order: ${orderDoc.id}");
+
+        // Extract the products array from the order document
+        List<dynamic> products = orderDoc['products'] ?? [];
         for (var product in products) {
-          productCount[product] = (productCount[product] ?? 0) + 1;
+          // Ensure productName exists in the product object
+          String? productName = product['productName'];
+          if (productName != null) {
+            // Increment the count for this productName
+            productCount[productName] = (productCount[productName] ?? 0) + 1;
+            print(
+                "Product found: $productName | Current count: ${productCount[productName]}");
+          } else {
+            print("Warning: Product name is missing in order: ${orderDoc.id}");
+          }
         }
       }
     }
 
+    // Find the most ordered product
     String? mostOrdered;
     int maxCount = 0;
+    print("\nFinal product counts:");
     productCount.forEach((product, count) {
+      print("- $product: $count");
       if (count > maxCount) {
         mostOrdered = product;
         maxCount = count;
@@ -165,26 +208,57 @@ class _FeatureConfigPageState extends State<FeatureConfigPage>
     });
 
     setState(() {
-      mostOrderedProduct = mostOrdered;
+      mostOrderedProduct = mostOrdered; // Update the most ordered product
     });
+
+    print("\nMost ordered product: $mostOrdered | Orders: $maxCount");
 
     // Fetch product details for the most ordered product
     if (mostOrderedProduct != null) {
-      fetchProductDetails(mostOrderedProduct!);
+      await fetchProductDetails(mostOrderedProduct!);
+      print(
+          "\nDetails fetched for the most ordered product: $mostOrderedProduct");
+    } else {
+      print("\nNo products found in the orders.");
     }
   }
 
   Future<void> fetchProductDetails(String productName) async {
-    QuerySnapshot productSnapshot =
-        await FirebaseFirestore.instance.collection('products').get();
-
-    for (var productDoc in productSnapshot.docs) {
-      if (productDoc['productName'] == productName) {
-        setState(() {
-          productDetails = productDoc.data() as Map<String, dynamic>;
-        });
-        break; // Stop once we find the product
+    try {
+      // Determine the correct collection based on the userName
+      String collectionName = '';
+      if (widget.userName == "Main Branch Admin") {
+        collectionName = "products";
+      } else if (widget.userName == "Sta. Cruz II Admin") {
+        collectionName = "products_branch1";
+      } else if (widget.userName == "San Dionisio Admin") {
+        collectionName = "products_branch2";
+      } else {
+        print("Unknown user name: ${widget.userName}");
+        return;
       }
+
+      // Query the correct collection to find the document with the matching productName
+      QuerySnapshot productSnapshot = await FirebaseFirestore.instance
+          .collection(collectionName)
+          .where('productName', isEqualTo: productName)
+          .limit(1) // Limit to 1 result for efficiency
+          .get();
+
+      if (productSnapshot.docs.isNotEmpty) {
+        // Extract the product details from the matching document
+        setState(() {
+          productDetails =
+              productSnapshot.docs.first.data() as Map<String, dynamic>;
+        });
+
+        print("Product details fetched successfully for: $productName");
+      } else {
+        print(
+            "No product found in '$collectionName' collection with productName: $productName");
+      }
+    } catch (e) {
+      print("Error fetching product details: $e");
     }
   }
 

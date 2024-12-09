@@ -212,23 +212,20 @@ class _FeatureProductState extends State<FeatureProduct> {
                                   // Modify Feature Button (bottom left)
                                   ElevatedButton.icon(
                                     onPressed: () {
-                                      // Trigger the feature modal when the modify button is clicked
+                                      // Pass userName to FeatureProductModal
                                       FeatureProductModal.showFeatureModal(
-                                          context);
+                                          context, widget.userName);
                                     },
-                                    icon: const Icon(Icons.edit,
-                                        size: 16), // Smaller icon size
+                                    icon: const Icon(Icons.edit, size: 16),
                                     label: const Text(
                                       "Modify    ",
-                                      style: TextStyle(
-                                          fontSize: 14), // Smaller font size
+                                      style: TextStyle(fontSize: 14),
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF6E473B),
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(
-                                          vertical: 8,
-                                          horizontal: 14), // Reduced padding
+                                          vertical: 8, horizontal: 14),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
