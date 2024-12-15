@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:itsa_food_app/customer_pages/order_tracking.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final List<dynamic> cartItems;
@@ -655,7 +656,13 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context); // Close modal
-                      // Navigate to Track Order page (you might need to create this page)
+                      // Navigate to Track Order page and pass isRiderAvailable
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrderTracking(),
+                        ),
+                      );
                     },
                     child: Text('Track Order', style: TextStyle(fontSize: 16)),
                   ),
@@ -727,7 +734,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Delivery and Payment Details
             _buildSectionTitle('Order & Payment Details'),
-            _buildDetailsRow('Order Type:', widget.deliveryType),
+            _buildDetailsRow('Delivery Type:', widget.deliveryType),
             _buildDetailsRow('Payment Method:', widget.paymentMethod),
             if (widget.voucherCode.isNotEmpty) ...[
               _buildDetailsRow('Voucher Code:', widget.voucherCode),
@@ -749,7 +756,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
 
             // Order Information
             _buildSectionTitle('Order Information'),
-            _buildDetailsRow('Order Type:', widget.orderType),
+            _buildDetailsRow('Order Mode:', widget.orderType),
 
             SizedBox(height: 30),
 

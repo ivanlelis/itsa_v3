@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/login/login.dart';
 import 'package:itsa_food_app/sign_up/register_address.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class CustomerSignUp extends StatefulWidget {
   const CustomerSignUp({super.key});
@@ -17,9 +18,13 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _nearestBranchController =
-      TextEditingController(); // New controller
+      TextEditingController();
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   String? _message; // Error message or notification
 
@@ -37,6 +42,7 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     String email = _emailController.text.trim();
     String mobileNumber = _mobileNumberController.text.trim();
     String password = _passwordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
     String address = _addressController.text.trim();
     String nearestBranch = _nearestBranchController.text.trim();
 
@@ -45,6 +51,23 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
 
     if (mobileNumber.startsWith('+63')) {
       mobileNumber = mobileNumber.substring(3); // Strip "+63"
+    }
+
+    // Mobile number validation
+    if (!RegExp(r'^09\d{9}$').hasMatch(mobileNumber)) {
+      Fluttertoast.showToast(
+        msg: "Invalid number!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      setState(() {
+        _message = "Passwords do not match.";
+      });
+      return;
     }
 
     setState(() {
@@ -91,7 +114,6 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
     }
   }
 
-// Helper function to format the nearestBranch
   String _formatNearestBranch(String branchName) {
     switch (branchName) {
       case "Sta. Lucia":
@@ -130,8 +152,8 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                   // Logo
                   Image.asset(
                     'assets/images/logo.png',
-                    height: 200,
-                    width: 200,
+                    height: 130,
+                    width: 130,
                   ),
                   const SizedBox(height: 20),
                   // Input Fields
@@ -169,12 +191,9 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
                   const SizedBox(height: 10),
                   _buildMobileNumberField(),
                   const SizedBox(height: 10),
-                  _buildTextField(
-                    controller: _passwordController,
-                    hintText: 'Password',
-                    obscureText: true,
-                    hasError: _errors["password"]!,
-                  ),
+                  _buildPasswordField(),
+                  const SizedBox(height: 10),
+                  _buildConfirmPasswordField(),
                   const SizedBox(height: 10),
                   // Error Message Styling (below the last field)
                   if (_message != null)
@@ -272,6 +291,57 @@ class _CustomerSignUpState extends State<CustomerSignUp> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: !_isPasswordVisible,
+      decoration: InputDecoration(
+        hintText: 'Password',
+        filled: true,
+        fillColor: Colors.white.withOpacity(1),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() {
+              _isPasswordVisible = !_isPasswordVisible;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+
+  // Build confirm password field with toggle visibility icon
+  Widget _buildConfirmPasswordField() {
+    return TextFormField(
+      controller: _confirmPasswordController,
+      obscureText: !_isConfirmPasswordVisible,
+      decoration: InputDecoration(
+        hintText: 'Confirm Password',
+        filled: true,
+        fillColor: Colors.white.withOpacity(1),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() {
+              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
       ),
     );
   }

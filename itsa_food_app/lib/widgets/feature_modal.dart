@@ -23,7 +23,7 @@ class FeatureProductModal {
 class _FeatureProductModalContent extends StatefulWidget {
   final String userName;
 
-  _FeatureProductModalContent({required this.userName});
+  const _FeatureProductModalContent({required this.userName});
 
   @override
   _FeatureProductModalContentState createState() =>

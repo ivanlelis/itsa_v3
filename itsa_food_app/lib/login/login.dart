@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
+  bool _isPasswordVisible = false;
   String? _errorMessage;
   bool _isLoading = false;
 
@@ -344,15 +344,25 @@ class _LoginPageState extends State<LoginPage> {
                               hintText: "Password",
                               filled: true,
                               fillColor: Colors.white,
-                              suffixIcon: _hasError
-                                  ? Icon(Icons.error, color: Colors.red)
-                                  : null,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
                                 borderSide: BorderSide.none,
                               ),
                             ),
-                            obscureText: true,
+                            obscureText: !_isPasswordVisible,
                             onChanged: (value) {
                               if (_hasError) {
                                 setState(() {

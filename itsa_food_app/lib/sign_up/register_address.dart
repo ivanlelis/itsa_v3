@@ -200,7 +200,7 @@ class _RegisterAddressState extends State<RegisterAddress> {
         builder: (context) => AlertDialog(
           title: const Text("Service Unavailable"),
           content: const Text(
-              "Sorry, the app doesn't currently offer services in that area."),
+              "Sorry, there are no stores available in your area."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
