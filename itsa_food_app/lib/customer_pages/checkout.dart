@@ -53,6 +53,7 @@ class _CheckoutState extends State<Checkout>
   double originalTotalAmount = 0.0;
   double totalAmount = 0.0;
   String? orderType;
+  late String currentAddress;
 
   @override
   void initState() {
@@ -93,6 +94,8 @@ class _CheckoutState extends State<Checkout>
             : "Pickup"; // Update based on selected tab
       });
     });
+
+    currentAddress = widget.userAddress ?? '';
   }
 
   @override
@@ -276,13 +279,19 @@ class _CheckoutState extends State<Checkout>
                   child: ListView(
                     children: [
                       AddressSection(
-                        userAddress: widget.userAddress ?? '',
+                        userAddress: currentAddress,
                         userName: widget.userName,
                         emailAddress: widget.emailAddress,
                         email: widget.email,
                         uid: widget.uid,
                         latitude: widget.latitude,
                         longitude: widget.longitude,
+                        onAddressUpdated: (updatedAddress) {
+                          // Update the address when returned from EditAddress
+                          setState(() {
+                            currentAddress = updatedAddress;
+                          });
+                        },
                       ),
                       const SizedBox(height: 16),
                       DeliveryTypeSection(

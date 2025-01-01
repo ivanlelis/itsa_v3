@@ -758,6 +758,11 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
             _buildSectionTitle('Order Information'),
             _buildDetailsRow('Order Mode:', widget.orderType),
 
+            SizedBox(height: 20),
+
+            _buildSectionTitle('Reward Points'),
+            _buildPointsSection(widget.totalAmount),
+
             SizedBox(height: 30),
 
             // Show payment receipt section if order type is "delivery" or "pickup" and payment method is "GCash"
@@ -796,6 +801,43 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPointsSection(double totalAmount) {
+    // Define your points logic here
+    int pointsEarned =
+        (totalAmount / 10).floor(); // Example: 1 point per ₱10 spent
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'You will earn:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF6E473B),
+          ),
+        ),
+        SizedBox(height: 5),
+        Text(
+          '$pointsEarned points',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
+        ),
+        SizedBox(height: 5),
+        Text(
+          'Use your points to redeem discounts or rewards in the future!',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 
@@ -975,28 +1017,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                                 const EdgeInsets.only(left: 16.0, bottom: 4.0),
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Ingredients:',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  ...ingredients.map<Widget>((ingredient) {
-                                    final ingredientName =
-                                        ingredient['name'] ?? 'Unknown';
-                                    final ingredientQuantity =
-                                        ingredient['quantity'] ?? 'N/A';
-                                    return Text(
-                                      '- $ingredientName: $ingredientQuantity',
-                                      style: const TextStyle(fontSize: 14),
-                                    );
-                                  }),
-                                ],
-                              ),
                             ),
                           ),
                       ],

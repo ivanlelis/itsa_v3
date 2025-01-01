@@ -41,6 +41,13 @@ class _EditAddressState extends State<EditAddress> {
   Timer? _debounce;
   String _currentAddress = "";
   bool _isLoading = true;
+  late Set<Marker> _markers;
+
+  final List<String> branchPlusCodes = [
+    '8XQ2+94H, Dasmariñas, Cavite',
+    '8X85+44, Dasmariñas, Cavite',
+    '8XQ4+228, Dasmariñas, Cavite',
+  ];
 
   final String _mapStyle = '''[{
       "featureType": "all",
@@ -69,10 +76,54 @@ class _EditAddressState extends State<EditAddress> {
   @override
   void initState() {
     super.initState();
+    _markers = {};
+    _setBranchMarkers();
 
     // Log the initial user address for debugging
     print("User Address: ${widget.userAddress}");
     _getCurrentLocation();
+  }
+
+  Future<void> _setBranchMarkers() async {
+    // Map branch plus codes to branch names
+    final branchDetails = {
+      '8XQ2+94H, Dasmariñas, Cavite': 'Sta. Lucia Branch',
+      '8X85+44, Dasmariñas, Cavite': 'Sta. Cruz II Branch',
+      '8XQ4+228, Dasmariñas, Cavite': 'San Dionisio Branch',
+    };
+
+    for (var branchPlusCode in branchDetails.keys) {
+      final coordinates = await _getCoordinatesFromPlusCode(branchPlusCode);
+      if (coordinates != null) {
+        setState(() {
+          _markers.add(Marker(
+            markerId: MarkerId(branchPlusCode),
+            position: coordinates,
+            infoWindow: InfoWindow(title: branchDetails[branchPlusCode]),
+          ));
+        });
+      }
+    }
+  }
+
+  Future<LatLng?> _getCoordinatesFromPlusCode(String plusCode) async {
+    final apiKey = 'AIzaSyAvT85VgPqti1JQEr_ca4cV4bZ8xuKrnXA';
+    final formattedPlusCode = Uri.encodeComponent(plusCode.trim());
+    final url =
+        'https://maps.googleapis.com/maps/api/geocode/json?address=$formattedPlusCode&key=$apiKey';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['results'] != null && data['results'].isNotEmpty) {
+        final location = data['results'][0]['geometry']['location'];
+        final lat = location['lat'];
+        final lng = location['lng'];
+        return LatLng(lat, lng);
+      }
+    }
+    return null;
   }
 
   Future<void> _getCurrentLocation() async {
@@ -160,6 +211,7 @@ class _EditAddressState extends State<EditAddress> {
                       target: _selectedLocation!,
                       zoom: 14.0,
                     ),
+                    markers: _markers,
                     onMapCreated: (GoogleMapController controller) async {
                       _controller = controller;
                       _controller!.setMapStyle(_mapStyle);
@@ -214,7 +266,7 @@ class _EditAddressState extends State<EditAddress> {
                     left: screenWidth * 0.04,
                     right: screenWidth * 0.04,
                     child: Container(
-                      height: screenHeight * 0.15,
+                      height: screenHeight * 0.16,
                       padding: EdgeInsets.all(screenWidth * 0.04),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -259,9 +311,39 @@ class _EditAddressState extends State<EditAddress> {
                     right: screenWidth * 0.04,
                     child: ElevatedButton(
                       onPressed: () async {
-                        await _saveAddressToFirestore();
-                        print(
-                            "New address saved: ${_selectedLocation!.latitude}, ${_selectedLocation!.longitude}");
+                        if (!_currentAddress.contains("Dasmariñas")) {
+                          // Show the dialog if the address is not in Dasmariñas
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text(
+                                  "Address Not Supported",
+                                  style: TextStyle(fontSize: 22),
+                                ),
+                                content: Text(
+                                  "Sorry, there are no stores available in your selected address.",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pop(); // Close the dialog
+                                    },
+                                    child: Text("Close"),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          // Save the address if it is in Dasmariñas
+                          await _saveAddressToFirestore(); // Save the address
+                          Navigator.of(context).pop(
+                              _currentAddress); // Return the updated address
+                          print(
+                              "New address saved: ${_selectedLocation!.latitude}, ${_selectedLocation!.longitude}");
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         padding:
@@ -275,7 +357,9 @@ class _EditAddressState extends State<EditAddress> {
                       child: Text(
                         "Save this as your new address",
                         style: TextStyle(
-                            fontSize: screenWidth * 0.045, color: Colors.white),
+                          fontSize: screenWidth * 0.045,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),

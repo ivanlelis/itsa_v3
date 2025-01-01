@@ -49,6 +49,7 @@ class _ProfileViewState extends State<ProfileView> {
   final TextEditingController _emailController = TextEditingController();
   int _selectedIndex = 3; // Set the default to Profile (index 3)
   File? _pickedImage;
+  String? _mobileNumber;
 
   @override
   void initState() {
@@ -204,6 +205,35 @@ class _ProfileViewState extends State<ProfileView> {
     _userNameController.text = userProvider.currentUser?.userName ?? '';
     _emailController.text = userProvider.currentUser?.emailAddress ?? '';
 
+    // Fetch mobile number from Firestore
+    try {
+      if (userProvider.currentUser?.emailAddress != null) {
+        final emailAddress = userProvider.currentUser!.emailAddress;
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('customer')
+            .where('emailAddress', isEqualTo: emailAddress)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          final userDoc = querySnapshot.docs.first;
+          final mobileNumber = userDoc['mobileNumber'] as String;
+
+          // Update mobile number state or controller
+          setState(() {
+            _mobileNumber =
+                mobileNumber; // Update your state variable if needed
+          });
+        } else {
+          print('No document found for the given emailAddress.');
+        }
+      } else {
+        print('Email address is null.');
+      }
+    } catch (e) {
+      print('Error fetching mobile number: $e');
+    }
+
     setState(() {}); // Trigger a rebuild
   }
 
@@ -266,7 +296,6 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                 ],
               ),
-
               SizedBox(height: 8),
               Text(
                 currentUser?.userName ??
@@ -280,9 +309,7 @@ class _ProfileViewState extends State<ProfileView> {
                     'No Email', // Provide a default value
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
-
               SizedBox(height: 24),
-
               _buildEditableField(
                   'Name',
                   currentUser?.userName ??
@@ -290,7 +317,6 @@ class _ProfileViewState extends State<ProfileView> {
                       'Guest'
                           'No Name', // Default to 'No Name' if both are null
                   context),
-
               _buildEditableField(
                   'Email',
                   currentUser?.emailAddress ??
@@ -298,12 +324,11 @@ class _ProfileViewState extends State<ProfileView> {
                       'sample@email.com'
                           'No Email', // Default to 'No Email' if both are null
                   context),
-
               _buildEditableField(
-                  'Mobile Number',
-                  '0912345678', // You can customize this as needed
-                  context),
-              // Replace with actual mobile number if available
+                'Mobile Number',
+                _mobileNumber ?? 'Loading...', // Show fetched mobile number
+                context,
+              ),
               SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () async {

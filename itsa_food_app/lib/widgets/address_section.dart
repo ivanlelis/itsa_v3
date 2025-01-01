@@ -9,6 +9,7 @@ class AddressSection extends StatelessWidget {
   final String? uid;
   final double latitude;
   final double longitude;
+  final ValueChanged<String> onAddressUpdated;
 
   const AddressSection({
     super.key,
@@ -19,6 +20,7 @@ class AddressSection extends StatelessWidget {
     required this.uid,
     required this.latitude,
     required this.longitude,
+    required this.onAddressUpdated,
   });
 
   @override
@@ -39,7 +41,6 @@ class AddressSection extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Navigate to EditAddress screen
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -51,9 +52,13 @@ class AddressSection extends StatelessWidget {
                       uid: uid ?? '',
                       latitude: latitude,
                       longitude: longitude,
-                    ), // Navigate to EditAddress
+                    ),
                   ),
-                );
+                ).then((updatedAddress) {
+                  if (updatedAddress != null && updatedAddress is String) {
+                    onAddressUpdated(updatedAddress);
+                  }
+                });
               },
               child: const Text(
                 'Edit',
