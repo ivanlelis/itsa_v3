@@ -24,14 +24,17 @@ class OrderHistory extends StatefulWidget {
 
 class _OrderHistoryState extends State<OrderHistory> {
   bool _isDescending = true;
+  DateTime? _filterDate;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            const Text("Order History", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepPurple,
+        title: const Text(
+          "Order History",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF6E473B), // Updated color
         actions: [
           IconButton(
             icon: Icon(
@@ -43,6 +46,31 @@ class _OrderHistoryState extends State<OrderHistory> {
                 _isDescending = !_isDescending;
               });
             },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list, color: Colors.white),
+            onSelected: (value) {
+              setState(() {
+                final now = DateTime.now();
+                if (value == '7 Days') {
+                  _filterDate = now.subtract(const Duration(days: 7));
+                } else if (value == '14 Days') {
+                  _filterDate = now.subtract(const Duration(days: 14));
+                } else if (value == '30 Days') {
+                  _filterDate = now.subtract(const Duration(days: 30));
+                } else {
+                  _filterDate = null; // No filter
+                }
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: '7 Days', child: Text('Last 7 Days')),
+              const PopupMenuItem(
+                  value: '14 Days', child: Text('Last 14 Days')),
+              const PopupMenuItem(
+                  value: '30 Days', child: Text('Last 30 Days')),
+              const PopupMenuItem(value: 'All', child: Text('All')),
+            ],
           ),
         ],
       ),
@@ -62,9 +90,24 @@ class _OrderHistoryState extends State<OrderHistory> {
                 child:
                     Text("No orders found.", style: TextStyle(fontSize: 18)));
           }
+
+          // Filter orders based on the selected date range
+          final filteredDocs = _filterDate == null
+              ? snapshot.data!.docs
+              : snapshot.data!.docs.where((doc) {
+                  Timestamp timestamp = doc['timestamp'];
+                  return timestamp.toDate().isAfter(_filterDate!);
+                }).toList();
+
+          if (filteredDocs.isEmpty) {
+            return const Center(
+                child: Text("No orders found for this range.",
+                    style: TextStyle(fontSize: 18)));
+          }
+
           return ListView(
             padding: const EdgeInsets.all(10),
-            children: snapshot.data!.docs.map((doc) {
+            children: filteredDocs.map((doc) {
               String orderId = doc.id;
               Timestamp timestamp = doc['timestamp'];
               List<dynamic> productName = doc['products'];
