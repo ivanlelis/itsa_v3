@@ -6,6 +6,9 @@ import 'package:itsa_food_app/customer_pages/menu.dart';
 import 'package:itsa_food_app/main_home/customer_home.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
 import 'package:itsa_food_app/customer_pages/personalize_order.dart'; // Import the new file
+import 'package:itsa_food_app/widgets/customer_sidebar.dart';
+import 'package:itsa_food_app/customer_pages/main_cart.dart';
+import 'package:itsa_food_app/customer_pages/search_custom.dart';
 
 class SelectCustom extends StatefulWidget {
   final String? userName;
@@ -36,6 +39,7 @@ class SelectCustom extends StatefulWidget {
 }
 
 class _SelectCustomState extends State<SelectCustom> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 2; // Default index for "Build Your Meal"
 
   void _onItemTapped(int index) {
@@ -115,14 +119,41 @@ class _SelectCustomState extends State<SelectCustom> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: CustomAppBar(
-        scaffoldKey:
-            GlobalKey<ScaffoldState>(), // Replace with actual scaffoldKey
+        scaffoldKey: _scaffoldKey,
         onCartPressed: () {
-          print('Cart button pressed');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainCart(
+                userName: widget.userName,
+                emailAddress: widget.emailAddress,
+                imageUrl: widget.imageUrl,
+                uid: widget.uid,
+                email: widget.email,
+                userAddress: widget.userAddress,
+                latitude: widget.latitude,
+                longitude: widget.longitude,
+                branchID: widget.branchID,
+              ),
+            ),
+          );
         },
         userName: widget.userName,
         uid: widget.uid,
+      ),
+      drawer: Drawer(
+        child: Sidebar(
+          userName: widget.userName,
+          emailAddress: widget.emailAddress,
+          email: widget.email,
+          userAddress: widget.userAddress,
+          imageUrl: widget.imageUrl,
+          uid: widget.uid,
+          latitude: widget.latitude,
+          longitude: widget.longitude,
+        ),
       ),
       body: Column(
         children: [
@@ -135,7 +166,7 @@ class _SelectCustomState extends State<SelectCustom> {
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 120, // Fixed height for both buttons
+                    height: 120,
                     child: Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(
@@ -186,7 +217,7 @@ class _SelectCustomState extends State<SelectCustom> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: SizedBox(
-                    height: 120, // Fixed height for both buttons
+                    height: 120,
                     child: Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(
@@ -194,7 +225,6 @@ class _SelectCustomState extends State<SelectCustom> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          print("Personalize Order tapped");
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -237,9 +267,19 @@ class _SelectCustomState extends State<SelectCustom> {
               ],
             ),
           ),
-          // Add additional content to the body if needed, below the buttons
+          // Add the SearchCustom widget here
           Expanded(
-            child: Center(),
+            child: SearchCustom(
+              userName: widget.userName,
+              emailAddress: widget.emailAddress,
+              imageUrl: widget.imageUrl,
+              uid: widget.uid,
+              email: widget.email,
+              userAddress: widget.userAddress,
+              latitude: widget.latitude,
+              longitude: widget.longitude,
+              branchID: widget.branchID,
+            ),
           ),
         ],
       ),

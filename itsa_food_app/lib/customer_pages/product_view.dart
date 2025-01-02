@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/main_cart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
 class ProductView extends StatefulWidget {
   final String productName;
   final String imageUrl;
