@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/my_combos.dart';
+import 'package:itsa_food_app/customer_pages/view_combo.dart';
 
 class SearchCustom extends StatefulWidget {
   final String? userName;
@@ -170,7 +171,6 @@ class _SearchCustomState extends State<SearchCustom> {
                     ),
                   );
                 },
-                child: const Text('View My Combos'),
                 style: ElevatedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -179,6 +179,7 @@ class _SearchCustomState extends State<SearchCustom> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                child: const Text('View My Combos'),
               ),
             ),
           ],
@@ -187,13 +188,65 @@ class _SearchCustomState extends State<SearchCustom> {
     );
   }
 
-  void _onViewButtonPressed(String comboName) {
-    print('View button pressed for combo: $comboName');
-  }
+  void _onViewButtonPressed(String comboName) async {
+    try {
+      // Fetch combo details from Firestore
+      final customersRef = FirebaseFirestore.instance.collection('customer');
 
-  void _onViewMyCombosButtonPressed() {
-    // Handle the "View My Combos" button action
-    print('View My Combos button pressed');
-    // You can navigate to another screen or show more details here
+      // Iterate through all customer documents to find the combo
+      for (var customer
+          in await customersRef.get().then((value) => value.docs)) {
+        final combosRef = customer.reference.collection('combos');
+        final comboDoc = await combosRef
+            .where('comboName', isEqualTo: comboName)
+            .limit(1)
+            .get();
+
+        if (comboDoc.docs.isNotEmpty) {
+          final comboData = comboDoc.docs.first.data();
+          final description = comboData['description'] as String;
+
+          // Get product names (productName1 and productName2)
+          final productName1 = comboData['productName1'] as String;
+          final productName2 = comboData['productName2'] as String;
+
+          final tags = List<String>.from(comboData['tags'] as List<dynamic>);
+
+          // Show combo details in the bottom sheet
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: ViewCombo(
+                  comboName: comboName,
+                  description: description,
+                  productName1: productName1, // Pass productName1
+                  productName2: productName2, // Pass productName2
+                  tags: tags, // Pass tags
+                  branchID: widget.branchID ?? '',
+                ),
+              );
+            },
+          );
+
+          return; // Exit the loop once the combo is found
+        }
+      }
+
+      // Show a message if the combo was not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Combo "$comboName" not found.')),
+      );
+    } catch (e) {
+      print("Error fetching combo details: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch combo details.')),
+      );
+    }
   }
 }

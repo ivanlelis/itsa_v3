@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:intl/intl.dart';
 
 class SaveCombo extends StatefulWidget {
   final String? selectedProductID;
@@ -406,7 +407,6 @@ class _SaveComboState extends State<SaveCombo> {
               // Generate a comboID
               String comboID = generateComboID();
 
-              // Add the combo data to Firestore
               try {
                 // Reference to the current user's document inside "customer" collection
                 DocumentReference userDocRef = FirebaseFirestore.instance
@@ -414,16 +414,34 @@ class _SaveComboState extends State<SaveCombo> {
                     .doc(widget
                         .uid); // Get the current user's UID from the widget
 
-                // Add data to the "combos" collection in the current user's document
-                await userDocRef.collection('combos').add({
+                // Fetch product details for selectedProductID and selectedMilkTeaID
+                Map<String, String> productDetails =
+                    await fetchProductDetails(widget.selectedProductID);
+                Map<String, String> milkTeaDetails =
+                    await fetchProductDetails(widget.selectedMilkTeaID);
+
+                // Get the current local time in Philippine time zone (UTC+8)
+                final now = DateTime.now();
+                final philippinesTime = now.toUtc().add(Duration(hours: 8));
+                final formattedTimestamp =
+                    DateFormat('yyyy-MM-dd HH:mm:ss').format(philippinesTime);
+
+                // Add combo details with product names in the same document
+                await userDocRef.collection('combos').doc(comboID).set({
                   'comboID': comboID,
                   'comboName': comboNameController.text,
                   'tags': tags,
                   'description': descriptionController.text,
                   'visibility': visibility,
+                  'productName1':
+                      productDetails['productName'], // First product name
+                  'productName2':
+                      milkTeaDetails['productName'], // Second product name
+                  'createdAt':
+                      formattedTimestamp, // Save timestamp in local PH time
                 });
 
-                // Optionally, you can pop or show a success message
+                // Optionally, show a success message or pop the screen
                 Navigator.pop(context);
               } catch (e) {
                 // Handle any errors during the save process

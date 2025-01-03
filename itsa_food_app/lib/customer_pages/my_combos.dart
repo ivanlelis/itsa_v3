@@ -72,7 +72,7 @@ class _MyCombosState extends State<MyCombos> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: privateComboNames.isEmpty
-            ? const Center(child: Text('No private combos found.'))
+            ? const Center(child: Text('Loading...'))
             : ListView.builder(
                 itemCount: privateComboNames.length,
                 itemBuilder: (context, index) {
