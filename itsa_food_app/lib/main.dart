@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:itsa_food_app/customer_pages/edit_address.dart';
 import 'package:itsa_food_app/customer_pages/profile.dart';
+import 'package:itsa_food_app/customer_pages/redeem_points.dart';
 import 'package:itsa_food_app/onboarding/onboarding.dart';
 import 'package:itsa_food_app/services/firebase_service.dart';
 import 'package:itsa_food_app/home/home.dart';
@@ -197,6 +198,17 @@ class _MyAppState extends State<MyApp> {
           final args = ModalRoute.of(context)?.settings.arguments
               as Map<String, dynamic>?;
           return ClaimVouchers(
+            emailAddress: args?['emailAddress'] ?? '',
+            userName: args?['userName'] ?? '',
+            uid: args?['uid'] ?? '',
+            latitude: args?['latitude'] ?? 0.0,
+            longitude: args?['longitude'] ?? 0.0,
+          );
+        },
+        '/redeemRewards': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return RedeemPoints(
             emailAddress: args?['emailAddress'] ?? '',
             userName: args?['userName'] ?? '',
             uid: args?['uid'] ?? '',

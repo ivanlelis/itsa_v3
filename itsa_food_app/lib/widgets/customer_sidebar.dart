@@ -129,6 +129,18 @@ class _SidebarState extends State<Sidebar> {
                             arguments: args);
                       },
               ),
+              // Add the Redeem Rewards item here
+              _buildSidebarItem(
+                context,
+                icon: Icons.loyalty,
+                title: 'Redeem Rewards',
+                customColor: currentUser == null ? disabledColor : customColor,
+                onTap: currentUser == null
+                    ? null
+                    : () {
+                        Navigator.pushNamed(context, '/redeemRewards');
+                      },
+              ),
               _buildSidebarItem(
                 context,
                 icon: Icons.contact_mail,

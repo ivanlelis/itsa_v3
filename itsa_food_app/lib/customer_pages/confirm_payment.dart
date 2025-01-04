@@ -203,7 +203,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         paymentReceiptUrl = await snapshot.ref.getDownloadURL();
       }
 
-      // Step 2: Prepare the order data with quantity and branchID
+      // Step 2: Calculate points earned
+      int pointsEarned = (widget.totalAmount / 10).floor();
+
+      // Step 3: Prepare the order data
       Map<String, dynamic> orderData = {
         'deliveryType': widget.deliveryType,
         'orderID': orderID,
@@ -226,9 +229,10 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         if (widget.selectedItemName != null)
           'exBundle': widget.selectedItemName, // Use widget.selectedItemName
         'branchID': widget.branchID, // Add branchID to the order data
+        'earnedPoints': pointsEarned, // Add earnedPoints field
       };
 
-      // Step 3: Create the order in Firestore
+      // Step 4: Create the order in Firestore
       await FirebaseFirestore.instance
           .collection('customer')
           .doc(widget.uid)
@@ -236,13 +240,40 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
           .doc(documentName) // Use dynamic document name
           .set(orderData);
 
-      // Step 4: Create the notification in Firestore
+      // Step 5: Create the notification in Firestore
       await FirebaseFirestore.instance
           .collection('notifications')
           .doc(documentName) // Use dynamic document name
           .set(orderData);
 
-      // Step 5: Calculate raw material costs and save the transaction
+      // Step 6: Update points field in the customer document
+      DocumentReference customerDocRef =
+          FirebaseFirestore.instance.collection('customer').doc(widget.uid);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot customerSnapshot =
+            await transaction.get(customerDocRef);
+
+        if (!customerSnapshot.exists) {
+          // If the customer document doesn't exist, create it with initial points
+          transaction.set(customerDocRef, {
+            'points': pointsEarned, // Initialize points
+          });
+        } else {
+          // Safely access the data and check if the points field exists
+          Map<String, dynamic>? customerData =
+              customerSnapshot.data() as Map<String, dynamic>?;
+          int currentPoints =
+              (customerData != null && customerData.containsKey('points'))
+                  ? customerData['points']
+                  : 0; // Use 0 if the points field doesn't exist
+          transaction.update(customerDocRef, {
+            'points': currentPoints + pointsEarned, // Add the new points
+          });
+        }
+      });
+
+      // Other steps remain unchanged...
       List<Map<String, dynamic>> rawMatCostPerProd =
           await _calculateRawMatCosts(
               widget.cartItems.cast<Map<String, dynamic>>());
@@ -261,22 +292,19 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         'matCostPerProduct': rawMatCostPerProd,
       };
 
-      // Save the transaction data in the transactions collection and subcollection
       await FirebaseFirestore.instance
-          .collection('transactions') // Top-level collection
-          .doc('transactions') // Use a placeholder for the top-level document
-          .collection(transactionsSubCollectionName) // Subcollection
-          .doc(orderID) // Document created inside the subcollection
+          .collection('transactions')
+          .doc('transactions')
+          .collection(transactionsSubCollectionName)
+          .doc(orderID)
           .set(transactionData);
 
       await _updateDailySales(currentDate, totalProdCost);
       await _updateDailyNetProfit(currentDate, totalNetProfit);
 
-      // Step 6: Update stock and clear the cart
       await _updateStockFromCartItems();
       await _deleteCart();
 
-      // Step 7: Show success modal
       _showPaymentSuccessModal();
     } catch (e) {
       print('Error creating order: $e');
