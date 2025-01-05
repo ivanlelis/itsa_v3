@@ -43,28 +43,23 @@ class _SearchCustomState extends State<SearchCustom> {
 
   Future<void> _fetchComboNames() async {
     try {
-      // Reference to the 'customers' collection
       final customersRef = FirebaseFirestore.instance.collection('customer');
-
-      // Get all customer documents
       final customerDocs = await customersRef.get();
+      final newComboNames = <String>[];
 
-      // Loop through each customer document
       for (var customer in customerDocs.docs) {
-        // Reference to the 'combos' subcollection for each customer
         final combosRef = customer.reference.collection('combos');
-
-        // Query for combos where visibility == 'Public'
         final combosQuery =
             await combosRef.where('visibility', isEqualTo: 'Public').get();
 
-        // Add the combo names to the list
         for (var combo in combosQuery.docs) {
-          setState(() {
-            comboNames.add(combo['comboName']);
-          });
+          newComboNames.add(combo['comboName']);
         }
       }
+
+      setState(() {
+        comboNames = newComboNames;
+      });
     } catch (e) {
       print("Error fetching combo names: $e");
     }
@@ -85,7 +80,28 @@ class _SearchCustomState extends State<SearchCustom> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Refresh button placed inside the card
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Search Combos',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed:
+                              _fetchComboNames, // Fetch latest combos when pressed
+                          tooltip: 'Refresh',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     // Search Bar
                     TextField(
                       onChanged: (value) {
@@ -107,63 +123,59 @@ class _SearchCustomState extends State<SearchCustom> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Content goes here
+                    // Content
                     Expanded(
-                      child: _searchQuery.isEmpty
-                          ? ListView.builder(
-                              itemCount: comboNames.length,
-                              itemBuilder: (context, index) {
-                                return Card(
-                                  elevation: 4,
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: ListTile(
-                                      title: Text(
-                                        comboNames[index],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.visibility),
-                                        onPressed: () {
-                                          _onViewButtonPressed(
-                                              comboNames[index]);
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : ListView(
-                              children: [
-                                Center(
-                                  child: Text(
-                                    'Search results for: $_searchQuery',
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                ),
-                              ],
+                      child: ListView.builder(
+                        itemCount: _searchQuery.isEmpty
+                            ? comboNames.length
+                            : comboNames
+                                .where((name) => name
+                                    .toLowerCase()
+                                    .contains(_searchQuery.toLowerCase()))
+                                .length,
+                        itemBuilder: (context, index) {
+                          final filteredCombos = _searchQuery.isEmpty
+                              ? comboNames
+                              : comboNames
+                                  .where((name) => name
+                                      .toLowerCase()
+                                      .contains(_searchQuery.toLowerCase()))
+                                  .toList();
+                          return Card(
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: ListTile(
+                              title: Text(
+                                filteredCombos[index],
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.visibility),
+                                onPressed: () {
+                                  _onViewButtonPressed(filteredCombos[index]);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            // Positioned View My Combos button at the bottom left corner of the main card
+            // Positioned View My Combos button
             Positioned(
               bottom: 16,
               left: 16,
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigate to the MyCombos screen when the button is pressed
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -188,12 +200,35 @@ class _SearchCustomState extends State<SearchCustom> {
     );
   }
 
+  Widget _buildComboCard(String comboName) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        title: Text(
+          comboName,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.visibility),
+          onPressed: () {
+            _onViewButtonPressed(comboName);
+          },
+        ),
+      ),
+    );
+  }
+
   void _onViewButtonPressed(String comboName) async {
     try {
-      // Fetch combo details from Firestore
       final customersRef = FirebaseFirestore.instance.collection('customer');
 
-      // Iterate through all customer documents to find the combo
       for (var customer
           in await customersRef.get().then((value) => value.docs)) {
         final combosRef = customer.reference.collection('combos');
@@ -205,14 +240,10 @@ class _SearchCustomState extends State<SearchCustom> {
         if (comboDoc.docs.isNotEmpty) {
           final comboData = comboDoc.docs.first.data();
           final description = comboData['description'] as String;
-
-          // Get product names (productName1 and productName2)
           final productName1 = comboData['productName1'] as String;
           final productName2 = comboData['productName2'] as String;
-
           final tags = List<String>.from(comboData['tags'] as List<dynamic>);
 
-          // Show combo details in the bottom sheet
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -225,20 +256,19 @@ class _SearchCustomState extends State<SearchCustom> {
                 child: ViewCombo(
                   comboName: comboName,
                   description: description,
-                  productName1: productName1, // Pass productName1
-                  productName2: productName2, // Pass productName2
-                  tags: tags, // Pass tags
+                  productName1: productName1,
+                  productName2: productName2,
+                  tags: tags,
                   branchID: widget.branchID ?? '',
                 ),
               );
             },
           );
 
-          return; // Exit the loop once the combo is found
+          return;
         }
       }
 
-      // Show a message if the combo was not found
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Combo "$comboName" not found.')),
       );

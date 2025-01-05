@@ -12,6 +12,7 @@ class MyCombos extends StatefulWidget {
 
 class _MyCombosState extends State<MyCombos> {
   List<String> privateComboNames = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -45,21 +46,21 @@ class _MyCombosState extends State<MyCombos> {
             await combosRef.where('visibility', isEqualTo: 'Private').get();
 
         // Add the private combo names to the list
-        if (combosQuery.docs.isEmpty) {
-          print('No private combos found for this user.');
-        } else {
-          setState(() {
-            privateComboNames = combosQuery.docs.map((combo) {
-              // Log the combo and its visibility for debugging
-              print(
-                  'Combo: ${combo['comboName']} - Visibility: ${combo['visibility']}');
-              return combo['comboName'] as String;
-            }).toList();
-          });
-        }
+        setState(() {
+          privateComboNames = combosQuery.docs.map((combo) {
+            // Log the combo and its visibility for debugging
+            print(
+                'Combo: ${combo['comboName']} - Visibility: ${combo['visibility']}');
+            return combo['comboName'] as String;
+          }).toList();
+          isLoading = false; // Stop loading after fetching
+        });
       }
     } catch (e) {
       print("Error fetching private combos: $e");
+      setState(() {
+        isLoading = false; // Stop loading on error
+      });
     }
   }
 
@@ -71,29 +72,31 @@ class _MyCombosState extends State<MyCombos> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: privateComboNames.isEmpty
+        child: isLoading
             ? const Center(child: Text('Loading...'))
-            : ListView.builder(
-                itemCount: privateComboNames.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        privateComboNames[index],
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+            : privateComboNames.isEmpty
+                ? const Center(child: Text('No Saved Combos'))
+                : ListView.builder(
+                    itemCount: privateComboNames.length,
+                    itemBuilder: (context, index) {
+                      return Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        child: ListTile(
+                          title: Text(
+                            privateComboNames[index],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
       ),
     );
   }

@@ -10,14 +10,14 @@ class ViewCombo extends StatefulWidget {
   final String? branchID;
 
   const ViewCombo({
-    Key? key,
+    super.key,
     required this.comboName,
     required this.description,
     required this.productName1,
     required this.productName2,
     required this.tags,
     this.branchID,
-  }) : super(key: key);
+  });
 
   @override
   _ViewComboState createState() => _ViewComboState();

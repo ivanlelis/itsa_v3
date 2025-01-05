@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RedeemedRewardsScreen extends StatefulWidget {
+  const RedeemedRewardsScreen({super.key});
+
   @override
   _RedeemedRewardsScreenState createState() => _RedeemedRewardsScreenState();
 }

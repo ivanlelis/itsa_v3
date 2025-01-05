@@ -168,7 +168,7 @@ class _RedeemPointsState extends State<RedeemPoints> {
             ),
           ),
           child: Text(
-            isComingSoon ? '$rewardText - Coming Soon!' : '$rewardText',
+            isComingSoon ? '$rewardText - Coming Soon!' : rewardText,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
