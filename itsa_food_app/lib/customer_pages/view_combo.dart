@@ -26,12 +26,14 @@ class ViewCombo extends StatefulWidget {
 class _ViewComboState extends State<ViewCombo> {
   String? imageUrl1;
   String? imageUrl2;
+  String? userName;
   double _dragPosition = 0.0; // Tracks drag position
 
   @override
   void initState() {
     super.initState();
     _fetchProductImages();
+    _fetchUserName();
   }
 
   Future<void> _fetchProductImages() async {
@@ -82,6 +84,30 @@ class _ViewComboState extends State<ViewCombo> {
     }
   }
 
+  Future<void> _fetchUserName() async {
+    try {
+      final customersRef = FirebaseFirestore.instance.collection('customer');
+      final querySnapshot = await customersRef.get();
+
+      for (var customerDoc in querySnapshot.docs) {
+        final combosRef = customerDoc.reference.collection('combos');
+        final combosSnapshot = await combosRef
+            .where('comboName', isEqualTo: widget.comboName)
+            .get();
+
+        if (combosSnapshot.docs.isNotEmpty) {
+          setState(() {
+            userName = customerDoc[
+                'userName']; // Get the userName from the customer document
+          });
+          break; // Stop searching once we find the match
+        }
+      }
+    } catch (e) {
+      print('Error fetching user name: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -105,7 +131,7 @@ class _ViewComboState extends State<ViewCombo> {
         children: [
           // Non-scrollable part: Combo Name (title)
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(10.0),
             child: Text(
               widget.comboName,
               style: const TextStyle(
@@ -114,6 +140,16 @@ class _ViewComboState extends State<ViewCombo> {
               ),
             ),
           ),
+          if (userName != null) ...[
+            Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: Text(
+                'Created by: $userName', // Display the userName
+                style:
+                    const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+              ),
+            ),
+          ],
           const Divider(),
           // Scrollable content: product cards, tags, description, etc.
           Expanded(

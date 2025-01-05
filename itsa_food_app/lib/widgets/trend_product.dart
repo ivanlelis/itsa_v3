@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'order_trending.dart'; // Import the OrderTrending widget
+import 'package:itsa_food_app/customer_pages/menu.dart';
 
 class TrendProduct extends StatefulWidget {
   final String? userName;
@@ -188,7 +189,24 @@ class _TrendProductState extends State<TrendProduct> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Menu(
+                        userName: widget.userName,
+                        emailAddress: widget.emailAddress,
+                        email: widget.email,
+                        imageUrl: widget.imageUrl,
+                        uid: widget.uid,
+                        userAddress: widget.userAddress,
+                        latitude: widget.latitude,
+                        longitude: widget.longitude,
+                        branchID: widget.branchID,
+                      ),
+                    ),
+                  );
+                },
                 style: TextButton.styleFrom(
                   foregroundColor: Color(0xFF6E473B), // Updated color
                 ),
