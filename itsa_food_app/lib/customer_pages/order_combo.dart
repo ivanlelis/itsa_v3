@@ -140,7 +140,7 @@ class _OrderComboState extends State<OrderCombo> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${widget.comboName}',
+              widget.comboName,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),

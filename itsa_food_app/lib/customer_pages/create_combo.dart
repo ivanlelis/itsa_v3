@@ -81,7 +81,6 @@ class _ComboOrderState extends State<ComboOrder> with TickerProviderStateMixin {
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -218,226 +217,91 @@ class _ComboOrderState extends State<ComboOrder> with TickerProviderStateMixin {
 
                             final products = snapshot.data!.docs;
 
-                            return Column(
-                              children: [
-                                // Product cards for the selected type (Pick your...)
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: (products.length / 2).ceil(),
-                                  itemBuilder: (context, rowIndex) {
-                                    final startIndex = rowIndex * 2;
-                                    final endIndex =
-                                        (startIndex + 2 <= products.length)
-                                            ? startIndex + 2
-                                            : products.length;
-                                    final rowProducts =
-                                        products.sublist(startIndex, endIndex);
+                            return SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  // Product cards for the selected type (Pick your...)
+                                  ListView.builder(
+                                    shrinkWrap: true, // Constrain the ListView
+                                    physics:
+                                        const NeverScrollableScrollPhysics(), // Disable internal scrolling
+                                    itemCount: (products.length / 2).ceil(),
+                                    itemBuilder: (context, rowIndex) {
+                                      final startIndex = rowIndex * 2;
+                                      final endIndex =
+                                          (startIndex + 2 <= products.length)
+                                              ? startIndex + 2
+                                              : products.length;
+                                      final rowProducts = products.sublist(
+                                          startIndex, endIndex);
 
-                                    return SizedBox(
-                                      height:
-                                          150, // Ensure the height of the scrollable area
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: rowProducts.length,
-                                        itemBuilder: (context, index) {
-                                          final product = rowProducts[index];
-                                          return GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                selectedProductID = product
-                                                    .id; // Select product under Pick your...
-                                                selectedItem = product[
-                                                    "productName"]; // Save the selected product's name
-                                              });
-                                            },
-                                            child: Column(
-                                              children: [
-                                                // Display the product image covering the card
-                                                Container(
-                                                  margin:
-                                                      const EdgeInsets.all(8.0),
-                                                  width:
-                                                      120, // Fixed width for each product card
-                                                  height:
-                                                      110, // Reduced height to fix overflow issue
-                                                  decoration: BoxDecoration(
-                                                    color: selectedProductID ==
-                                                            product.id
-                                                        ? Colors.blue[100]
-                                                        : Colors.white,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: Colors.black26,
-                                                        blurRadius: 4,
-                                                        offset:
-                                                            const Offset(2, 2),
-                                                      ),
-                                                    ],
-                                                    border: Border.all(
+                                      return SizedBox(
+                                        height:
+                                            150, // Ensure the height of the scrollable area
+                                        child: ListView.builder(
+                                          scrollDirection: Axis
+                                              .horizontal, // Horizontal scrolling
+                                          itemCount: rowProducts.length,
+                                          itemBuilder: (context, index) {
+                                            final product = rowProducts[index];
+                                            return GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  selectedProductID = product
+                                                      .id; // Select product
+                                                  selectedItem = product[
+                                                      "productName"]; // Save the product name
+                                                });
+                                              },
+                                              child: Column(
+                                                children: [
+                                                  Container(
+                                                    margin:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    width:
+                                                        120, // Fixed width for each product card
+                                                    height:
+                                                        110, // Reduced height to fix overflow issue
+                                                    decoration: BoxDecoration(
                                                       color:
                                                           selectedProductID ==
                                                                   product.id
-                                                              ? Colors.blue
-                                                              : Colors
-                                                                  .transparent,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                    child: product[
-                                                                "imageUrl"] !=
-                                                            null
-                                                        ? Image.network(
-                                                            product["imageUrl"],
-                                                            fit: BoxFit
-                                                                .cover, // Image will cover the whole card
-                                                            width:
-                                                                double.infinity,
-                                                          )
-                                                        : const Icon(
-                                                            Icons
-                                                                .image_not_supported,
-                                                            size: 60,
-                                                          ),
-                                                  ),
-                                                ),
-                                                // Padding for the product name below the image
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 8.0),
-                                                  child: Text(
-                                                    product["productName"],
-                                                    textAlign: TextAlign.center,
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                                // Show "Choose your milktea:" label only after a product is selected
-                                if (selectedProductID != null)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
-                                    child: Text(
-                                      "Choose your milk tea:",
-                                      style: const TextStyle(
-                                        fontSize: 23,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E0B0D),
-                                      ),
-                                    ),
-                                  ),
-                                // Show Milk Tea products only after a product is selected
-                                if (selectedProductID != null)
-                                  FutureBuilder<QuerySnapshot>(
-                                    future:
-                                        milkTeaFuture, // Use the milkTeaFuture for Milk Tea products
-                                    builder: (context, milkTeaSnapshot) {
-                                      if (milkTeaSnapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return const Center(
-                                            child: CircularProgressIndicator());
-                                      } else if (milkTeaSnapshot.hasError) {
-                                        return Center(
-                                          child: Text(
-                                              "Error: ${milkTeaSnapshot.error}",
-                                              style: const TextStyle(
-                                                  color: Colors.red)),
-                                        );
-                                      } else if (!milkTeaSnapshot.hasData ||
-                                          milkTeaSnapshot.data!.docs.isEmpty) {
-                                        return const Center(
-                                            child: Text(
-                                                "No Milk Tea products available",
-                                                style:
-                                                    TextStyle(fontSize: 18)));
-                                      }
-
-                                      final milkTeaProducts =
-                                          milkTeaSnapshot.data!.docs;
-
-                                      return Column(
-                                        children: [
-                                          // Horizontal scrollable row for Milk Tea products
-                                          SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            child: Row(
-                                              children: milkTeaProducts
-                                                  .map((product) {
-                                                return GestureDetector(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      selectedMilkTeaID = product
-                                                          .id; // Select product under Choose your milktea:
-                                                    });
-                                                  },
-                                                  child: Column(
-                                                    children: [
-                                                      // Display the product image covering the card
-                                                      Container(
-                                                        margin: const EdgeInsets
-                                                            .all(8.0),
-                                                        width: 120,
-                                                        height: 120,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color:
-                                                              selectedMilkTeaID ==
-                                                                      product.id
-                                                                  ? Colors
-                                                                      .blue[100]
-                                                                  : Colors
-                                                                      .white,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                              color: Colors
-                                                                  .black26,
-                                                              blurRadius: 4,
-                                                              offset:
-                                                                  const Offset(
-                                                                      2, 2),
-                                                            ),
-                                                          ],
-                                                          border: Border.all(
-                                                            color: selectedMilkTeaID ==
+                                                              ? Colors.blue[100]
+                                                              : Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black26,
+                                                          blurRadius: 4,
+                                                          offset: const Offset(
+                                                              2, 2),
+                                                        ),
+                                                      ],
+                                                      border: Border.all(
+                                                        color:
+                                                            selectedProductID ==
                                                                     product.id
                                                                 ? Colors.blue
                                                                 : Colors
                                                                     .transparent,
-                                                            width: 2,
-                                                          ),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                          child: product[
-                                                                      "imageUrl"] !=
+                                                        width: 2,
+                                                      ),
+                                                    ),
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      child:
+                                                          product["imageUrl"] !=
                                                                   null
                                                               ? Image.network(
                                                                   product[
                                                                       "imageUrl"],
                                                                   fit: BoxFit
-                                                                      .cover, // Image will cover the whole card
+                                                                      .cover,
                                                                   width: double
                                                                       .infinity,
                                                                 )
@@ -446,98 +310,228 @@ class _ComboOrderState extends State<ComboOrder> with TickerProviderStateMixin {
                                                                       .image_not_supported,
                                                                   size: 60,
                                                                 ),
-                                                        ),
-                                                      ),
-                                                      // Product name outside the card
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal:
-                                                                    8.0),
-                                                        child: Text(
-                                                          product[
-                                                              "productName"],
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style:
-                                                              const TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  fontSize: 16),
-                                                        ),
-                                                      ),
-                                                    ],
+                                                    ),
                                                   ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                        ],
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8.0),
+                                                    child: Text(
+                                                      product["productName"],
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       );
                                     },
                                   ),
-                                const SizedBox(
-                                  height: 130,
-                                ),
-                                if (selectedMilkTeaID != null &&
-                                    selectedProductID !=
-                                        null) // Ensure both are selected
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16.0, horizontal: 24.0),
-                                    child: SizedBox(
-                                      width: double
-                                          .infinity, // Makes the button take up the full width
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                              0xFF2E7D32), // Set to the desired green color
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 16.0),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
+                                  // Show "Choose your milktea:" label only after a product is selected
+                                  if (selectedProductID != null)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8.0),
+                                      child: Text(
+                                        "Choose your milk tea:",
+                                        style: const TextStyle(
+                                          fontSize: 23,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF2E0B0D),
                                         ),
-                                        onPressed: () {
-                                          // Navigate to SaveCombo and pass the selectedItem and selectedMilkTeaID
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) => SaveCombo(
-                                                      selectedProductID:
-                                                          selectedProductID,
-                                                      selectedMilkTeaID:
-                                                          selectedMilkTeaID,
-                                                      branchID: widget.branchID,
-                                                      latitude: widget.latitude,
-                                                      longitude:
-                                                          widget.longitude,
-                                                      userAddress:
-                                                          widget.userAddress,
-                                                      userName: widget.userName,
-                                                      uid: widget.uid,
-                                                      imageUrl: widget.imageUrl,
-                                                      email: widget.email,
-                                                      emailAddress:
-                                                          widget.emailAddress,
-                                                    )),
+                                      ),
+                                    ),
+                                  // Horizontal scrollable Milk Tea products
+                                  if (selectedProductID != null)
+                                    FutureBuilder<QuerySnapshot>(
+                                      future: milkTeaFuture,
+                                      builder: (context, milkTeaSnapshot) {
+                                        if (milkTeaSnapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        } else if (milkTeaSnapshot.hasError) {
+                                          return Center(
+                                            child: Text(
+                                              "Error: ${milkTeaSnapshot.error}",
+                                              style: const TextStyle(
+                                                  color: Colors.red),
+                                            ),
                                           );
-                                        },
-                                        child: const Text(
-                                          "Proceed",
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                        } else if (!milkTeaSnapshot.hasData ||
+                                            milkTeaSnapshot
+                                                .data!.docs.isEmpty) {
+                                          return const Center(
+                                            child: Text(
+                                              "No Milk Tea products available",
+                                              style: TextStyle(fontSize: 18),
+                                            ),
+                                          );
+                                        }
+
+                                        final milkTeaProducts =
+                                            milkTeaSnapshot.data!.docs;
+
+                                        return SingleChildScrollView(
+                                          scrollDirection: Axis
+                                              .horizontal, // Horizontal scrolling
+                                          child: Row(
+                                            children:
+                                                milkTeaProducts.map((product) {
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    selectedMilkTeaID = product
+                                                        .id; // Select Milk Tea product
+                                                  });
+                                                },
+                                                child: Column(
+                                                  children: [
+                                                    Container(
+                                                      margin:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      width: 120,
+                                                      height: 120,
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            selectedMilkTeaID ==
+                                                                    product.id
+                                                                ? Colors
+                                                                    .blue[100]
+                                                                : Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color:
+                                                                Colors.black26,
+                                                            blurRadius: 4,
+                                                            offset:
+                                                                const Offset(
+                                                                    2, 2),
+                                                          ),
+                                                        ],
+                                                        border: Border.all(
+                                                          color: selectedMilkTeaID ==
+                                                                  product.id
+                                                              ? Colors.blue
+                                                              : Colors
+                                                                  .transparent,
+                                                          width: 2,
+                                                        ),
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        child:
+                                                            product["imageUrl"] !=
+                                                                    null
+                                                                ? Image.network(
+                                                                    product[
+                                                                        "imageUrl"],
+                                                                    fit: BoxFit
+                                                                        .cover,
+                                                                    width: double
+                                                                        .infinity,
+                                                                  )
+                                                                : const Icon(
+                                                                    Icons
+                                                                        .image_not_supported,
+                                                                    size: 60,
+                                                                  ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8.0),
+                                                      child: Text(
+                                                        product["productName"],
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  const SizedBox(height: 130),
+                                  if (selectedMilkTeaID != null &&
+                                      selectedProductID != null)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16.0, horizontal: 24.0),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFF2E7D32),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16.0),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => SaveCombo(
+                                                  selectedProductID:
+                                                      selectedProductID,
+                                                  selectedMilkTeaID:
+                                                      selectedMilkTeaID,
+                                                  branchID: widget.branchID,
+                                                  latitude: widget.latitude,
+                                                  longitude: widget.longitude,
+                                                  userAddress:
+                                                      widget.userAddress,
+                                                  userName: widget.userName,
+                                                  uid: widget.uid,
+                                                  imageUrl: widget.imageUrl,
+                                                  email: widget.email,
+                                                  emailAddress:
+                                                      widget.emailAddress,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text(
+                                            "Proceed",
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             );
                           },
                         ),
