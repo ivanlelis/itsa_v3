@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'order_combo.dart'; // Import the new OrderCombo screen
 
 class ViewCombo extends StatefulWidget {
   final String comboName;
@@ -259,7 +260,18 @@ class _ViewComboState extends State<ViewCombo> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: ElevatedButton(
                       onPressed: () {
-                        // Add your order action here
+                        // Navigate to OrderCombo screen and pass comboName and userName
+                        if (userName != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OrderCombo(
+                                comboName: widget.comboName,
+                                userName: userName!,
+                              ),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(double.infinity, 60), // Large button
