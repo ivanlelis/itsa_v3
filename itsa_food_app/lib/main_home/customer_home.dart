@@ -8,7 +8,6 @@ import 'package:itsa_food_app/user_provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:itsa_food_app/widgets/featured_products.dart';
-import 'package:itsa_food_app/widgets/game_card.dart';
 import 'package:itsa_food_app/widgets/trend_product.dart';
 import 'package:itsa_food_app/widgets/customer_navbar.dart';
 import 'package:itsa_food_app/widgets/customer_appbar.dart';
@@ -218,80 +217,6 @@ class _CustomerMainHomeState extends State<CustomerMainHome> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  if (user?.userName != null) SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      if (user?.userName == null) {
-                        showDialog(
-                          context: context,
-                          barrierDismissible:
-                              true, // Allows dismissing by tapping outside
-                          builder: (BuildContext context) {
-                            return Dialog(
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize
-                                      .min, // Adjusts to the content's size
-                                  children: [
-                                    // Display the image at the top of the modal
-                                    Image.asset(
-                                      'assets/images/invite.png',
-                                      height: 180, // Adjust height as needed
-                                      width: 180, // Adjust width as needed
-                                    ),
-
-                                    SizedBox(height: 10),
-                                    Text(
-                                      "Enjoy amazing deals and vouchers so sign up now!",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    SizedBox(height: 30),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(
-                                            context); // Close the modal
-                                        Navigator.pushNamed(context,
-                                            '/login'); // Navigate to login
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 30, vertical: 15),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        backgroundColor: Colors.blueAccent,
-                                      ),
-                                      child: Text(
-                                        "Log In / Sign Up",
-                                        style: TextStyle(
-                                            fontSize: 16, color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      } else {
-                        // Proceed with Scratch and Win functionality
-                        print("Scratch and Win clicked");
-                      }
-                    },
-                    child: AbsorbPointer(
-                      absorbing: user?.userName ==
-                          null, // Disable interaction if user is not logged in
-                      child: GameCard(),
-                    ),
-                  ),
-                  SizedBox(height: 20),
                   FutureBuilder<DocumentSnapshot>(
                     future: _featuredProduct,
                     builder: (context, snapshot) {
